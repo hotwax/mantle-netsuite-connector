@@ -35,6 +35,9 @@
         <member-entity entity-alias="PAB" entity-name="org.apache.ofbiz.party.contact.PostalAddress" join-from-alias="OCMBL" join-optional="true">
             <key-map field-name="contactMechId"/>
         </member-entity>
+        <member-entity entity-alias="COUNTRYGEOBL" entity-name="org.apache.ofbiz.common.geo.Geo" join-from-alias="PAB" join-optional="true">
+            <key-map field-name="countryGeoId" related="geoId"/>
+        </member-entity>
         <member-entity entity-alias="OCMSL" entity-name="org.apache.ofbiz.order.order.OrderContactMech" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
             <entity-condition>
@@ -43,6 +46,9 @@
         </member-entity>
         <member-entity entity-alias="PAS" entity-name="org.apache.ofbiz.party.contact.PostalAddress" join-from-alias="OCMSL" join-optional="true">
             <key-map field-name="contactMechId"/>
+        </member-entity>
+        <member-entity entity-alias="COUNTRYGEOSL" entity-name="org.apache.ofbiz.common.geo.Geo" join-from-alias="PAS" join-optional="true">
+            <key-map field-name="countryGeoId" related="geoId"/>
         </member-entity>
         <member-entity entity-alias="OCMBP" entity-name="org.apache.ofbiz.order.order.OrderContactMech" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
@@ -75,15 +81,41 @@
         <alias name="shippingCity" field="city" entity-alias="PAS"/>
         <alias name="shippingState" field="stateProvinceGeoId" entity-alias="PAS"/>
         <alias name="shippingPostalCode" field="postalCode" entity-alias="PAS"/>
+        <alias name="shippingCountry" field="geoCode" entity-alias="COUNTRYGEOSL"/>
         <alias name="billingAddress1" field="address2" entity-alias="PAB"/>
         <alias name="billingAddress2" field="address2" entity-alias="PAB"/>
         <alias name="billingCity" field="city" entity-alias="PAB"/>
         <alias name="billingState" field="stateProvinceGeoId" entity-alias="PAB"/>
         <alias name="billingPostalCode" field="postalCode" entity-alias="PAB"/>
+        <alias name="billingCountry" field="geoCode" entity-alias="COUNTRYGEOBL"/>
         <alias name="NetsuiteCustomerId" field="idValue" entity-alias="PID"/>
         <alias name="salesChannel" field="description" entity-alias="SCENM"/>
         <alias-all entity-alias="TN"/>
         <alias name="ShippingCharge" field="amount" entity-alias="OADJ"/>
         <alias name="giftCardAmountSum" field="maxAmount" entity-alias="OPP"/>
+    </view-entity>
+
+    <view-entity entity-name="OrderItemsForNetSuiteView" package="co.hotwax.order" group="ofbiz_transactional">
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem"/>
+        <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI">
+            <key-map field-name="productId"/>
+        </member-entity>
+        <member-entity entity-alias="GID" entity-name="org.apache.ofbiz.product.product.GoodIdentification" join-from-alias="P">
+            <key-map field-name="productId"/>
+            <entity-condition>
+                <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OADJ" entity-name="org.apache.ofbiz.order.order.OrderAdjustment" join-from-alias="OI" join-optional="true">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <entity-condition>
+                <econdition field-name="orderAdjustmentTypeId" value="EXT_PROMO_ADJUSTMENT"/>
+            </entity-condition>
+        </member-entity>
+        <alias-all entity-alias="OI"/>
+        <alias name="NetSuiteProductId" field="idValue" entity-alias="GID"/>
+        <alias name="DiscountSum" field="amount" entity-alias="OADJ" function="sum"/>
     </view-entity>
 </entities>
