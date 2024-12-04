@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="generate" noun="OrdersFeedForNetSuite" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="orderId">
+                <description>Parameter to fetch Order details for a specific orderId.</description>
+            </parameter>
+            <parameter name="systemMessageTypeId" required="true">
+                <description>The System Message Type ID for generating the Brokered Order Items Feed.</description>
+            </parameter>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote Id for generating the Brokered Order Items Feed.</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+            <log message="Generating Create Orders Feed file of HotWax for Order ${orderId} at time ${nowDate}"/>
+            <script>
+                import com.fasterxml.jackson.core.JsonGenerator
+                import com.fasterxml.jackson.core.JsonFactory
+                import com.fasterxml.jackson.databind.ObjectMapper
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
+                if(orderId) netsuiteOrders_find.condition("orderId", orderId)
+
+                // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
+                try (ordersItr = netsuiteOrders_find.iterator()) {
+            </script>
+
+            <!-- If no orders in BrokeredOrderItemsSyncQueue, then don't generate the file -->
+            <if condition="!ordersItr.hasNext()">
+                <script>ordersItr.close()</script>
+                <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
+            </if>
+
+            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+
+            <!-- Prepare JSON File Path -->
+            <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
+            <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
+                dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
+            <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
+
+            <!-- Prepare the Feed File  -->
+            <script>
+
+                try {
+                //json file
+                File ordersFeedFile = new File(jsonFilePath)
+                if (!ordersFeedFile.parentFile.exists()) ordersFeedFile.parentFile.mkdirs()
+                JsonFactory jsonFactory = new JsonFactory()
+
+                /* Declaring the PrintWriter and JsonGenerator resources in the the try statement,
+                so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
+                try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, ordersFeedFile);
+                JsonGenerator generator = jsonFactory.createGenerator(pw)) {
+                generator.writeStartArray()
+            </script>
+
+            <iterate list="ordersItr" entry="order">
+                <!-- Set orderItemList List to add the order Item Detail map -->
+                <set field="orderItemList" from="[]"/>
+                <entity-find entity-name="co.hotwax.order.OrderItemsForNetSuiteView" list="orderItemsList">
+                    <econdition field-name="orderId" operator="equals" from="order.orderId"/>
+                </entity-find>
+
+                <if condition="!orderItemList">
+                    <log level="info" message="There is no eligible  order items for this order"/>
+                    <continue/>
+                </if>
+                <set field="orderItemDetail" from="orderItemsList.getMap()"/>
+                <script>
+                    orderItemList.add(orderItemDetail)
+                </script>
+
+                <!-- Prepare the Order Detail map -->
+                    <set field="orderDetail" from="order.getMap() + [orderItems:orderItemList]"/>
+
+                <script>
+                    new ObjectMapper()
+                    .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
+                    .writerWithDefaultPrettyPrinter().writeValue(generator, orderDetail)
+
+                </script>
+            </iterate>
+            <script>
+                        generator.writeEndArray()
+                    }
+                } catch (IOException e) {
+                    logger.error("Error preparing Order Feed files", e)
+                }
+                }
+            </script>
+             <!-- Save the Json Feed File path in System Message messageText -->
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[messageText:jsonFilePathRef, systemMessageTypeId:systemMessageTypeId,
+                    systemMessageRemoteId:systemMessageRemoteId]" out-map="systemMessageOut"/>
+
+            <return message="Created the Order Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId}
+                and remote ${systemMessageRemoteId} saved response in messages
+                ${systemMessageOut.systemMessageId}"/>
+        </actions>
+    </service>
+</services>
