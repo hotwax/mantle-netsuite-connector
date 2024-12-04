@@ -69,7 +69,9 @@
             <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
             <econdition entity-alias="OID" field-name="orderId" operator="equals" value=""/>
         </entity-condition>
-        <alias-all entity-alias="OH"/>
+        <alias name="orderName" field="orderName" entity-alias="OH"/>
+        <alias name="orderId" field="orderId" entity-alias="OH"/>
+        <alias name="orderDate" field="orderDate" entity-alias="OH"/>
         <alias name="shippingAddress1" field="address1" entity-alias="PAS"/>
         <alias name="shippingAddress2" field="address2" entity-alias="PAS"/>
         <alias name="shippingCity" field="city" entity-alias="PAS"/>
@@ -82,10 +84,10 @@
         <alias name="billingState" field="stateProvinceGeoId" entity-alias="PAB"/>
         <alias name="billingPostalCode" field="postalCode" entity-alias="PAB"/>
         <alias name="billingCountry" field="geoCode" entity-alias="COUNTRYGEOBL"/>
-        <alias name="NetsuiteCustomerId" field="idValue" entity-alias="PID"/>
+        <alias name="customerId" field="idValue" entity-alias="PID"/>
         <alias name="salesChannel" field="description" entity-alias="SCENM"/>
         <alias-all entity-alias="TN"/>
-        <alias name="ShippingCharge" field="amount" entity-alias="OADJ"/>
+        <alias name="ShippingCost" field="amount" entity-alias="OADJ"/>
     </view-entity>
 
     <view-entity entity-name="OrderItemsForNetSuiteView" package="co.hotwax.order" group="ofbiz_transactional">
@@ -100,7 +102,11 @@
                 <date-filter/>
             </entity-condition>
         </member-entity>
-        <alias-all entity-alias="OI"/>
+        <alias name="orderItemSeqId" field="orderItemSeqId" entity-alias="OI"/>
+        <alias name="orderId" field="orderId" entity-alias="OI"/>
+        <alias name="price" field="unitPrice" entity-alias="OI"/>
+        <alias name="quantity" field="quantity" entity-alias="OI"/>
+        <alias name="itemStatus" field="statusId" entity-alias="OI"/>
         <alias name="NetSuiteProductId" field="idValue" entity-alias="GID"/>
     </view-entity>
 </entities>
