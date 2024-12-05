@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="prepare" noun="OrdersFeedDataForNetSuite">
+        <in-parameters>
+            <parameter name="orderId">
+                <description>Parameter to fetch Order details for a specific orderId.</description>
+            </parameter>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="orderMap"/>
+        </out-parameters>
+        <actions>
+            <log message="order: ${orderId}"/>
+            <entity-find entity-name="co.hotwax.order.OrdersDetailsForNetSuiteView" list="orderLevelDetailList">
+                <econdition field-name="orderId" from="orderId"/>
+            </entity-find>
+            <set field="orderDetails" from="orderLevelDetailList[0]"/>
+
+            <!-- Set orderItemList List to add the order Item Detail map -->
+            <set field="orderItemList" from="[]"/>
+            <entity-find entity-name="co.hotwax.order.OrderItemsForNetSuiteView" list="orderItemsList">
+                <econdition field-name="orderId" operator="equals" from="orderDetails.orderId"/>
+            </entity-find>
+
+            <if condition="!orderItemsList">
+                <log message="There is no eligible order items for this order"/>
+                <return/>
+            </if>
+
+            <iterate list="orderItemsList" entry="orderItem">
+                <log message="orderItemSeqId: ${orderItem.orderItemSeqId}"/>
+                <script>
+                    orderItemList.add(orderItem.getMap())
+                </script>
+            </iterate>
+            <!-- Prepare the Order Detail map -->
+            <set field="orderMap" from="orderDetails.getMap() + [orderItems:orderItemList]"/>
+        </actions>
+    </service>
+
+
+    <service verb="generate" noun="CreateOrderFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="orderId">
+                <description>Parameter to fetch Order details for a specific orderId.</description>
+            </parameter>
+            <parameter name="systemMessageTypeId" required="true">
+                <description>The System Message Type ID for generating the Orders Feed for Netsuite.</description>
+            </parameter>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote Id for generating the Orders Feed for Netsuite.</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+            <log message="Generating Create Orders Feed file of HotWax for Order ${orderId} at time ${nowDate}"/>
+            <script>
+                import com.fasterxml.jackson.core.JsonGenerator
+                import com.fasterxml.jackson.core.JsonFactory
+                import com.fasterxml.jackson.databind.ObjectMapper
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
+                if(orderId) netsuiteOrders_find.condition("orderId", orderId)
+
+                // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
+                try (ordersItr = netsuiteOrders_find.iterator()) {
+            </script>
+
+            <if condition="!ordersItr.hasNext()">
+                <script>ordersItr.close()</script>
+                <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
+            </if>
+
+            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null">
+                <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
+            </if>
+            <iterate list="ordersItr" entry="order">
+                <service-call name="co.hotwax.netsuite.CreateOrderService.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
+                    out-map="context"/>
+                <log message="print the order map after each itr: ${context.orderMap}"/>
+                <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
+                    <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                    <field-map field-name="parameterName" value="resourcePath"/>
+                </entity-find-one>
+                <if condition="groovyFileResource">
+                    <log message="found a groovy file resource at ${groovyFileResource}"/>
+                    <set field="scriptPath" from="groovyFileResource.parameterValue"/>
+                    <script>
+                        Object result = ec.resource.script(scriptPath, null)
+                    </script>
+                </if>
+            </iterate>
+            <script>}</script>
+        </actions>
+
+    </service>
+</services>
