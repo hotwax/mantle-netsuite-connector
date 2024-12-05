@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed">
+    <moqui.resource.DbResource filename="netsuite" isFile="N" resourceId="Netsuite" parentResourceId=""/>
+    <moqui.resource.DbResource filename="groovy" isFile="N" resourceId="Groovy" parentResourceId="Netsuite"/>
+    <moqui.resource.DbResource filename="CreateOrderTransformationGroovy.groovy" isFile="Y" resourceId="CreateOrderTransformationGroovy" parentResourceId="Groovy">
+        <file mimeType="text/html" versionName="01" rootVersionName="01">
+            <fileData>
+            </fileData>
+            <histories versionName="01" previousVersionName="01"/>
+        </file>
+    </moqui.resource.DbResource>
+</entity-facade-xml>

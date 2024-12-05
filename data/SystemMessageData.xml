@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed">
+    <!-- System Message Type for Warehouse Brokered Order Items Feed -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuiteOrderItemsFeed"
+        description="Generate HotWax Warehouse Brokered Order Items Feed"
+        parentTypeId="LocalFeedFile"
+        sendPath=""
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath=""/>
+    <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
+        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
+
+</entity-facade-xml>
