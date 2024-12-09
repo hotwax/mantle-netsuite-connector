@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="search" noun="OrderDataDocument" type="inline" authenticate="anonymous-all">
+        <out-parameters>
+            <parameter name="output" allow-html="any"/>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[                
+                List<Map> docMapList = ec.entity.getDataDocuments("Order", null, null, null) 
+                i = 0               
+            ]]></script>
+            <set field="output" from="new LinkedList()"/>
+            <iterate list="docMapList" entry="docMap">
+                <script>
+                    i++
+                    String docString = groovy.json.JsonOutput.toJson(docMap)
+                    String prettyDocString = groovy.json.JsonOutput.prettyPrint(docString)
+                    output.add(docMap)
+                    if (i==5) break;
+                </script>                
+            </iterate>
+        </actions>
+    </service>    
+</services>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="test">
+    
+    <dataDocuments dataDocumentId="Order" indexName="order_header" documentName="OrderHeader" primaryEntityName="org.apache.ofbiz.order.order.OrderHeader">
+        <fields fieldSeqId="01" fieldPath="orderId"/>
+        <fields fieldSeqId="02" fieldPath="orderName"/>
+        <fields fieldSeqId="03" fieldPath="org.apache.ofbiz.common.enum.Enumeration:description" fieldNameAlias="salesChannelEnumId"/>
+        <fields fieldSeqId="02" fieldPath="org.apache.ofbiz.order.order.OrderItem:orderItemSeqId"/>
+        <fields fieldSeqId="04" fieldPath="org.apache.ofbiz.order.order.OrderItem:productId"/>
+        <fields fieldSeqId="05" fieldPath="org.apache.ofbiz.order.order.OrderItem:unitPrice"/>
+        <fields fieldSeqId="06" fieldPath="org.apache.ofbiz.order.order.OrderItem:quantity" fieldNameAlias="orderQuantity"/>
+        <fields fieldSeqId="07" fieldPath="orderDate"/>
+
+        <fields fieldSeqId="08" fieldPath="org.apache.ofbiz.order.order.OrderItem:org.apache.ofbiz.product.product.Product:org.apache.ofbiz.product.product.GoodIdentification:goodIdentificationTypeId" fieldNameAlias="goodIdentificationTypeId"/>
+        <fields fieldSeqId="09" fieldPath="org.apache.ofbiz.order.order.OrderItem:org.apache.ofbiz.product.product.Product:org.apache.ofbiz.product.product.GoodIdentification:idValue" fieldNameAlias="idValue"/>
+
+        <fields fieldSeqId="10" fieldPath="org.apache.ofbiz.order.order.OrderRole:org.apache.ofbiz.party.party.Party:org.apache.ofbiz.party.party.PartyIdentification:partyIdentificationTypeId" fieldNameAlias="partyIdentificationTypeId"/>
+        <fields fieldSeqId="11" fieldPath="org.apache.ofbiz.order.order.OrderRole:org.apache.ofbiz.party.party.Party:org.apache.ofbiz.party.party.PartyIdentification:idValue" fieldNameAlias="idValue"/>
+
+        <fields fieldSeqId="12" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:contactMechPurposeTypeId" fieldNameAlias="contactMechPurposeTypeId"/>
+        <fields fieldSeqId="13" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.PostalAddress:toName" fieldNameAlias="to_name"/>
+        <fields fieldSeqId="14" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.PostalAddress:address1" fieldNameAlias="address1"/>
+        <fields fieldSeqId="15" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.PostalAddress:address2" fieldNameAlias="address2"/>
+        <fields fieldSeqId="16" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.PostalAddress:city" fieldNameAlias="city"/>
+        <fields fieldSeqId="17" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.PostalAddress:stateProvinceGeoId" fieldNameAlias="state"/>
+        <fields fieldSeqId="18" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.PostalAddress:postalCode" fieldNameAlias="postalCode"/>
+        <fields fieldSeqId="19" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.PostalAddress:Country:geoCode" fieldNameAlias="geoCode"/>
+    
+        <fields fieldSeqId="20" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:infoString" fieldNameAlias="billingEmail"/>
+
+        <fields fieldSeqId="21" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.TelecomNumber:countryCode" fieldNameAlias="billing_country_code"/>
+        <fields fieldSeqId="22" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.TelecomNumber:areaCode" fieldNameAlias="billing_area_code"/>
+        <fields fieldSeqId="23" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:org.apache.ofbiz.party.contact.TelecomNumber:contactNumber" fieldNameAlias="billing_contact_number"/>
+
+        <fields fieldSeqId="24" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:org.apache.ofbiz.party.contact.PostalAddress:toName" fieldNameAlias="addressee"/>
+        <fields fieldSeqId="25" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:org.apache.ofbiz.party.contact.PostalAddress:address1" fieldNameAlias="address1"/>
+        <fields fieldSeqId="26" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:org.apache.ofbiz.party.contact.PostalAddress:address2" fieldNameAlias="address2"/>
+        <fields fieldSeqId="27" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:org.apache.ofbiz.party.contact.PostalAddress:city" fieldNameAlias="city"/>
+        <fields fieldSeqId="28" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:org.apache.ofbiz.party.contact.PostalAddress:stateProvinceGeoId" fieldNameAlias="stateProvinceGeoId"/>
+        <fields fieldSeqId="29" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:org.apache.ofbiz.party.contact.PostalAddress:postalCode" fieldNameAlias="postalCode"/>
+
+        <fields fieldSeqId="30" fieldPath="org.apache.ofbiz.order.order.OrderContactMech:org.apache.ofbiz.party.contact.ContactMech:infoString" fieldNameAlias="shippingEmail"/>
+
+        <fields fieldSeqId="31" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:TelecomNumber:countryCode" fieldNameAlias="shipping_countryCode"/>
+        <fields fieldSeqId="32" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:TelecomNumber:areaCode" fieldNameAlias="shipping_areaCode"/>
+        <fields fieldSeqId="33" fieldPath="org.apache.ofbiz.order.order.OrderItemShipGroup:TelecomNumber:contactNumber" fieldNameAlias="shipping_contactNumber"/>
+
+
+        <conditions fieldNameAlias="goodIdentificationTypeId" operator="equals" fieldValue="NETSUITE_PRODUCT_ID"/>
+        <conditions fieldNameAlias="partyIdentificationTypeId" operator="equals" fieldValue="NETSUITE_CUSTOMER_ID"/>
+        <conditions fieldNameAlias="contactMechPurposeTypeId" operator="in" fieldValue="BILLING_EMAIL,BILLING_LOCATION,SHIPPING_EMAIL,PHONE_BILLING"/>
+    </dataDocuments>
+</entity-facade-xml>
