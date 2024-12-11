@@ -1,10 +1,160 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<entity-facade-xml type="seed">
+<entity-facade-xml>
     <moqui.resource.DbResource filename="netsuite" isFile="N" resourceId="Netsuite" parentResourceId=""/>
     <moqui.resource.DbResource filename="groovy" isFile="N" resourceId="Groovy" parentResourceId="Netsuite"/>
     <moqui.resource.DbResource filename="CreateOrderTransformationGroovy.groovy" isFile="Y" resourceId="CreateOrderTransformationGroovy" parentResourceId="Groovy">
         <file mimeType="text/html" versionName="01" rootVersionName="01">
             <fileData>
+                <![CDATA[
+               // Access the orderMapDetail from the input map
+                Map orderMapDetail = orderMapOut.orderMapDetail
+                
+                EntityValue OrderIdentification = ec.entity.find("co.hotwax.order.OrderIdentification")
+                    .condition("orderId",orderMapDetail.orderId)
+                    .condition("orderIdentificationTypeId", "SHOPIFY_ORD_ID").one()
+                
+                String etailOrderId = OrderIdentification ? OrderIdentification.getString("idValue") : ""
+                orderMapDetail.put("etailOrderId", etailOrderId)
+                
+                EntityValue orderCommunicationEvent = ec.entity.find("co.hotwax.integration.CommunicationEventAndOrder")
+                    .condition("orderId", orderMapDetail.orderId)
+                    .condition("communicationEventTypeId", "ORDER_NOTE").one()
+                
+                EntityList orderAttributes = ec.entity.find("org.apache.ofbiz.order.order.OrderAttribute")
+                    .condition("orderId", orderMapDetail.orderId)
+                    .useCache(true)
+                    .list()
+                
+                String isGiftWrap = "false"
+                String giftWrapOption = ""
+                String shipBooklets = "false"
+                
+                if (orderAttributes) {
+                    // Loop through the attributes and check for Option Font and Option Text
+                    orderAttributes.each { attribute ->
+                        if (attribute.attrName == "Gift Wrap Option") {
+                            giftWrapOption = attribute.attrValue
+                            isGiftWrap = "true"
+                        }
+                        if(attribute.attrName == "isShipBooklet")
+                        isShipBooklet
+                    }
+                }
+                orderMapDetail.put("giftWrapOption", giftWrapOption)
+                orderMapDetail.put("isGiftWrap", isGiftWrap)
+                
+                // Order Note
+                String orderNote = orderCommunicationEvent ? orderCommunicationEvent.getString("content") : ""
+                // Remove the \n character from the orderNote
+                orderNote = orderNote.replace("\n", " ")
+                orderMapDetail.put("orderNote", orderNote)
+                
+                String gorjanaSalesChannel = orderMapDetail.salesChannel
+                orderMapDetail.put("gorjanaSalesChannel", gorjanaSalesChannel)
+                
+                BigDecimal hcOrderTotal = BigDecimal.ZERO
+                
+                EntityList orderLevelAdjustment = ec.entity.find("co.hotwax.order.OrderItemAdjustmentAndAttribute")
+                    .condition("orderId", orderMapDetail.orderId)
+                    .condition("orderItemSeqId", "_NA_").list()
+                
+                if (orderLevelAdjustment) {
+                    System.out.println("orderLevelAdjustment:" + orderLevelAdjustment)
+                    BigDecimal orderLevelAdjustmentTotal = orderLevelAdjustment.collect { adj -> adj.getBigDecimal("amount") ?: BigDecimal.ZERO }.sum()
+                    hcOrderTotal = hcOrderTotal.add(orderLevelAdjustmentTotal)
+                }
+                // Loop through each order item
+                orderMapDetail.orderItems.each { orderItem ->
+                
+                    EntityValue ProductDetail = ec.entity.find("org.apache.ofbiz.product.product.Product")
+                        .condition("productId", orderItem.productId ).one()
+                    String packingCategory = ""
+                    if("MARKETING_PKG_PICK" == ProductDetail.productTypeId){
+                        packingCategory = "4"
+                    }
+                    orderItem.put("packingCategory", packingCategory)
+                
+                
+                    if ("POS Channel" != orderMapDetail.salesChannel){
+                        EntityValue defaultFacility = ec.entity.find("org.apache.ofbiz.product.facility.Facility")
+                            .condition("facilityTypeId", "WAREHOUSE")
+                            .condition("facilityId", "WH").one()
+                        String location = defaultFacility ? defaultFacility.getString("externalId") : ""
+                        orderItem.put("location", location)
+                        orderItem.put("department", "2")
+                    }
+                
+                    // Calculate item total: unitPrice * quantity
+                    BigDecimal unitPrice = (orderItem?.get("price") as BigDecimal)
+                    BigDecimal quantity = (orderItem?.get("quantity") as BigDecimal)
+                    BigDecimal itemTotal = unitPrice * quantity
+                    hcOrderTotal = hcOrderTotal.add(itemTotal)
+                
+                    EntityList orderItemLevelAdjustment = ec.entity.find("co.hotwax.order.OrderItemAdjustmentAndAttribute")
+                        .condition("orderId", orderMapDetail.orderId)
+                        .condition("orderItemSeqId", orderItem.orderItemSeqId).list()
+                
+                    if(orderItemLevelAdjustment) {
+                        BigDecimal itemAdjustmentTotal = orderItemLevelAdjustment.collect { adj -> adj.get("amount") ?: BigDecimal.ZERO }.sum()
+                        hcOrderTotal = hcOrderTotal.add(itemAdjustmentTotal)
+                    }
+                
+                    String orderLineTypeId = ""
+                
+                    if(orderItem.isDiscountRow){
+                        orderLineTypeId = "HC_DISCOUNT_${orderItem.orderItemSeqId}"
+                    }
+                
+                    orderItem.put("orderLineTypeId", orderLineTypeId)
+                    // Query the OrderItemAttribute entity for Option Font and Option Text at the item level
+                     EntityList orderItemAttributes = ec.entity.find("org.apache.ofbiz.order.order.OrderItemAttribute")
+                        .condition("orderId", orderItem.orderId)
+                        .condition("orderItemSeqId", orderItem.orderItemSeqId)
+                        .useCache(true)
+                        .list()
+                
+                    // Initialize variables to hold the Option Font and Option Text values
+                    String optionFont = ""
+                    String optionText = ""
+                    String giftWrapText = ""
+                    String finalSale = ""
+                
+                    if (orderItemAttributes) {
+                        // Loop through the attributes and check for Option Font and Option Text
+                        orderItemAttributes.each { attribute ->
+                            if (attribute.attrName == "Font") {
+                                optionFont = attribute.attrValue
+                            }
+                            if (attribute.attrName == "Text") {
+                                optionText = attribute.attrValue
+                            }
+                            if (attribute.attrName == "Direction") {
+                                direction = attribute.attrValue
+                            }
+                            if (attribute.attrName == "Gift Wrap") {
+                                giftWrapText = attribute.attrValue
+                            }
+                            if(attribute.attrName == "Final Sale"){
+                                finalSale = attribute.attrValue
+                            }
+                        }
+                        // If direction is available, append it to the Option Text
+                        if (direction) {
+                            optionText = "${optionText} Direction: ${direction}"
+                        }
+                    }
+                    // Add Option Font and Option Text to the order item
+                    orderItem.put("optionFont", optionFont)
+                    orderItem.put("OptionText", optionText)
+                    orderItem.put("GiftWraperText", giftWrapText)
+                    orderItem.put("finalSale", finalSale)
+                }
+                
+                orderMapDetail.put("hcOrderTotal", hcOrderTotal)
+                // Return the updated orderMapDetail
+                orderData = orderMapDetail
+                return orderData
+                ]]>
             </fileData>
             <histories versionName="01" previousVersionName="01"/>
         </file>
