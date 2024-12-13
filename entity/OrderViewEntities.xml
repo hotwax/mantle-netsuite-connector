@@ -2,8 +2,17 @@
 
 <entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+    <!--
+    Created a view to fetch eligible orders for creating an order feed from HotWax to NetSuite.
+    The view consolidates relevant data from `OrderHeader`, `OrderIdentification`, and `PartyIdentification` entities.
 
-    <view-entity entity-name="EligibleOrdersForNetSuiteView" package="co.hotwax.order">
+    Criteria for fetching eligible records:
+    1. The order must be of type `SALES_ORDER`
+    2. The order should not already synced with Netsuite
+    3. The customer should be synced with Netsuite
+    4. A date filter can be applied in `OrderIdentification` to fetch the eligible identification.
+    -->
+    <view-entity entity-name="EligibleOrdersForNetSuiteView" package="co.hotwax.order" group="ofbiz_transactional">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
         <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
@@ -25,6 +34,44 @@
         <alias-all entity-alias="OH"/>
     </view-entity>
 
+    <!--Purpose of this view:
+    - The primary purpose of this view-entity is to fetch the order-related data required by the service to prepare the order feed from Hotwax to NetSuite.
+
+    Fetching entities multiple times:
+    1. OrderContactMech (OCMBL, OCMSL, OCMBP, OCMSP, OCMBE, OCMSE):
+       - The OrderContactMech entity is fetched multiple times to retrieve contact mechanisms for various purposes:
+           - `OCMBL`: For billing location details.
+           - `OCMSL`: For shipping location details.
+           - `OCMBP`: For billing phone details.
+           - `OCMSP`: For shipping phone details.
+           - `OCMBE`: For billing email details.
+           - `OCMSE`: For shipping email details.
+       - Each alias is used for a specific contact mechanism purpose, ensuring data is retrieved correctly without overlaps.
+    2. PostalAddress (PAB, PAS):
+       - The PostalAddress entity is fetched twice to separately retrieve the billing and shipping addresses.
+       - `PAB` is used to fetch the billing address associated with the billing contact mechanism (BILLING_LOCATION).
+       - `PAS` is used to fetch the shipping address associated with the shipping contact mechanism (SHIPPING_LOCATION).
+    3. TelecomNumber (TN, TNSP):
+       - Fetched twice to separately retrieve billing and shipping phone numbers.
+       - `TN` retrieves billing phone details associated with `PHONE_BILLING`.
+       - `TNSP` retrieves shipping phone details associated with `PHONE_SHIPPING`.
+    4. Geo (COUNTRYGEOBL, COUNTRYGEOSL):
+       - Fetched twice to separately retrieve country details for billing and shipping addresses.
+       - `COUNTRYGEOBL` retrieves the country information for billing address (`PAB`).
+       - `COUNTRYGEOSL` retrieves the country information for shipping address (`PAS`).
+
+   Reason for including all the details in this view:
+    - To simplify the implementation of the service:
+        - Fetching details like PostalAddress, TelecomNumber, and other related entities directly in the service would make the implementation complex and harder to maintain.
+        - Consolidating all the data fetching logic in the view keeps the service focused on business logic rather than data retrieval. (mainly we want to keep the feting logic and the business logic separate)
+    - To centralize data retrieval logic:
+        - This approach also makes it easier to modify data retrieval logic in one place (the view) without impacting services.
+
+    Approach to alias selection:
+    - Only the required fields are selected in the alias definitions to avoid fetching unnecessary data.
+    - Each alias (e.g., `shippingAddress1`, `billingEmail`, `ShippingCost`) maps to a specific field that is directly used in the service.
+    - This minimizes the size of the result set
+    -->
     <view-entity entity-name="OrdersDetailsForNetSuiteView" package="co.hotwax.order" group="ofbiz_transactional">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
         <member-entity entity-alias="SCENM" entity-name="org.apache.ofbiz.common.enum.Enumeration" join-from-alias="OH" join-optional="true">
@@ -138,6 +185,23 @@
         <alias name="ShippingCost" field="amount" entity-alias="OADJ"/>
     </view-entity>
 
+    <!--
+    Purpose of this view:
+    - The primary purpose of the `OrderItemsForNetSuiteView` view is to fetch order item-level details that are required for creating the order feed from Hotwax to NetSuite.
+    - It specifically checks for the eligibility of each order item for NetSuite processing by ensuring that the product has a corresponding NetSuite product ID.`.
+
+    Scenarios to consider:
+    1. **Custom Gift Card Items in POS Orders**:
+       - In some cases, a POS order might contain both regular items and custom gift card items.
+       - Custom gift card items typically do not have a `NETSUITE_PRODUCT_ID` associated with them.
+       - Since this view filters items based on the presence of a `NETSUITE_PRODUCT_ID`, custom gift card items will be excluded from the results.
+       - This exclusion can lead to incomplete or incorrect data in such scenarios, as the custom gift card item will not be included in the feed sent to NetSuite.
+
+    Design decision rationale:
+    - By enforcing the condition that each product must have a `NETSUITE_PRODUCT_ID`, this view ensures that only eligible items are included in the NetSuite feed.
+    - However, scenarios like the one described above must be handled at the service level or through a separate mechanism to ensure that excluded items (such as custom gift cards) are appropriately processed or flagged.
+    - Keeping the data fetching logic in this view simplifies the implementation of the service and maintains separation of concerns between data retrieval and business logic.
+    -->
     <view-entity entity-name="OrderItemsForNetSuiteView" package="co.hotwax.order" group="ofbiz_transactional">
         <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem"/>
         <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI">
@@ -165,6 +229,7 @@
         <alias name="location" field="facilityId" entity-alias="OISG"/>
     </view-entity>
 
+    <!-- we can shift this view into ofbiz-oms-udm component where all other generic views are created as IntegrationTypeMappingAndEnum view is not specific to netsuite. -->
     <view-entity entity-name="IntegrationTypeMappingAndEnum" package="co.hotwax.integration">
         <member-entity entity-alias="ITM" entity-name="co.hotwax.integration.IntegrationTypeMapping"/>
         <member-entity entity-alias="ENUM" entity-name="org.apache.ofbiz.common.enum.Enumeration" join-from-alias="ITM">
@@ -175,6 +240,7 @@
         <alias name="EnumDescription" field="description" entity-alias="ENUM"/>
     </view-entity>
 
+    <!-- we can shift this view into ofbiz-oms-udm component where all other generic views are created as CommunicationEventAndOrder view is not specific to netsuite. -->
     <view-entity entity-name="CommunicationEventAndOrder" package="co.hotwax.integration">
         <member-entity entity-alias="CO" entity-name="org.apache.ofbiz.order.order.CommunicationEventOrder"/>
         <member-entity entity-alias="CE" entity-name="org.apache.ofbiz.party.communication.CommunicationEvent" join-from-alias="CO">
