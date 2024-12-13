@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
     <service verb="prepare" noun="OrdersFeedDataForNetSuite">
+        <!--
+        This service prepares the order and order item details for eligible orders that need to be
+        exported to NetSuite. The service fetches order data from the `OrdersDetailsForNetSuiteView`
+        and order item data from the `OrderItemsForNetSuiteView`. It then prepares a consolidated
+        map containing both the order-level details and the associated order items. This map is
+        returned as `orderMap` which will be used in further processing.
+
+        - To retrieve and compile order details and corresponding order item details for NetSuite integration.
+        - If no eligible order items are found, the service terminates early, returning an empty order map and logging a message.
+        - If order items exist, they are added to a list and merged with the order details to create a final map (`orderMap`) which contains
+         both the order-level information and associated items.
+        - The service is executed for each order individually.
+
+        TODO: Handle the scenario for custom gift cards, as described in the view. Custom gift cards may need special processing or data handling to ensure correct integration with NetSuite.
+        -->
         <in-parameters>
             <parameter name="orderId">
                 <description>Parameter to fetch Order details for a specific orderId.</description>
@@ -71,7 +86,13 @@
                 processedOrderMap.remove("shippingAreaCode")
                 processedOrderMap.remove("shippingContactNumber")
 
-                // Logic to use shipping address as billing address if billing details are missing
+                /*
+                Logic to use shipping address as billing address if billing details are missing
+                The purpose of this logic is to handle scenarios where the billing address is missing from the order data.
+                In such cases, we use the shipping address as a fallback to ensure that we still have a valid billing address
+                available to create the order in NetSuite. A country is a required field for NetSuite order creation,
+                */
+
                 if (!orderMap.billingContactMechId && orderMap.shippingContactMachId) {
                     log.info("Billing address is missing. Using shipping address as billing address.");
                     processedOrderMap.put("billingAddress1", orderMap.shippingAddress1);
@@ -82,6 +103,23 @@
                     processedOrderMap.put("billingPostalCode", orderMap.shippingPostalCode);
                 }
             ]]></script>
+
+            <!--
+            we need to ensure that **only non-refunded gift card payments** are included
+            in the total gift card payment amount for an order. This is critical to maintain the accuracy of payment
+            tracking and avoid over-reporting the payment total when a gift card transaction has been refunded.
+
+            **Problem When Refunded Gift Card Payments are Not Excluded**:
+            Without filtering out refunded gift card payments, we risk including **invalid or duplicate payment records**
+            in the order’s total gift card payment. For example, a gift card transaction might fail, causing a refund record
+            to be created, but due to multiple records being generated for the same failed transaction, the order’s total
+            could incorrectly reflect the refunded amount. This could lead to discrepancies in payment reporting, affecting
+            both financial reconciliation and downstream systems like NetSuite.
+
+            - **Gift Card Payments**: We identify gift card payments by checking for transactions where the `paymentMethodTypeId` is `EXT_GIFT_CARD`. This ensures we are processing only gift card payments.
+            - **Refunded Gift Cards**: Refunds are identified by the presence of a `parentRefNumber` field on a gift card payment. The `parentRefNumber` links the payment to a previous transaction, indicating that this is a refund of a previously processed gift card payment.
+            - **Non-Refunded Payments**: After identifying refunded payments, we sum up the gift card payments that **do not have a corresponding refund**. This is done by comparing the `manualRefNumber` of each gift card payment against a list of refunded transactions.
+            -->
 
             <!-- Process Gift Card Payments -->
             <entity-find entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" list="GiftCardPaymentList">
@@ -97,32 +135,42 @@
                 def manualRefSet = new HashSet()
                 def refundedSet = new HashSet()
 
+                // Identify refunded gift card payments by checking the parent reference number
                 for (giftCardPayment in GiftCardPaymentList) {
                     if (giftCardPayment.parentRefNumber) {
-                        refundedSet.add(giftCardPayment.parentRefNumber)
+                        refundedSet.add(giftCardPayment.parentRefNumber) // Mark as refunded if a parentRefNumber exists
                     }
                 }
 
+                // Sum amounts of non-refunded gift cards, ensuring we don't double-count gift cards
                 for (giftCardPayment in GiftCardPaymentList) {
                     if (!refundedSet.contains(giftCardPayment.manualRefNumber) && !manualRefSet.contains(giftCardPayment.manualRefNumber)) {
                         totalNonRefundedGiftCardAmount += giftCardPayment.amount
-                        manualRefSet.add(giftCardPayment.manualRefNumber)
+                        manualRefSet.add(giftCardPayment.manualRefNumber) // Avoid double-counting gift cards
                     }
                 }
-            ]]></script>
 
-            <!-- Add Gift Card Amount to the Order Map -->
-            <script><![CDATA[
                 processedOrderMap.put("HCGiftCardPayment", totalNonRefundedGiftCardAmount)
-                processedOrderMap.put("taxCode", "AVATAX")
-                if ("POS Channel" != orderMap.salesChannel){
+
+                // Set the tax code for the order
+                processedOrderMap.put("taxCode", "AVATAX") // TODO: Currently setting a hardcoded tax code "AVATAX"
+
+                // Set the shipping tax code based on sales channel
+                if ("POS Channel" != orderMap.salesChannel) {
                     processedOrderMap.put("shippingTaxCode", "AVATAX")
-                }
-                else{
+                } else {
                     processedOrderMap.put("shippingTaxCode", "")
                 }
             ]]></script>
-            
+            <!--
+            TODO:
+            - Currently, the tax code is hardcoded as "AVATAX". This should be made dynamic based on business requirements.
+              It can be changed in the future to reflect different tax codes as needed.
+            - For Digital Goods, the tax code is sent as "-Not Taxable-" to NetSuite.(in some cases vary based on the )
+              The current hardcoded "AVATAX" may not be suitable for all product types.
+            - We can create the record in integration type mapping based on the product types.
+            -->
+
             <!-- Process Order Items -->
             <set field="orderItemList" from="orderMap.orderItems"/>
             <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>(); ]]></script>
@@ -135,8 +183,23 @@
                     processedOrderItem.remove("itemStatus");
                     processedOrderItem.put("orderLineId", processedOrderItem.orderItemSeqId)
                     processedOrderItem.put("priceLevel", "custom")
-
                 ]]></script>
+                <!--
+                - The price level is a required field to determine the pricing tier for an order item.
+                - We fetch the price level from two sources currently (existing flow):
+                    1. **Integration Type Mapping**: This is used when a pre-defined mapping exists between the system and an external integration.
+                    2. **Product Store Setting Entity**: This is utilized when price levels vary based on the product store's configuration.
+                        We are using the product store setting because
+                        For some clients, the price level may vary based on different seasons or promotions (e.g., they may change the price level during sales or other events).
+                - Or the price level defaults to "custom," as per the business requirements.
+
+                TODO:
+                - We need to use a single entity to fetch the detail of the price level to make it generic.
+                - The **Product Store Setting** is the preferred source for fetching the price level because:
+                    - It supports `fromDate` and `thruDate`, making it easier to store and retrieve multiple mappings for different time periods.
+                - Using a single source simplifies the logic and ensures consistent handling of price levels.
+                - Validate the "custom" default setting to ensure it aligns with evolving client requirements.
+                -->
 
                 <!-- Map Shipping Method -->
                 <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="ShippingMethodMappingList">
@@ -149,14 +212,45 @@
                         processedOrderItem.remove("shipmentMethodTypeId")
                     ]]></script>
                     <else>
-                        <!--TODO: currently setting the shipment method as empty as in case of pos_completed method we does not have itm available-->
+
+                        <!--Case: Digital Goods
+                        - Digital goods are imported into OMS with a default shipping method (e.g., "STANDARD").
+                        - If processed using the existing logic, digital goods may incorrectly inherit this shipping method.
+                        TODO:
+                        - For orders consisting solely of digital goods we need to handle this in the custom groovy logic.
+                            - The `shippingMethod` is either hardcoded or set as empty per the client’s custom requirement.
+                        -->
+
+                        <!--Currently setting the shipment method as empty as in case of pos_completed method we does not have itm available
+                        We can handle this in custom groovy if needed.-->
                         <script><![CDATA[
                         processedOrderItem.put("shippingMethod", "")
                         processedOrderItem.remove("shipmentMethodTypeId")
                     ]]></script>
                     </else>
                 </if>
+                <!--
+                - This logic retrieves the department value by mapping the `facilityId` from the order item to the corresponding department identifier (`idValue`).
+                - The mapping is fetched from the `FacilityIdentification` entity with the following conditions:
+                    - `facilityId` matches the `location` field in the `orderItem`.
+                    - `facilityIdenTypeId` is set to "ORDR_ORGN_DPT" (indicating the department associated with the facility).
 
+                Case: POS Orders
+                - The department is specifically mapped for orders originating from the "POS Channel".
+                - If the mapping is successful, the first matched `idValue` is set as the `department` in the processed order item.
+
+                order other than POS:
+                - We does not have the location associated with it.
+                - The logic for setting the `department` may vary based on client-specific requirements.
+                - For non-POS orders (e.g., web orders), the department logic might differ and require custom mapping in groovy.
+
+                Custom Handling:
+                - The `department` field is overwritten in the custom Groovy service for client-specific scenarios.
+                - This is necessary as the location is associated only with POS orders, and for other order types, the logic must adapt to meet the client’s requirements.
+                - For example:
+                    - Certain clients may require a default department for specific order types.
+                    - Others might base the department on additional fields like the product category or sales region.
+                -->
                 <entity-find entity-name="co.hotwax.facility.FacilityIdentification" list="facilityIdentificationList">
                     <econdition field-name="facilityId" from="orderItem.location"/>
                     <econdition field-name="facilityIdenTypeId" value="ORDR_ORGN_DPT"/>
@@ -184,8 +278,16 @@
                         <set field="totalPromotionAmount" from="totalPromotionAmount + adjustment.amount"/>
                     </iterate>
 
-                    <!-- Duplicate Item for Promotion -->
-                    <!--TODO: currently making the copy as-is from the original item map need to re-visit this -->
+                    <!--
+                    - A duplicate item map is created to represent the promotional discount as a separate row in the processed order item list.
+                    - Key updates in the duplicate map:
+                        - `price` is set to the total promotional amount.
+                        - A custom field, `isDiscountRow`, is set to "true" to distinguish this row as a promotional discount.
+
+                    TODO:
+                    - Currently, the promotional discount item is created as an exact copy of the original item, except for the `price` and `isDiscountRow` fields.
+                    - Revisit this logic to ensure that only relevant fields are copied or modified.
+                    -->
                     <script><![CDATA[
                         Map<String, Object> promoOrderItemDetail = new HashMap<>(processedOrderItem);
                         promoOrderItemDetail.put("price", totalPromotionAmount);
@@ -223,8 +325,27 @@
             <parameter name="thruOrderDate">
                 <description>Parameter to fetch Order details after specific order date</description>
             </parameter>
-            <parameter name="salesChannel">
+            <!-- These parameters are required to configure the service for the following scenarios:
+            1. When scheduling this job twice in an instance:
+               a) For POS orders: include orders with "POS_SALES_CHANNEL".
+               b) For all other orders: exclude orders from the "POS_SALES_CHANNEL".
+            2. For sand sale orders:
+               - These orders belong to the "POS_SALES_CHANNEL" but need to follow the normal flow.
+               - To achieve this, we use shipment method parameters in addition to sales channel parameters:
+                 a) For POS orders: configure includeSalesChannel as "POS_SALES_CHANNEL" and includeShipmentMethod as "POS_COMPLETED".
+                 b) For all other orders: configure excludeSalesChannel as "POS_SALES_CHANNEL" and excludeShipmentMethod as "POS_COMPLETED".
+            -->
+            <parameter name="includeSalesChannel">
                 <description>Parameter to fetch Order details for specific sales channel</description>
+            </parameter>
+            <parameter name="excludeSalesChannel">
+                <description>Parameter to exclude the Orders from the specific sales channel</description>
+            </parameter>
+            <parameter name="includeShipmentMethod">
+                <description>Parameter to fetch Order details for specific shipment method</description>
+            </parameter>
+            <parameter name="excludeShipmentMethod">
+                <description>Parameter to exclude the Orders from the specific shipment method</description>
             </parameter>
         </in-parameters>
         <actions>
@@ -280,21 +401,26 @@
                 <if condition="orderMap">
                     <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
                         out-map="orderMapOut"/>
-
+                    <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
+                    This will retrieve the Groovy script resource path if configured.
+                    -->
                     <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
                         <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
                         <field-map field-name="parameterName" value="resourcePath"/>
                     </entity-find-one>
+                    <!-- Check if the Groovy file resource is available. -->
                     <if condition="groovyFileResource">
+                        <!-- Set the scriptPath using the retrieved parameterValue from the entity find operation. -->
                         <set field="scriptPath" from="groovyFileResource.parameterValue"/>
+                        <!-- Execute the Groovy script located at the scriptPath and store the result in the context. -->
                         <script>
                             Object result = ec.resource.script(scriptPath, null)
                             context.result = result
                         </script>
-                        <else>
-                            <log message="No groovy file found"/>
-                            <set field="result" from="orderMapOut.orderMapDetail"/>
-                        </else>
+                    <else>
+                        <!-- If no Groovy file resource is found, fallback to using the default orderMapDetail. -->
+                        <set field="result" from="orderMapOut.orderMapDetail"/>
+                    </else>
                     </if>
                     <script>
                         def order = context.get("result")
