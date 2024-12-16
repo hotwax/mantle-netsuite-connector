@@ -1,5 +1,159 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+    <service verb="generate" noun="CreateOrderFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="orderId">
+                <description>Parameter to fetch Order details for a specific orderId.</description>
+            </parameter>
+            <parameter name="systemMessageTypeId" required="true">
+                <description>The System Message Type ID for generating the Orders Feed for Netsuite.</description>
+            </parameter>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote Id for generating the Orders Feed for Netsuite.</description>
+            </parameter>
+            <parameter name="fromOrderDate">
+                <description>Parameter to fetch Order details after specific order date</description>
+            </parameter>
+            <parameter name="thruOrderDate">
+                <description>Parameter to fetch Order details after specific order date</description>
+            </parameter>
+            <parameter name="includeShipmentMethod">
+                <description>Parameter to fetch Order details for specific shipment method</description>
+            </parameter>
+            <parameter name="excludeShipmentMethod">
+                <description>Parameter to exclude the Orders from the specific shipment method</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+            <log message="Generating Order Feed file for Order ${orderId} at time ${nowDate}"/>
+            <!-- Prepare csv File Path -->
+            <set field="contentRoot" from="ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager'"/>
+            <set field="csvFilePathRef" value="${contentRoot}/NetsuiteOrderFeed/CreateOrderItemsFeed-${ec.l10n.format(ec.user.nowTimestamp, 'yyyy-MM-dd-HH-mm-ss', null, TimeZone.getDefault())}.csv"/>
+            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+
+            <!--TODO: Here currently the view used to get the eligible orders for the create feed does not have the shipment method
+                need to figure out how we can put the checks for include and exclude shipment method.
+            -->
+            <script>
+                import co.hotwax.netsuite.helper.CsvHelper
+                import org.apache.commons.csv.CSVFormat
+                import org.apache.commons.csv.CSVPrinter
+                import java.nio.file.Files
+                import java.nio.file.Paths
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                File csvFile = new File(csvFilePath)
+                if (!csvFile.parentFile.exists()) { csvFile.parentFile.mkdirs()}
+
+                // Prepare CSV Writer
+                def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8)
+                def csvHeaders = null
+                def csvPrinter = null
+
+                netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
+                if(orderId) netsuiteOrders_find.condition("orderId", orderId)
+                if(fromOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
+                if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
+
+                // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
+                try (ordersItr = netsuiteOrders_find.iterator()) {
+            </script>
+
+            <if condition="!ordersItr.hasNext()">
+                <script>ordersItr.close()</script>
+                <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
+            </if>
+
+            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null">
+                <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
+            </if>
+
+            <iterate list="ordersItr" entry="order">
+                <service-call name="co.hotwax.netsuite.OrderServices.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
+                              out-map="context"/>
+                <set field="orderMap" from="context?.orderMap"/>
+                <if condition="orderMap">
+                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
+                                  out-map="orderMapOut"/>
+                    <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
+                    This will retrieve the Groovy script resource path if configured.
+                    -->
+                    <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
+                        <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                        <field-map field-name="parameterName" value="resourcePath"/>
+                    </entity-find-one>
+                    <!-- Check if the Groovy file resource is available. -->
+                    <if condition="groovyFileResource">
+                        <!-- Set the scriptPath using the retrieved parameterValue from the entity find operation. -->
+                        <set field="scriptPath" from="groovyFileResource.parameterValue"/>
+                        <!-- Execute the Groovy script located at the scriptPath and store the result in the context. -->
+                        <script>
+                            Object result = ec.resource.script(scriptPath, null)
+                            context.result = result
+                        </script>
+                        <else>
+                            <!-- If no Groovy file resource is found, fallback to using the default orderMapDetail. -->
+                            <set field="result" from="orderMapOut.orderMapDetail"/>
+                        </else>
+                    </if>
+                    <script>
+                        def order = context.get("result")
+                        def orderItems = order.remove("orderItems")
+                        def orderId = order.remove("orderName")
+                        def flattenedOrders = []
+                        orderItems.each { item ->
+                        item.put("orderId", orderId)
+                        item.remove("orderItemSeqId")
+                        item.remove("isDiscountRow")
+                        item.remove("productId")
+                        item.put("item", item.remove("NetSuiteProductId"))
+                        def flattenedOrder = [:]
+                        flattenedOrder.putAll(order)
+                        item.each { key, value -> flattenedOrder["$key"] = value }
+                        flattenedOrders.add(flattenedOrder)
+                        }
+                        context.flattenedOrders = flattenedOrders
+
+                        // Dynamically determine headers in the first iteration
+                        if (!csvHeaders) {
+                        csvHeaders = flattenedOrders[0].keySet().collect { it as String }
+                        csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
+                        }
+
+                        // Write rows to the CSV
+                        if (csvPrinter  &amp;&amp; !flattenedOrders.isEmpty()) {
+                        System.out.println("writing the data in csv file")
+                        // Process orders and reorder JSON keys headers
+                        flattenedOrders.each { record ->
+                        def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
+                        csvPrinter.printRecord(orderedRecord)
+                        }
+                        }
+                    </script>
+                </if>
+            </iterate>
+            <script>
+                }
+                if (csvPrinter) {
+                    csvPrinter.flush()
+                    csvPrinter.close()
+                }
+            </script>
+            <!-- Save the Json Feed File path in System Message messageText -->
+            <service-call name="org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage"
+                in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
+
+            <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
+                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageIdList}"/>
+        </actions>
+    </service>
+
     <service verb="prepare" noun="OrdersFeedDataForNetSuite">
         <!--
         This service prepares the order and order item details for eligible orders that need to be
@@ -14,7 +168,6 @@
          both the order-level information and associated items.
         - The service is executed for each order individually.
 
-        TODO: Handle the scenario for custom gift cards, as described in the view. Custom gift cards may need special processing or data handling to ensure correct integration with NetSuite.
         -->
         <in-parameters>
             <parameter name="orderId">
@@ -169,6 +322,7 @@
             - For Digital Goods, the tax code is sent as "-Not Taxable-" to NetSuite.(in some cases vary based on the )
               The current hardcoded "AVATAX" may not be suitable for all product types.
             - We can create the record in integration type mapping based on the product types.
+            - Or we can modify this in custom groovy file.
             -->
 
             <!-- Process Order Items -->
@@ -182,24 +336,7 @@
                     processedOrderItem.put("closed", isClosed);
                     processedOrderItem.remove("itemStatus");
                     processedOrderItem.put("orderLineId", processedOrderItem.orderItemSeqId)
-                    processedOrderItem.put("priceLevel", "custom")
                 ]]></script>
-                <!--
-                - The price level is a required field to determine the pricing tier for an order item.
-                - We fetch the price level from two sources currently (existing flow):
-                    1. **Integration Type Mapping**: This is used when a pre-defined mapping exists between the system and an external integration.
-                    2. **Product Store Setting Entity**: This is utilized when price levels vary based on the product store's configuration.
-                        We are using the product store setting because
-                        For some clients, the price level may vary based on different seasons or promotions (e.g., they may change the price level during sales or other events).
-                - Or the price level defaults to "custom," as per the business requirements.
-
-                TODO:
-                - We need to use a single entity to fetch the detail of the price level to make it generic.
-                - The **Product Store Setting** is the preferred source for fetching the price level because:
-                    - It supports `fromDate` and `thruDate`, making it easier to store and retrieve multiple mappings for different time periods.
-                - Using a single source simplifies the logic and ensures consistent handling of price levels.
-                - Validate the "custom" default setting to ensure it aligns with evolving client requirements.
-                -->
 
                 <!-- Map Shipping Method -->
                 <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="ShippingMethodMappingList">
@@ -258,9 +395,30 @@
                 </entity-find>
 
                 <if condition="!facilityIdentificationList.isEmpty() &amp;&amp; 'POS Channel' == orderMap.salesChannel">
-                    <script><![CDATA[
-                        processedOrderItem.put("department", facilityIdentificationList[0].idValue)
-                    ]]></script>
+                    <script>processedOrderItem.put("department", facilityIdentificationList[0].idValue)</script>
+                    <else>
+                        <!--TODO: currently setting the department as empty for orders other then POS orders
+                         this is handled in custom groovy script. -->
+                        <script><![CDATA[
+                            processedOrderItem.put("department", "")
+                        ]]></script>
+                    </else>
+                </if>
+
+                <!-- Map Price Level -->
+                <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="priceLevelList">
+                    <econdition field-name="integrationTypeId" value="NETSUITE_PRICE_LEVEL"/>
+                    <econdition field-name="mappingKey" value="PRICE_LEVEL"/>
+                </entity-find>
+
+                <if condition="!priceLevelList.isEmpty()">
+                    <script>processedOrderItem.put("priceLevel",priceLevelList[0].mappingValue)</script>
+                    <else>
+                        <!--TODO: currently setting the price level as custom if mapping is not available -->
+                        <script><![CDATA[
+                            processedOrderItem.put("priceLevel", "custom")
+                        ]]></script>
+                    </else>
                 </if>
 
                 <script>processedOrderItemList.add(processedOrderItem);</script>
@@ -308,168 +466,4 @@
         </actions>
     </service>
 
-    <service verb="generate" noun="CreateOrderFeed" authenticate="anonymous-all" transaction-timeout="7200">
-        <in-parameters>
-            <parameter name="orderId">
-                <description>Parameter to fetch Order details for a specific orderId.</description>
-            </parameter>
-            <parameter name="systemMessageTypeId" required="true">
-                <description>The System Message Type ID for generating the Orders Feed for Netsuite.</description>
-            </parameter>
-            <parameter name="systemMessageRemoteId" required="true">
-                <description>The System Message Remote Id for generating the Orders Feed for Netsuite.</description>
-            </parameter>
-            <parameter name="fromOrderDate">
-                <description>Parameter to fetch Order details after specific order date</description>
-            </parameter>
-            <parameter name="thruOrderDate">
-                <description>Parameter to fetch Order details after specific order date</description>
-            </parameter>
-            <!-- These parameters are required to configure the service for the following scenarios:
-            1. When scheduling this job twice in an instance:
-               a) For POS orders: include orders with "POS_SALES_CHANNEL".
-               b) For all other orders: exclude orders from the "POS_SALES_CHANNEL".
-            2. For sand sale orders:
-               - These orders belong to the "POS_SALES_CHANNEL" but need to follow the normal flow.
-               - To achieve this, we use shipment method parameters in addition to sales channel parameters:
-                 a) For POS orders: configure includeSalesChannel as "POS_SALES_CHANNEL" and includeShipmentMethod as "POS_COMPLETED".
-                 b) For all other orders: configure excludeSalesChannel as "POS_SALES_CHANNEL" and excludeShipmentMethod as "POS_COMPLETED".
-            -->
-            <parameter name="includeSalesChannel">
-                <description>Parameter to fetch Order details for specific sales channel</description>
-            </parameter>
-            <parameter name="excludeSalesChannel">
-                <description>Parameter to exclude the Orders from the specific sales channel</description>
-            </parameter>
-            <parameter name="includeShipmentMethod">
-                <description>Parameter to fetch Order details for specific shipment method</description>
-            </parameter>
-            <parameter name="excludeShipmentMethod">
-                <description>Parameter to exclude the Orders from the specific shipment method</description>
-            </parameter>
-        </in-parameters>
-        <actions>
-            <set field="nowDate" from="ec.user.nowTimestamp"/>
-            <log message="Generating Order Feed file for Order ${orderId} at time ${nowDate}"/>
-            <!-- Prepare csv File Path -->
-            <set field="contentRoot" from="ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager'"/>
-            <set field="csvFilePathRef" value="${contentRoot}/NetsuiteOrderFeed/CreateOrderItemsFeed-${ec.l10n.format(ec.user.nowTimestamp, 'yyyy-MM-dd-HH-mm-ss', null, TimeZone.getDefault())}.csv"/>
-            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
-
-            <script>
-
-                import org.apache.commons.csv.CSVFormat
-                import org.apache.commons.csv.CSVPrinter
-                import java.nio.file.Files
-                import java.nio.file.Paths
-                import java.nio.charset.StandardCharsets
-                import org.moqui.entity.EntityCondition
-
-                File csvFile = new File(csvFilePath)
-                if (!csvFile.parentFile.exists()) { csvFile.parentFile.mkdirs()}
-
-                // Prepare CSV Writer
-                def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8)
-                def csvHeaders = null
-                def csvPrinter = null
-
-                netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
-                if(orderId) netsuiteOrders_find.condition("orderId", orderId)
-                if(salesChannel) netsuiteOrders_find.condition("salesChannelEnumId", salesChannel)
-                if(fromOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
-                if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
-
-                // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
-                try (ordersItr = netsuiteOrders_find.iterator()) {
-            </script>
-
-            <if condition="!ordersItr.hasNext()">
-                <script>ordersItr.close()</script>
-                <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
-            </if>
-
-            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
-            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
-            <if condition="systemMessageType == null">
-                <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
-            </if>
-
-            <iterate list="ordersItr" entry="order">
-                <service-call name="co.hotwax.netsuite.OrderServices.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
-                    out-map="context"/>
-                <set field="orderMap" from="context?.orderMap"/>
-                <if condition="orderMap">
-                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
-                        out-map="orderMapOut"/>
-                    <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
-                    This will retrieve the Groovy script resource path if configured.
-                    -->
-                    <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
-                        <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
-                        <field-map field-name="parameterName" value="resourcePath"/>
-                    </entity-find-one>
-                    <!-- Check if the Groovy file resource is available. -->
-                    <if condition="groovyFileResource">
-                        <!-- Set the scriptPath using the retrieved parameterValue from the entity find operation. -->
-                        <set field="scriptPath" from="groovyFileResource.parameterValue"/>
-                        <!-- Execute the Groovy script located at the scriptPath and store the result in the context. -->
-                        <script>
-                            Object result = ec.resource.script(scriptPath, null)
-                            context.result = result
-                        </script>
-                    <else>
-                        <!-- If no Groovy file resource is found, fallback to using the default orderMapDetail. -->
-                        <set field="result" from="orderMapOut.orderMapDetail"/>
-                    </else>
-                    </if>
-                    <script>
-                        def order = context.get("result")
-                        def orderItems = order.remove("orderItems")
-                        def orderId = order.remove("orderName")
-                        def flattenedOrders = []
-                        orderItems.each { item ->
-                            item.put("orderId", orderId)
-                            item.remove("orderItemSeqId")
-                            item.remove("isDiscountRow")
-                            item.remove("productId")
-                            item.put("item", item.remove("NetSuiteProductId"))
-                            def flattenedOrder = [:]
-                            flattenedOrder.putAll(order)
-                            item.each { key, value -> flattenedOrder["$key"] = value }
-                            flattenedOrders.add(flattenedOrder)
-                        }
-                        context.flattenedOrders = flattenedOrders
-
-                        // Dynamically determine headers in the first iteration
-                        if (!csvHeaders) {
-                            csvHeaders = flattenedOrders[0].keySet().collect { it as String }
-                            csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
-                        }
-
-                        // Write rows to the CSV
-                        if (csvPrinter  &amp;&amp; !flattenedOrders.isEmpty()) {
-                            System.out.println("writing the data in csv file")
-                            flattenedOrders.each { record ->
-                                csvPrinter.printRecord(record.values())
-                            }
-                        }
-                    </script>
-                </if>
-            </iterate>
-            <script>
-                }
-                if (csvPrinter) {
-                    csvPrinter.flush()
-                    csvPrinter.close()
-                }
-            </script>
-            <!-- Save the Json Feed File path in System Message messageText -->
-            <service-call name="org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage"
-                in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
-
-            <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageIdList}"/>
-        </actions>
-    </service>
 </services>
