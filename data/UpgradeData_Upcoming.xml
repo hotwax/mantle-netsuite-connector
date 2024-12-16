@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<entity-facade-xml type="seed">
+<entity-facade-xml type="ext-upgrade">
+    <!-- System Message Type for Create Order Feed for Netsuite -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuiteOrderItemsFeed"
+        description="Generate HotWax Create Order Feed for Netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath=""
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath=""/>
+    <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
+        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
+
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeedHCtoNS" description="Generate HotWax Create Order Feed for Neetsuite"
         serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
