@@ -18,11 +18,16 @@
             <parameter name="thruOrderDate">
                 <description>Parameter to fetch Order details after specific order date</description>
             </parameter>
-            <parameter name="includeShipmentMethod">
-                <description>Parameter to fetch Order details for specific shipment method</description>
+            <parameter name="includeShipmentMethod" type="List">
+                <description>
+                    Parameter to fetch Order details for specific shipment method or a list of shipping method
+                    like: POS_COMPLETED,STORE_PICKUP
+                </description>
             </parameter>
-            <parameter name="excludeShipmentMethod">
-                <description>Parameter to exclude the Orders from the specific shipment method</description>
+            <parameter name="excludeShipmentMethod" type="List">
+                <description>Parameter to exclude the Orders from the specific shipment method or a list of shipping method
+                    like: POS_COMPLETED,STORE_PICKUP
+                </description>
             </parameter>
         </in-parameters>
         <actions>
@@ -37,7 +42,6 @@
                 need to figure out how we can put the checks for include and exclude shipment method.
             -->
             <script>
-                import co.hotwax.netsuite.helper.CsvHelper
                 import org.apache.commons.csv.CSVFormat
                 import org.apache.commons.csv.CSVPrinter
                 import java.nio.file.Files
@@ -57,6 +61,11 @@
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
                 if(fromOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
                 if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
+                if(includeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
+                if(excludeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
+
+                netsuiteOrders_find.selectField("orderId")
+                netsuiteOrders_find.distinct(true)
 
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
                 try (ordersItr = netsuiteOrders_find.iterator()) {
@@ -111,7 +120,7 @@
                         item.remove("orderItemSeqId")
                         item.remove("isDiscountRow")
                         item.remove("productId")
-                        item.put("item", item.remove("NetSuiteProductId"))
+                        item.put("item", item.remove("netSuiteProductId"))
                         def flattenedOrder = [:]
                         flattenedOrder.putAll(order)
                         item.each { key, value -> flattenedOrder["$key"] = value }
@@ -255,6 +264,8 @@
                     processedOrderMap.put("billingCountry", orderMap.shippingCountry);
                     processedOrderMap.put("billingPostalCode", orderMap.shippingPostalCode);
                 }
+                processedOrderMap.remove("shippingContactMechId")
+                processedOrderMap.remove("billingContactMechId")
             ]]></script>
 
             <!--
