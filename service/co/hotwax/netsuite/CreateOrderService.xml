@@ -116,15 +116,15 @@
                         def orderId = order.remove("orderName")
                         def flattenedOrders = []
                         orderItems.each { item ->
-                        item.put("orderId", orderId)
-                        item.remove("orderItemSeqId")
-                        item.remove("isDiscountRow")
-                        item.remove("productId")
-                        item.put("item", item.remove("netSuiteProductId"))
-                        def flattenedOrder = [:]
-                        flattenedOrder.putAll(order)
-                        item.each { key, value -> flattenedOrder["$key"] = value }
-                        flattenedOrders.add(flattenedOrder)
+                            item.put("orderId", orderId)
+                            item.remove("orderItemSeqId")
+                            item.remove("isDiscountRow")
+                            item.remove("productId")
+                            item.put("item", item.remove("netSuiteProductId"))
+                            def flattenedOrder = [:]
+                            flattenedOrder.putAll(order)
+                            item.each { key, value -> flattenedOrder["$key"] = value }
+                            flattenedOrders.add(flattenedOrder)
                         }
                         context.flattenedOrders = flattenedOrders
 
@@ -136,12 +136,11 @@
 
                         // Write rows to the CSV
                         if (csvPrinter  &amp;&amp; !flattenedOrders.isEmpty()) {
-                        System.out.println("writing the data in csv file")
-                        // Process orders and reorder JSON keys headers
-                        flattenedOrders.each { record ->
-                        def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
-                        csvPrinter.printRecord(orderedRecord)
-                        }
+                            // Process orders and reorder JSON keys headers
+                            flattenedOrders.each { record ->
+                                def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
+                                csvPrinter.printRecord(orderedRecord)
+                            }
                         }
                     </script>
                 </if>
@@ -192,7 +191,9 @@
                 <econdition field-name="orderId" from="orderId"/>
             </entity-find>
             <set field="orderDetails" from="orderLevelDetailList[0]"/>
-
+            <script>
+                orderDetails.date = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(orderDetails.date.toString()))
+            </script>
             <!-- Set orderItemList List to add the order Item Detail map -->
             <set field="orderItemList" from="[]"/>
             <entity-find entity-name="co.hotwax.order.OrderItemsForNetSuiteView" list="orderItemsList">
@@ -435,10 +436,11 @@
                 <script>processedOrderItemList.add(processedOrderItem);</script>
 
                 <!-- Process Promotions -->
-                <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="orderAdjustmentList">
+                <entity-find entity-name="co.hotwax.order.OrderItemAdjustmentAndAttribute" list="orderAdjustmentList">
                     <econdition field-name="orderId" from="orderMap.orderId"/>
                     <econdition field-name="orderItemSeqId" from="orderItem.orderItemSeqId"/>
                     <econdition field-name="orderAdjustmentTypeId" value="EXT_PROMO_ADJUSTMENT"/>
+                    <econdition field-name="attrName" operator="is-null"/>
                 </entity-find>
                 <if condition="orderAdjustmentList &amp;&amp; orderAdjustmentList.size() > 0">
 
