@@ -27,7 +27,6 @@
                 <econdition entity-alias="PID" field-name="partyIdentificationTypeId" value="NETSUITE_CUSTOMER_ID"/>
             </entity-condition>
         </member-entity>
-        <!-- Added the subselect in the EligibleOrdersForNetSuiteView to add a check on shipping method while fetching the eligible orderIds -->
         <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemsForNetSuiteView" sub-select="true" join-from-alias="OH">
             <key-map field-name="orderId"/>
         </member-entity>
@@ -189,7 +188,7 @@
         <alias name="billingAddressee" field="toName" entity-alias="PAS"/>
         <alias name="billingEmail" field="infoString" entity-alias="CMBE"/>
         <alias name="email" field="infoString" entity-alias="CMSE"/>
-        <alias name="ShippingCost" field="amount" entity-alias="OADJ"/>
+        <alias name="shippingCost" field="amount" entity-alias="OADJ"/>
     </view-entity>
 
     <!--
