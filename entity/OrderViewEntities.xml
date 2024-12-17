@@ -27,11 +27,16 @@
                 <econdition entity-alias="PID" field-name="partyIdentificationTypeId" value="NETSUITE_CUSTOMER_ID"/>
             </entity-condition>
         </member-entity>
+        <!-- Added the subselect in the EligibleOrdersForNetSuiteView to add a check on shipping method while fetching the eligible orderIds -->
+        <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemsForNetSuiteView" sub-select="true" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
             <econdition entity-alias="OID" field-name="orderId" operator="equals" value=""/>
         </entity-condition>
         <alias-all entity-alias="OH"/>
+        <alias-all entity-alias="OIV"/>
     </view-entity>
 
     <!--Purpose of this view:
@@ -157,31 +162,33 @@
         </member-entity>
         <alias name="orderName" field="orderName" entity-alias="OH"/>
         <alias name="orderId" field="orderId" entity-alias="OH"/>
-        <alias name="orderDate" field="orderDate" entity-alias="OH"/>
+        <alias name="date" field="orderDate" entity-alias="OH"/>
+        <alias name="customer" field="idValue" entity-alias="PID"/>
+        <alias name="salesChannel" field="description" entity-alias="SCENM"/>
         <alias name="shippingContactMechId" field="contactMechId" entity-alias="PAS"/>
-        <alias name="shippingAddress1" field="address1" entity-alias="PAS"/>
-        <alias name="shippingAddress2" field="address2" entity-alias="PAS"/>
-        <alias name="shippingCity" field="city" entity-alias="PAS"/>
-        <alias name="shippingState" field="stateProvinceGeoId" entity-alias="PAS"/>
-        <alias name="shippingPostalCode" field="postalCode" entity-alias="PAS"/>
-        <alias name="shippingCountry" field="geoCode" entity-alias="COUNTRYGEOSL"/>
+        <alias name="addressee" field="toName" entity-alias="PAS"/>
+        <alias name="address1" field="address1" entity-alias="PAS"/>
+        <alias name="address2" field="address2" entity-alias="PAS"/>
+        <alias name="city" field="city" entity-alias="PAS"/>
+        <alias name="state" field="stateProvinceGeoId" entity-alias="PAS"/>
+        <alias name="zip" field="postalCode" entity-alias="PAS"/>
+        <alias name="country" field="geoCode" entity-alias="COUNTRYGEOSL"/>
+        <alias name="shippingCountryCode" field="countryCode" entity-alias="TNSP"/>
+        <alias name="shippingAreaCode" field="countryCode" entity-alias="TNSP"/>
+        <alias name="shippingContactNumber" field="contactNumber" entity-alias="TNSP"/>
         <alias name="billingContactMechId" field="contactMechId" entity-alias="PAB"/>
         <alias name="billingAddress1" field="address2" entity-alias="PAB"/>
         <alias name="billingAddress2" field="address2" entity-alias="PAB"/>
         <alias name="billingCity" field="city" entity-alias="PAB"/>
         <alias name="billingState" field="stateProvinceGeoId" entity-alias="PAB"/>
-        <alias name="billingPostalCode" field="postalCode" entity-alias="PAB"/>
+        <alias name="billingZip" field="postalCode" entity-alias="PAB"/>
         <alias name="billingCountry" field="geoCode" entity-alias="COUNTRYGEOBL"/>
-        <alias name="customerId" field="idValue" entity-alias="PID"/>
-        <alias name="salesChannel" field="description" entity-alias="SCENM"/>
         <alias name="billingCountryCode" field="countryCode" entity-alias="TN"/>
         <alias name="billingAreaCode" field="countryCode" entity-alias="TN"/>
         <alias name="billingContactNumber" field="contactNumber" entity-alias="TN"/>
-        <alias name="shippingCountryCode" field="countryCode" entity-alias="TNSP"/>
-        <alias name="shippingAreaCode" field="countryCode" entity-alias="TNSP"/>
-        <alias name="shippingContactNumber" field="contactNumber" entity-alias="TNSP"/>
+        <alias name="billingAddressee" field="toName" entity-alias="PAS"/>
         <alias name="billingEmail" field="infoString" entity-alias="CMBE"/>
-        <alias name="shippingEmail" field="infoString" entity-alias="CMSE"/>
+        <alias name="email" field="infoString" entity-alias="CMSE"/>
         <alias name="ShippingCost" field="amount" entity-alias="OADJ"/>
     </view-entity>
 
@@ -224,7 +231,7 @@
         <alias name="quantity" field="quantity" entity-alias="OI"/>
         <alias name="itemStatus" field="statusId" entity-alias="OI"/>
         <alias name="productId" field="productId" entity-alias="OI"/>
-        <alias name="NetSuiteProductId" field="idValue" entity-alias="GID"/>
+        <alias name="netSuiteProductId" field="idValue" entity-alias="GID"/>
         <alias name="shipmentMethodTypeId" entity-alias="OISG"/>
         <alias name="location" field="facilityId" entity-alias="OISG"/>
     </view-entity>
