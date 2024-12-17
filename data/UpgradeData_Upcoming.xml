@@ -12,7 +12,7 @@
 
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeedHCtoNS" description="Generate HotWax Create Order Feed for Netsuite"
-        serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        serviceName="co.hotwax.netsuite.CreateOrderService.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
         <parameters parameterName="orderId" parameterValue=""/>

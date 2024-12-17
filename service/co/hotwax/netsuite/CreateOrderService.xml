@@ -83,11 +83,11 @@
             </if>
 
             <iterate list="ordersItr" entry="order">
-                <service-call name="co.hotwax.netsuite.OrderServices.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
+                <service-call name="co.hotwax.netsuite.CreateOrderService.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
                               out-map="context"/>
                 <set field="orderMap" from="context?.orderMap"/>
                 <if condition="orderMap">
-                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
+                    <service-call name="co.hotwax.netsuite.CreateOrderService.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
                                   out-map="orderMapOut"/>
                     <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
                     This will retrieve the Groovy script resource path if configured.
