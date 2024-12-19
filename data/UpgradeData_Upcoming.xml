@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="ext-upgrade">
+
+    <!-- System Message Type for Create Order Feed for Netsuite -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuitePOSOrderItemsFeed"
+        description="Generate HotWax Create Order Feed for Netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath=""
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/CreateOrderFeed/createOrderFeed-${dateTime}.csv"/>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuiteOrderItemsFeed"
+        description="Generate HotWax Create Order Feed for Netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath=""
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/CreateOrderFeed/createOrderFeed-${dateTime}.csv"/>
+
+    <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
+        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
+
+    <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
+        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
+
+    <!-- ServiceJob data for create order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeedHCtoNS" description="Generate HotWax Create Order Feed for Netsuite"
+        serviceName="co.hotwax.netsuite.CreateOrderService.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="orderId" parameterValue=""/>
+        <parameters parameterName="fromOrderDate" parameterValue=""/>
+        <parameters parameterName="thruOrderDate" parameterValue=""/>
+        <parameters parameterName="includeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+</entity-facade-xml>
