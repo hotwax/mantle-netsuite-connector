@@ -27,6 +27,13 @@
         <alias name="fromDate" entity-alias="OID"/>
         <alias name="orderId" field="idValue" entity-alias="OID"/>
         <alias name="paymentMethodTypeId" entity-alias="OPP"/>
+        <alias name="orderPaymentPreferenceId" entity-alias="OPP"/>
+        <alias name="shipmentMethodTypeId" entity-alias="OISG" is-aggregate="true"/>
+        <entity-condition>
+            <econdition entity-alias="OH" field-name="orderTypeId" value="SALES_ORDER"/>
+            <econdition field-name="statusId" operator="not-equals" value="PAYMENT_REFUNDED" entity-alias="OPP"/>
+            <econdition field-name="paymentMethodTypeId" operator="not-equals" value="EXT_SHOP_GFT_CARD" entity-alias="OPP"/>
+        </entity-condition>
     </view-entity>
 
     <view-entity entity-name="DirectCancelOrder" package="co.hotwax.order" group="ofbiz_transactional">
