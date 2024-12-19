@@ -25,6 +25,7 @@
         <alias name="totalAmount" field="maxAmount" entity-alias="OPP"/>
         <alias name="externalId" field="manualRefNum" entity-alias="OPP"/>
         <alias name="fromDate" entity-alias="OID"/>
+        <alias name="orderId" field="idValue" entity-alias="OID"/>
         <alias name="paymentMethodTypeId" entity-alias="OPP"/>
     </view-entity>
 
