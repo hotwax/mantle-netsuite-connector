@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <view-entity entity-name="CustomerDepositSyncView"  package="co.hotwax.financial" group="ofbiz_transactional">
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="DCO" entity-name="co.hotwax.order.DirectCancelOrder" join-from-alias="OH" sub-select="true" join-optional="true">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <alias name="shopifyOrderNo" field="externalId" entity-alias="OH"/>
+        <alias name="totalAmount" field="maxAmount" entity-alias="OPP"/>
+        <alias name="externalId" field="manualRefNum" entity-alias="OPP"/>
+        <alias name="fromDate" entity-alias="OID"/>
+        <alias name="orderId" field="idValue" entity-alias="OID"/>
+        <alias name="paymentMethodTypeId" entity-alias="OPP"/>
+        <alias name="orderPaymentPreferenceId" entity-alias="OPP"/>
+        <alias name="shipmentMethodTypeId" entity-alias="OISG" is-aggregate="true"/>
+        <entity-condition>
+            <econdition entity-alias="OH" field-name="orderTypeId" value="SALES_ORDER"/>
+            <econdition field-name="statusId" operator="not-equals" value="PAYMENT_REFUNDED" entity-alias="OPP"/>
+            <econdition field-name="paymentMethodTypeId" operator="not-equals" value="EXT_SHOP_GFT_CARD" entity-alias="OPP"/>
+        </entity-condition>
+    </view-entity>
+
+    <view-entity entity-name="DirectCancelOrder" package="co.hotwax.order" group="ofbiz_transactional">
+        <member-entity entity-alias="OS" entity-name="org.apache.ofbiz.order.order.OrderStatus"/>
+        <alias name="statusCount" field="statusId" entity-alias="OS" function="count"/>
+        <alias name="status" field="statusId" entity-alias="OS" function="max"/>
+        <alias name="orderId" entity-alias="OS"/>
+        <entity-condition>
+            <econdition field-name="orderItemSeqId" operator="is-null" entity-alias="OS"/>
+            <econdition field-name="orderPaymentPreferenceId" operator="is-null" entity-alias="OS"/>
+            <having-econditions>
+                <econditions>
+                    <econdition field-name="statusCount" operator="equals" value="1"/>
+                    <econdition field-name="status" operator="equals" value="ORDER_CANCELLED"/>
+                </econditions>
+            </having-econditions>
+        </entity-condition>
+    </view-entity>
+</entities>
