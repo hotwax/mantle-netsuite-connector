@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+    <service verb="generate" noun="CustomerDepositFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="systemMessageTypeId" required="true">
+                <description>The System Message Type ID for generating the Orders Feed for Netsuite.</description>
+            </parameter>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote Id for generating the Orders Feed for Netsuite.</description>
+            </parameter>
+            <parameter name="fromDate">
+                <description>Parameter to fetch the customer deposit after specific date (when the netsuite order id is sync with hotwax)</description>
+            </parameter>
+            <parameter name="excludeShipmentMethod" type="List">
+                <description>Parameter to exclude the Orders from the specific shipment method or a list of shipping method
+                    like: POS_COMPLETED,STORE_PICKUP
+                </description>
+            </parameter>
+            <parameter name="jobName">
+                <description>The name of the scheduled job to fetch the last run time for preparing customer deposit feed.</description>
+            </parameter>
+            <parameter name="skipLastRunTimeUpdate" type="Boolean" default="false">
+                <description>skip the LastRunTime update,mainly used while debugging</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+            <log message="Generating customer deposit feed at time ${nowDate}"/>
+
+            <!-- We can use last run time to fetch the records updated after the last service job run -->
+            <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="lastRunParam">
+                <field-map field-name="jobName"/>
+                <field-map field-name="parameterName" value="lastRunTime"/>
+            </entity-find-one>
+
+            <!-- Set sinceDate using the lastRunTime, if it is set, fetch updates from
+                   that time, else it will be null -->
+            <if condition="!fromDate">
+                <set field="fromDate" from="lastRunParam?.parameterValue"/>
+            </if>
+
+            <script>
+            import com.fasterxml.jackson.core.JsonGenerator
+            import com.fasterxml.jackson.core.JsonFactory
+            import com.fasterxml.jackson.databind.ObjectMapper
+            import java.nio.charset.StandardCharsets
+            import org.moqui.entity.EntityCondition
+
+                customerDeposit_find = ec.entity.find("co.hotwax.financial.CustomerDepositSyncView")
+                if(fromDate) customerDeposit_find.condition("fromDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromDate)
+                if(excludeShipmentMethod) customerDeposit_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
+
+                // Using try-with-resources to automatically close the EntityListIterator 'depositItr'
+                try (depositItr = customerDeposit_find.iterator()) {
+            </script>
+
+            <if condition="!depositItr.hasNext()">
+                <script>depositItr.close()</script>
+                <return message="No eligible customer deposit at ${nowDate}, not generating the HotWax Feed file."/>
+            </if>
+
+            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+
+            <!-- Prepare JSON File Path -->
+            <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
+            <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+            [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+             productStoreId:productStoreId], false)"/>
+            <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
+
+            <!-- Prepare the customer deposit Feed file  -->
+            <script>
+                try {
+                //json file
+                File cusFeedFile = new File(jsonFilePath)
+                if (!cusFeedFile.parentFile.exists()) cusFeedFile.parentFile.mkdirs()
+                JsonFactory jfactory = new JsonFactory()
+
+                /* Declaring the PrintWriter and JsonGenerator resources in the the try statement,
+                so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
+                try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, cusFeedFile);
+                JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
+                jGenerator.writeStartArray()
+            </script>
+
+            <iterate list="depositItr" entry="cusDeposit">data/SystemMessageData.xml
+                
+                <entity-find entity-name="co.hotwax.integration.IntegrationTypeMapping" list="paymentMapping">
+                    <econdition field-name="integrationTypeId" value="NETSUITE_PMT_MTHD"/>
+                </entity-find>
+
+                <script>
+                    def customerDeposit = new HashMap(cusDeposit);
+                    String paymentMethodTypeId = cusDeposit.paymentMethodTypeId;
+                    def specificMapping = paymentMapping.find { it.mappingKey == paymentMethodTypeId };
+                    def defaultMapping = specificMapping ?: paymentMapping.find { it.mappingKey == 'DEFAULT' };
+                    customerDeposit['paymentMethod'] = defaultMapping?.mappingValue;
+                    customerDeposit.remove('paymentMethodTypeId');
+                    customerDeposit.remove('fromDate');
+                    customerDeposit.remove('shipmentMethodTypeId');
+                    customerDeposit.remove('orderPaymentPreferenceId');
+
+                    new ObjectMapper()
+                    .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
+                    .writerWithDefaultPrettyPrinter().writeValue(jGenerator, customerDeposit)
+                </script>
+            </iterate>
+            <script>
+                        jGenerator.writeEndArray()
+                    }
+                } catch (IOException e) {
+                    logger.error("Error preparing customer deposit file", e)
+                }
+            }
+            </script>
+
+            <!-- Call queue#SystemMessage that will save the json file path in messageText and send the file to sftp
+             using the send service configured in SystemMessageType -->
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                in-map="[systemMessageTypeId:systemMessageTypeId,
+                systemMessageRemoteId:systemMessageRemoteId, messageText:jsonFilePathRef]"
+                out-map="custFeedSystemMessageOut"/>
+
+            <!-- Based on the input of skipLastRunTimeUpdate, we can update the last Run time
+                   This will help in controlling the update of last run time if the job is run manually -->
+            <if condition="!skipLastRunTimeUpdate">
+                <!-- Set the current timestamp as the last inventory run time for next run -->
+                <service-call name="update#moqui.service.job.ServiceJobParameter"
+                    in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName,
+                    parameterValue:nowDate]"/>
+            </if>
+            <return message="Created the HotWax customer deposit Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+                remote ${systemMessageRemoteId} saved response in messages ${custFeedSystemMessageOut.systemMessageId}"/>
+        </actions>
+    </service>
+</services>
