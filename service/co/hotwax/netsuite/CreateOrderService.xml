@@ -33,9 +33,16 @@
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
             <log message="Generating Order Feed file for Order ${orderId} at time ${nowDate}"/>
+
+            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null">
+                <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
+            </if>
             <!-- Prepare csv File Path -->
-            <set field="contentRoot" from="ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager'"/>
-            <set field="csvFilePathRef" value="${contentRoot}/NetsuiteOrderFeed/CreateOrderItemsFeed-${ec.l10n.format(ec.user.nowTimestamp, 'yyyy-MM-dd-HH-mm-ss', null, TimeZone.getDefault())}.csv"/>
+            <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                 productStoreId:productStoreId], false)"/>
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
 
             <!--TODO: Here currently the view used to get the eligible orders for the create feed does not have the shipment method
@@ -74,12 +81,6 @@
             <if condition="!ordersItr.hasNext()">
                 <script>ordersItr.close()</script>
                 <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
-            </if>
-
-            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
-            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
-            <if condition="systemMessageType == null">
-                <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
             </if>
 
             <iterate list="ordersItr" entry="order">

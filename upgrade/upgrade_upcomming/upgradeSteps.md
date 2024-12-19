@@ -12,4 +12,5 @@
 ### System message type
 1. New system message type and system message type parameter is added.
 - NetSuiteOrderItemsFeed 
+- NetSuitePOSOrderItemsFeed
 2. configure the send path in the system message type as per the required directory path.
