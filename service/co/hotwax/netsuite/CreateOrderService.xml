@@ -115,6 +115,7 @@
                         def order = context.get("result")
                         def orderItems = order.remove("orderItems")
                         def orderId = order.remove("orderName")
+                        order.remove("salesChannelEnumCode")
                         def flattenedOrders = []
                         orderItems.each { item ->
                             item.put("orderId", orderId)
