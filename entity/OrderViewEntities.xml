@@ -30,9 +30,13 @@
         <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemsForNetSuiteView" sub-select="true" join-from-alias="OH">
             <key-map field-name="orderId"/>
         </member-entity>
+        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrdersForNetsuite" sub-select="true" join-from-alias="OH" join-optional="true">
+            <key-map field-name="orderId"/>
+        </member-entity>
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
             <econdition entity-alias="OID" field-name="orderId" operator="equals" value=""/>
+            <econdition entity-alias="INVORD" field-name="orderId" operator="equals" value=""/>
         </entity-condition>
         <alias-all entity-alias="OH"/>
         <alias-all entity-alias="OIV"/>
@@ -234,5 +238,25 @@
         <alias name="netSuiteProductId" field="idValue" entity-alias="GID"/>
         <alias name="shipmentMethodTypeId" entity-alias="OISG"/>
         <alias name="location" field="facilityId" entity-alias="OISG"/>
+    </view-entity>
+    
+    <view-entity entity-name="InvalidOrdersForNetsuite" package="co.hotwax.netsuite.order">
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="GID" entity-name="org.apache.ofbiz.product.product.GoodIdentification" join-from-alias="OI" join-optional="true">
+            <key-map field-name="productId"/>
+            <entity-condition>
+                <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <alias-all entity-alias="OH"/>
+        <alias name="productId" entity-alias="OI" field="productId"/>
+        <entity-condition>
+            <econdition field-name="goodIdentificationTypeId" entity-alias="GID" operator="equals" value="null"/>
+            <econdition field-name="orderTypeId" entity-alias="OH" operator="equals" value="SALES_ORDER"/>
+        </entity-condition>
     </view-entity>
 </entities>
