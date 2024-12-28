@@ -60,9 +60,10 @@
         <alias name="externalId" field="partyId" entity-alias="PER"/>
         <alias name="firstName" entity-alias="PER"/>
         <alias name="lastName" entity-alias="PER"/>
+        <alias name="HCShopifyCustomerId" field="idValue" entity-alias="PID"/>
         <alias name="email" field="infoString" function="max" entity-alias="CONEMIL"/>
         <alias name="countryCode" field="countryCode" function="max" entity-alias="TELECOM"/>
-        <alias name="areaCode" field="countryCode" function="max" entity-alias="TELECOM"/>
+        <alias name="areaCode" field="areaCode" function="max" entity-alias="TELECOM"/>
         <alias name="contactNumber" field="contactNumber" function="max" entity-alias="TELECOM"/>
     </view-entity>
 </entities>
