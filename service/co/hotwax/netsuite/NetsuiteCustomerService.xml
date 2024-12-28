@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="generate" noun="CustomerSyncFeed" authenticate="anonymous-all">
+        <in-parameters>
+            <parameter name="partyId">
+                <description>Parameter to fetch party details for a specific customer.</description>
+            </parameter>
+            <parameter name="systemMessageTypeId" required="true">
+                <description>The System Message Type ID for generating the Customer Feed for Netsuite.</description>
+            </parameter>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote Id for generating the Customer Feed for Netsuite.</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+            <log message="Generating Customer Feed file for party ${partyId} at time ${nowDate}"/>
+
+            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null">
+                <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
+            </if>
+            <!-- Prepare csv File Path -->
+            <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                 productStoreId:productStoreId], false)"/>
+            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+
+            <!--TODO: Here currently the view used to get the eligible orders for the create feed does not have the shipment method
+                need to figure out how we can put the checks for include and exclude shipment method.
+            -->
+            <script>
+                import org.apache.commons.csv.CSVFormat
+                import org.apache.commons.csv.CSVPrinter
+                import java.nio.file.Files
+                import java.nio.file.Paths
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                File csvFile = new File(csvFilePath)
+                if (!csvFile.parentFile.exists()) { csvFile.parentFile.mkdirs()}
+
+                def csvHeaders = []
+                def csvPrinter = null
+                def customerList = []
+
+                netsuiteCustomer_find = ec.entity.find("co.netsuite.customer.CustomerView")
+                if(partyId) netsuiteCustomer_find.condition("externalId", orderId)
+
+                // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
+                try (netsuiteCustomer_itr = netsuiteCustomer_find.iterator()) {
+            </script>
+
+            <if condition="!netsuiteCustomer_itr.hasNext()">
+                <script>ordersItr.close()</script>
+                <return message="No eligible customer at ${nowDate}, not generating the HotWax Feed file."/>
+            </if>
+
+           <script>
+                    netsuiteCustomer_itr.each { customer ->
+                        def customerData = [:]
+                        customerData.putAll(customer)
+                        customerData.individual = "T"
+                        customerData.status = "CUSTOMER-Closed Won"
+                        customerData.taxable = "TRUE"
+                        customerData.defaultOrderPriority = "5"
+
+               customerData.firstName = (customer.firstName?.length() > 13 ? customer.firstName.substring(0, 13) : customer.firstName) ?: "X"
+               customerData.lastName = (customer.lastName?.length() > 13 ? customer.lastName.substring(0, 13) : customer.lastName) ?: "X"
+
+               def preparePhoneNumber = { String... parts ->
+                            parts.findAll { it }?.join(' ') ?: null
+                        }
+
+                        customerData.phone = preparePhoneNumber(customer.countryCode, customer.areaCode, customer.contactNumber)
+
+                        // Remove the original phone-related fields
+                        customerData.remove("countryCode")
+                        customerData.remove("areaCode")
+                        customerData.remove("contactNumber")
+
+                        customerList.add(customerData)
+
+                        // Set headers only once
+                        if (csvHeaders.isEmpty()) {
+                            csvHeaders = customerData.keySet() as List
+                        }
+                    }
+                }
+
+               // Write to CSV file
+               if (!customerList.isEmpty()) {
+                   Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8).withCloseable { writer ->
+                       csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
+                       customerList.each { customer ->
+                           csvPrinter.printRecord(csvHeaders.collect { key -> customer[key] ?: "" })
+                       }
+                       csvPrinter.flush()
+                   }
+               }
+           </script>
+            <!-- Save the Json Feed File path in System Message messageText -->
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
+
+            <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
+                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageIdList}"/>
+        </actions>
+    </service>
+</services>
