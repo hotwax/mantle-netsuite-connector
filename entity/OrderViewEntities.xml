@@ -178,7 +178,7 @@
         <alias name="zip" field="postalCode" entity-alias="PAS"/>
         <alias name="country" field="geoCode" entity-alias="COUNTRYGEOSL"/>
         <alias name="shippingCountryCode" field="countryCode" entity-alias="TNSP"/>
-        <alias name="shippingAreaCode" field="countryCode" entity-alias="TNSP"/>
+        <alias name="shippingAreaCode" field="areaCode" entity-alias="TNSP"/>
         <alias name="shippingContactNumber" field="contactNumber" entity-alias="TNSP"/>
         <alias name="billingContactMechId" field="contactMechId" entity-alias="PAB"/>
         <alias name="billingAddress1" field="address2" entity-alias="PAB"/>
@@ -188,7 +188,7 @@
         <alias name="billingZip" field="postalCode" entity-alias="PAB"/>
         <alias name="billingCountry" field="geoCode" entity-alias="COUNTRYGEOBL"/>
         <alias name="billingCountryCode" field="countryCode" entity-alias="TN"/>
-        <alias name="billingAreaCode" field="countryCode" entity-alias="TN"/>
+        <alias name="billingAreaCode" field="areaCode" entity-alias="TN"/>
         <alias name="billingContactNumber" field="contactNumber" entity-alias="TN"/>
         <alias name="billingAddressee" field="toName" entity-alias="PAS"/>
         <alias name="billingEmail" field="infoString" entity-alias="CMBE"/>
