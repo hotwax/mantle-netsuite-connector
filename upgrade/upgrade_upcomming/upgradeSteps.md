@@ -4,13 +4,15 @@
     2. Follow the client specific manual if any.
     3. Check the Nifi flows if configured.
 
-
 ### Service job.
-1. New service job is created to create the orders from hotwax to netsuite.
-2. import the job data and configure the required parameters in the service job.
+1. **generate_CreateOrderFeed**
+   1. New service job is created to create the orders from hotwax to NetSuite.
+   2. Import the job data and configure the required parameters in the service job.
 
 ### System message type
-1. New system message type and system message type parameter is added.
-- NetSuiteOrderItemsFeed 
-- NetSuitePOSOrderItemsFeed
-2. configure the send path in the system message type as per the required directory path.
+- PosCashOrderItemsFeed 
+  - Import the data from the respective custom repository to add the groovy file in for create order feed.
+  - Add the path of the groovy file in the system message type parameter.
+- NetSuiteOrderItemsFeed
+  - Import the data from the respective custom repository to add the groovy file in for create order feed.
+  - Add the path of the groovy file in the system message type parameter.

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
-
     <service verb="generate" noun="CreateOrderFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <in-parameters>
             <parameter name="orderId">
@@ -45,9 +44,6 @@
                  productStoreId:productStoreId], false)"/>
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
 
-            <!--TODO: Here currently the view used to get the eligible orders for the create feed does not have the shipment method
-                need to figure out how we can put the checks for include and exclude shipment method.
-            -->
             <script>
                 import org.apache.commons.csv.CSVFormat
                 import org.apache.commons.csv.CSVPrinter
@@ -71,7 +67,7 @@
                 if(includeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
                 if(excludeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
 
-                netsuiteOrders_find.selectField("orderId")
+                netsuiteOrders_find.selectField("orderId,partyId")
                 netsuiteOrders_find.distinct(true)
 
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
@@ -84,11 +80,11 @@
             </if>
 
             <iterate list="ordersItr" entry="order">
-                <service-call name="co.hotwax.netsuite.CreateOrderService.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
+                <service-call name="co.hotwax.netsuite.OrderServices.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
                               out-map="context"/>
                 <set field="orderMap" from="context?.orderMap"/>
                 <if condition="orderMap">
-                    <service-call name="co.hotwax.netsuite.CreateOrderService.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
+                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
                                   out-map="orderMapOut"/>
                     <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
                     This will retrieve the Groovy script resource path if configured.
@@ -155,15 +151,14 @@
                 }
             </script>
             <!-- Save the Json Feed File path in System Message messageText -->
-            <service-call name="org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage"
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                 messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
 
             <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageIdList}"/>
+                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}"/>
         </actions>
     </service>
-
     <service verb="prepare" noun="OrdersFeedDataForNetSuite">
         <!--
         This service prepares the order and order item details for eligible orders that need to be
@@ -217,7 +212,6 @@
             <set field="orderMap" from="orderDetails.getMap() + [orderItems:orderItemList]"/>
         </actions>
     </service>
-
     <service verb="add" noun="BusinessLogicInFeedData">
         <in-parameters>
             <parameter name="orderMap" type="Map"/>
@@ -480,5 +474,4 @@
             <set field="orderMapDetail" from="processedOrderMap"/>
         </actions>
     </service>
-
 </services>
