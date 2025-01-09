@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <entity entity-name="ProductPromo" package="org.apache.ofbiz.product.promo" group="ofbiz_transactional">
+        <field name="productPromoId" type="id" is-pk="true"></field>
+        <field name="promoName" type="text-medium"></field>
+        <field name="promoText" type="text-medium"></field>
+        <field name="userEntered" type="text-indicator"></field>
+        <field name="showToCustomer" type="text-indicator"></field>
+        <field name="requireCode" type="text-indicator"></field>
+        <field name="useLimitPerOrder" type="number-integer"></field>
+        <field name="useLimitPerCustomer" type="number-integer"></field>
+        <field name="useLimitPerPromotion" type="number-integer"></field>
+        <field name="billbackFactor" type="number-decimal"></field>
+        <field name="overrideOrgPartyId" type="id"></field>
+        <field name="createdDate" type="date-time"></field>
+        <field name="createdByUserLogin" type="id-long"></field>
+        <field name="lastModifiedDate" type="date-time"></field>
+        <field name="lastModifiedByUserLogin" type="id-long"></field>
+        <relationship type="one" fk-name="PROD_PRMO_OPA" related="org.apache.ofbiz.party.party.Party">
+            <key-map field-name="overrideOrgPartyId" related="partyId"/>
+        </relationship>
+        <relationship type="one" fk-name="PROD_PRMO_CUL" title="CreatedBy" related="org.apache.ofbiz.security.login.UserLogin">
+            <key-map field-name="createdByUserLogin" related="userLoginId"/>
+        </relationship>
+        <relationship type="one" fk-name="PROD_PRMO_LMCUL" title="LastModifiedBy" related="org.apache.ofbiz.security.login.UserLogin">
+            <key-map field-name="lastModifiedByUserLogin" related="userLoginId"/>
+        </relationship>
+    </entity>
+
+    <!-- we can shift this view into ofbiz-oms-udm component where all other generic views are created as IntegrationTypeMappingAndEnum view is not specific to netsuite. -->
+    <view-entity entity-name="IntegrationTypeMappingAndEnum" package="co.hotwax.integration">
+        <member-entity entity-alias="ITM" entity-name="co.hotwax.integration.IntegrationTypeMapping"/>
+        <member-entity entity-alias="ENUM" entity-name="org.apache.ofbiz.common.enum.Enumeration" join-from-alias="ITM">
+            <key-map field-name="integrationTypeId"/>
+        </member-entity>
+        <alias-all entity-alias="ITM"/>
+        <alias-all entity-alias="ENUM"/>
+    </view-entity>
+
+    <!-- we can shift this view into ofbiz-oms-udm component where all other generic views are created as CommunicationEventAndOrder view is not specific to netsuite. -->
+    <view-entity entity-name="CommunicationEventAndOrder" package="co.hotwax.integration">
+        <member-entity entity-alias="CO" entity-name="org.apache.ofbiz.order.order.CommunicationEventOrder"/>
+        <member-entity entity-alias="CE" entity-name="org.apache.ofbiz.party.communication.CommunicationEvent" join-from-alias="CO">
+            <key-map field-name="communicationEventId"/>
+        </member-entity>
+        <alias-all entity-alias="CO"/>
+        <alias-all entity-alias="CE"/>
+    </view-entity>
+</entities>
