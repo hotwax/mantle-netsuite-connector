@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="seed">
-   <!-- System Message Type for Create Customer Feed for Netsuite -->
+    <!-- System Message Type for Create Customer Feed for Netsuite -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="CreateNetsuiteCustomerFeed"
-        description="Generate HotWax Create Customer Feed for Netsuite"
-        parentTypeId="LocalFeedFile"
-        sendPath=""
-        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-        receivePath="${contentRoot}/Customer/customer-Feed-${dateTime}.csv"/>
+     description="Generate HotWax Create Customer Feed for Netsuite"
+     parentTypeId="LocalFeedFile"
+     sendPath="/home/${sftpUsername}/netsuite/customer/export"
+     sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+     receivePath="${contentRoot}/Customer/customer-Feed-${dateTime}.csv"/>
 </entity-facade-xml>
