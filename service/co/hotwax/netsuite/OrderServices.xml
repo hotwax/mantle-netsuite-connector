@@ -162,7 +162,7 @@
     <service verb="prepare" noun="OrdersFeedDataForNetSuite">
         <!--
         This service prepares the order and order item details for eligible orders that need to be
-        exported to NetSuite. The service fetches order data from the `OrdersDetailsForNetSuiteView`
+        exported to NetSuite. The service fetches order data from the `OrderDetailsForNetSuiteView`
         and order item data from the `OrderItemsForNetSuiteView`. It then prepares a consolidated
         map containing both the order-level details and the associated order items. This map is
         returned as `orderMap` which will be used in further processing.
@@ -184,7 +184,7 @@
         </out-parameters>
         <actions>
             <log message="order: ${orderId}"/>
-            <entity-find entity-name="co.hotwax.order.OrdersDetailsForNetSuiteView" list="orderLevelDetailList">
+            <entity-find entity-name="co.hotwax.order.OrderDetailsForNetSuiteView" list="orderLevelDetailList">
                 <econdition field-name="orderId" from="orderId"/>
             </entity-find>
             <set field="orderDetails" from="orderLevelDetailList[0]"/>
