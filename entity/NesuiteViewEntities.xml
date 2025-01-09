@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
-    <view-entity entity-name="CustomerView"  package="co.netsuite.customer">
+<view-entity entity-name="CustomerView"  package="co.netsuite.customer">
         <member-entity entity-alias="PER" entity-name="org.apache.ofbiz.party.party.Person"/>
         <member-entity entity-alias="PROLE" entity-name="org.apache.ofbiz.party.party.PartyRole" join-from-alias="PER">
             <key-map field-name="partyId"/>
