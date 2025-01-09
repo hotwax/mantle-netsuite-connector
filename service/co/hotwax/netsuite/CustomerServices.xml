@@ -41,11 +41,11 @@
             </if>
 
             <script>
-            import com.fasterxml.jackson.core.JsonGenerator
-            import com.fasterxml.jackson.core.JsonFactory
-            import com.fasterxml.jackson.databind.ObjectMapper
-            import java.nio.charset.StandardCharsets
-            import org.moqui.entity.EntityCondition
+                import com.fasterxml.jackson.core.JsonGenerator
+                import com.fasterxml.jackson.core.JsonFactory
+                import com.fasterxml.jackson.databind.ObjectMapper
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
 
                 customerDeposit_find = ec.entity.find("co.hotwax.financial.CustomerDepositSyncView")
                 if(fromDate) customerDeposit_find.condition("fromDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromDate)
@@ -75,46 +75,47 @@
             <script>
                 try {
                 //json file
-                File cusFeedFile = new File(jsonFilePath)
-                if (!cusFeedFile.parentFile.exists()) cusFeedFile.parentFile.mkdirs()
-                JsonFactory jfactory = new JsonFactory()
+                    File cusFeedFile = new File(jsonFilePath)
+                    if (!cusFeedFile.parentFile.exists()) cusFeedFile.parentFile.mkdirs()
+                    JsonFactory jfactory = new JsonFactory()
 
-                /* Declaring the PrintWriter and JsonGenerator resources in the the try statement,
-                so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
-                try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, cusFeedFile);
-                JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
-                jGenerator.writeStartArray()
+                    /* Declaring the PrintWriter and JsonGenerator resources in the the try statement,
+                    so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
+                    try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, cusFeedFile);
+                    JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
+                        jGenerator.writeStartArray()
             </script>
+            <iterate list="depositItr" entry="cusDeposit">
 
-            <iterate list="depositItr" entry="cusDeposit">data/SystemMessageData.xml
-                
                 <entity-find entity-name="co.hotwax.integration.IntegrationTypeMapping" list="paymentMapping">
                     <econdition field-name="integrationTypeId" value="NETSUITE_PMT_MTHD"/>
                 </entity-find>
 
                 <script>
-                    def customerDeposit = new HashMap(cusDeposit);
-                    String paymentMethodTypeId = cusDeposit.paymentMethodTypeId;
-                    def specificMapping = paymentMapping.find { it.mappingKey == paymentMethodTypeId };
-                    def defaultMapping = specificMapping ?: paymentMapping.find { it.mappingKey == 'DEFAULT' };
-                    customerDeposit['paymentMethod'] = defaultMapping?.mappingValue;
-                    customerDeposit.remove('paymentMethodTypeId');
-                    customerDeposit.remove('fromDate');
-                    customerDeposit.remove('shipmentMethodTypeId');
-                    customerDeposit.remove('orderPaymentPreferenceId');
+                        def customerDeposit = new HashMap(cusDeposit);
+                        String paymentMethodTypeId = cusDeposit.paymentMethodTypeId;
+                        def specificMapping = paymentMapping.find { it.mappingKey == paymentMethodTypeId };
+                        def defaultMapping = specificMapping ?: paymentMapping.find { it.mappingKey == 'DEFAULT' };
+                        customerDeposit['paymentMethod'] = defaultMapping?.mappingValue;
+                        customerDeposit.remove('paymentMethodTypeId');
+                        customerDeposit.remove('fromDate');
+                        customerDeposit.remove('shipmentMethodTypeId');
+                        customerDeposit.remove('orderPaymentPreferenceId');
+                        customerDeposit.remove("statusCount")
+                        customerDeposit.remove("status")
 
-                    new ObjectMapper()
-                    .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
-                    .writerWithDefaultPrettyPrinter().writeValue(jGenerator, customerDeposit)
+                        new ObjectMapper()
+                        .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
+                        .writerWithDefaultPrettyPrinter().writeValue(jGenerator, customerDeposit)
                 </script>
             </iterate>
             <script>
                         jGenerator.writeEndArray()
+                        }
+                    } catch (IOException e) {
+                        logger.error("Error preparing customer deposit file", e)
                     }
-                } catch (IOException e) {
-                    logger.error("Error preparing customer deposit file", e)
                 }
-            }
             </script>
 
             <!-- Call queue#SystemMessage that will save the json file path in messageText and send the file to sftp
@@ -127,7 +128,7 @@
             <!-- Based on the input of skipLastRunTimeUpdate, we can update the last Run time
                    This will help in controlling the update of last run time if the job is run manually -->
             <if condition="!skipLastRunTimeUpdate">
-                <!-- Set the current timestamp as the last inventory run time for next run -->
+                <!-- Set the current timestamp as the last run time for next run -->
                 <service-call name="update#moqui.service.job.ServiceJobParameter"
                     in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName,
                     parameterValue:nowDate]"/>
