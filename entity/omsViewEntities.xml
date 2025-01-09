@@ -37,7 +37,6 @@
         </member-entity>
         <alias-all entity-alias="ITM"/>
         <alias-all entity-alias="ENUM"/>
-        <alias name="enumDescription" field="description" entity-alias="ENUM"/>
     </view-entity>
 
     <!-- we can shift this view into ofbiz-oms-udm component where all other generic views are created as CommunicationEventAndOrder view is not specific to netsuite. -->
