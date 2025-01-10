@@ -118,6 +118,7 @@
                             item.remove("orderItemSeqId")
                             item.remove("isDiscountRow")
                             item.remove("productId")
+                            item.remove("productTypeId")
                             item.put("item", item.remove("netSuiteProductId"))
                             def flattenedOrder = [:]
                             flattenedOrder.putAll(order)
@@ -310,28 +311,23 @@
                         manualRefSet.add(giftCardPayment.manualRefNumber) // Avoid double-counting gift cards
                     }
                 }
-
                 processedOrderMap.put("HCGiftCardPayment", totalNonRefundedGiftCardAmount)
+            ]]></script>
 
-                // Set the tax code for the order
-                processedOrderMap.put("taxCode", "AVATAX") // TODO: Currently setting a hardcoded tax code "AVATAX"
+            <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="taxMappingList">
+                <econdition field-name="integrationTypeId" value="NETSUITE_TAX_CODE"/>
+            </entity-find>
 
+            <set field="shippingTaxCode" value="${taxMappingList?.find { it.mappingKey == 'DEFAULT' }?.mappingValue}"/>
+
+            <script>
                 // Set the shipping tax code based on sales channel
                 if ("POS Channel" != orderMap.salesChannel) {
-                    processedOrderMap.put("shippingTaxCode", "AVATAX")
+                    processedOrderMap.put("shippingTaxCode", shippingTaxCode)
                 } else {
                     processedOrderMap.put("shippingTaxCode", "")
                 }
-            ]]></script>
-            <!--
-            TODO:
-            - Currently, the tax code is hardcoded as "AVATAX". This should be made dynamic based on business requirements.
-              It can be changed in the future to reflect different tax codes as needed.
-            - For Digital Goods, the tax code is sent as "-Not Taxable-" to NetSuite.(in some cases vary based on the )
-              The current hardcoded "AVATAX" may not be suitable for all product types.
-            - We can create the record in integration type mapping based on the product types.
-            - Or we can modify this in custom groovy file.
-            -->
+            </script>
 
             <!-- Process Order Items -->
             <set field="orderItemList" from="orderMap.orderItems"/>
@@ -351,6 +347,23 @@
                     <econdition field-name="integrationTypeId" value="NETSUITE_SHP_MTHD"/>
                     <econdition field-name="mappingKey" from="orderItem.shipmentMethodTypeId"/>
                 </entity-find>
+
+                <if condition="!taxMappingList.isEmpty()">
+                    <!-- Loop through the tax mapping list to check for specific productTypeId match -->
+                    <set field="taxCode" value="${taxMappingList?.find { it.mappingKey == 'DEFAULT' }?.mappingValue}"/>
+
+                    <iterate list="taxMappingList" entry="mapping">
+                        <!-- Check if the mapping's key matches the productTypeId -->
+                        <if condition="mapping.mappingKey == orderItem.productTypeId">
+                            <log message="========================in the productTypeId where ${orderItem.productTypeId}"/>
+                            <set field="taxCode" from="mapping.mappingValue"/>
+                            <break/>
+                        </if>
+                    </iterate>
+                </if>
+                <!-- Add the taxCode to the processed order item -->
+                <set field="processedOrderItem.taxCode" from="taxCode"/>
+
                 <if condition="!ShippingMethodMappingList.isEmpty()">
                     <script><![CDATA[
                         processedOrderItem.put("shippingMethod", ShippingMethodMappingList[0].mappingValue)
