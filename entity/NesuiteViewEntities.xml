@@ -232,6 +232,13 @@
             <key-map field-name="orderId"/>
             <key-map field-name="shipGroupSeqId"/>
         </member-entity>
+        <member-entity entity-alias="OIA" entity-name="org.apache.ofbiz.order.order.OrderItemAssoc" join-from-alias="OI" join-optional="true">
+            <key-map field-name="orderId" related="toOrderId" />
+            <key-map related="toOrderItemSeqId" field-name="orderItemSeqId"/>
+            <entity-condition>
+                <econdition field-name="orderItemAssocTypeId" value="KIT_COMPONENT"/>
+            </entity-condition>
+        </member-entity>
         <alias name="orderItemSeqId" field="orderItemSeqId" entity-alias="OI"/>
         <alias name="orderId" field="orderId" entity-alias="OI"/>
         <alias name="price" field="unitPrice" entity-alias="OI"/>
@@ -241,6 +248,10 @@
         <alias name="netSuiteProductId" field="idValue" entity-alias="GID"/>
         <alias name="shipmentMethodTypeId" entity-alias="OISG"/>
         <alias name="location" field="facilityId" entity-alias="OISG"/>
+        <alias name="productTypeId" entity-alias="P"/>
+        <entity-condition>
+            <econdition field-name="orderItemAssocTypeId" operator="is-null" entity-alias="OIA"/>
+        </entity-condition>
     </view-entity>
     <view-entity entity-name="InvalidOrdersForNetsuite" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
