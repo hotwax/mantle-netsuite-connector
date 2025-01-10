@@ -32,7 +32,7 @@
     <!-- we can shift this view into ofbiz-oms-udm component where all other generic views are created as IntegrationTypeMappingAndEnum view is not specific to netsuite. -->
     <view-entity entity-name="IntegrationTypeMappingAndEnum" package="co.hotwax.integration">
         <member-entity entity-alias="ITM" entity-name="co.hotwax.integration.IntegrationTypeMapping"/>
-        <member-entity entity-alias="ENUM" entity-name="org.apache.ofbiz.common.enum.Enumeration" join-from-alias="ITM">
+        <member-entity entity-alias="ENUM" entity-name="moqui.basic.Enumeration" join-from-alias="ITM">
             <key-map field-name="integrationTypeId"/>
         </member-entity>
         <alias-all entity-alias="ITM"/>
