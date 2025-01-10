@@ -355,7 +355,6 @@
                     <iterate list="taxMappingList" entry="mapping">
                         <!-- Check if the mapping's key matches the productTypeId -->
                         <if condition="mapping.mappingKey == orderItem.productTypeId">
-                            <log message="========================in the productTypeId where ${orderItem.productTypeId}"/>
                             <set field="taxCode" from="mapping.mappingValue"/>
                             <break/>
                         </if>

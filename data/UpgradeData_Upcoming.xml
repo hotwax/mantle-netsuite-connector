@@ -32,4 +32,10 @@
 
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
         parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
+
+    <Enumeration enumCode="NETSUITE_TAX_CODE" enumId="NETSUITE_TAX_CODE" enumName="Netsuite Tax codes" enumTypeId="NETSUITE" />
+    <IntegrationTypeMapping integrationTypeId="NETSUITE_TAX_CODE" mappingKey="DIGITAL_GOOD" mappingValue="-Not Taxable-" description="Tax code for digital goods" />
+    <IntegrationTypeMapping integrationTypeId="NETSUITE_TAX_CODE" mappingKey="GIFT_CARD" mappingValue="-Not Taxable-" description="Tax code for gift cards" />
+    <IntegrationTypeMapping integrationTypeId="NETSUITE_TAX_CODE" mappingKey="DEFAULT" mappingValue="AVATAX" description="Fallback tax code for unmapped product types" />
+
 </entity-facade-xml>
