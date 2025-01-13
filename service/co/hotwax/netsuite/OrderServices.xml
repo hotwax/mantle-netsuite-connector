@@ -38,11 +38,27 @@
             <if condition="systemMessageType == null">
                 <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
             </if>
+
+            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="SmtParam">
+                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                <field-map field-name="parameterName" value="missingFieldSmtId"/>
+            </entity-find-one>
+
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="InvalidSystemMsgType">
+                <field-map field-name="systemMessageTypeId" from="SmtParam.parameterValue"/>
+            </entity-find-one>
+
             <!-- Prepare csv File Path -->
             <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
                  productStoreId:productStoreId], false)"/>
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+
+            <!-- Prepare csv File Path -->
+            <set field="invalidFilePathRef" from="ec.resource.expand(InvalidSystemMsgType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                 productStoreId:productStoreId], false)"/>
+            <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
 
             <script>
                 import org.apache.commons.csv.CSVFormat
@@ -53,12 +69,17 @@
                 import org.moqui.entity.EntityCondition
 
                 File csvFile = new File(csvFilePath)
-                if (!csvFile.parentFile.exists()) { csvFile.parentFile.mkdirs()}
+                File invalidFile = new File(invalidFilePath)
+                if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
+                if (!invalidFile.parentFile.exists()) invalidFile.parentFile.mkdirs()
+                def isFileEmpty = true
 
-                // Prepare CSV Writer
+                // Prepare CSV Writers for valid and invalid files
                 def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8)
+                def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8)
                 def csvHeaders = null
                 def csvPrinter = null
+                def invalidCsvPrinter = null
 
                 netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
@@ -128,16 +149,31 @@
 
                         // Dynamically determine headers in the first iteration
                         if (!csvHeaders) {
-                        csvHeaders = flattenedOrders[0].keySet().collect { it as String }
-                        csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
+                            csvHeaders = flattenedOrders[0].keySet().collect { it as String }
+                            csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
+
+                            invalidCsvPrinter = new CSVPrinter(invalidWriter, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
                         }
 
-                        // Write rows to the CSV
-                        if (csvPrinter  &amp;&amp; !flattenedOrders.isEmpty()) {
-                            // Process orders and reorder JSON keys headers
-                            flattenedOrders.each { record ->
+                        // Check for required fields and separate valid/invalid orders
+                        flattenedOrders.each { record ->
+                            def missingFields = []
+                            if (!record["customer"]) missingFields.add("Customer")
+                            if (!record["date"]) missingFields.add("Date")
+                            if (!record["country"]) missingFields.add("Country")
+                            if (!record["billingCountry"]) missingFields.add("Billing Country")
+                            if (!record["location"]) missingFields.add("Location")
+
+                            if (missingFields.isEmpty()) {
+                                // Write valid record to the main CSV
                                 def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
                                 csvPrinter.printRecord(orderedRecord)
+                            } else {
+                                // Write invalid record to the invalid CSV
+                                def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
+                                invalidCsvPrinter.printRecord(orderedRecord)
+                                isFileEmpty = false
+
                             }
                         }
                     </script>
@@ -149,14 +185,29 @@
                     csvPrinter.flush()
                     csvPrinter.close()
                 }
+                if (invalidCsvPrinter) {
+                    invalidCsvPrinter.flush()
+                    invalidCsvPrinter.close()
+                }
+                if (isFileEmpty) {
+                    invalidFile.delete()
+                }
             </script>
             <!-- Save the Json Feed File path in System Message messageText -->
             <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                 messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
 
+            <if condition="!isFileEmpty">
+                <!-- Save the Json Feed File path in System Message messageText -->
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[systemMessageTypeId:InvalidSystemMsgType.systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                    messageText:invalidFilePath]" out-map="MissingFieldSysMsgOut"/>
+            </if>
+
             <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}"/>
+                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}
+                and the response of required fields missing file in message ${MissingFieldSysMsgOut.systemMessageId}"/>
         </actions>
     </service>
     <service verb="prepare" noun="OrdersFeedDataForNetSuite">
