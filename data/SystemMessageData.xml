@@ -20,4 +20,12 @@
 
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
         parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
+
+    <!-- System Message Type for Customer Deposit Feed for Netsuite -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateCustomerDepositFeed"
+     description="Generate customer deposit feed from hotwax to Netsuite"
+     parentTypeId="LocalFeedFile"
+     sendPath="/home/${sftpUsername}/netsuite/salesorder/customerdeposit/Customer-Deposit-Feed--${systemMessageId}-${dateTime}.json"
+     sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+     receivePath="${contentRoot}/CustomerDeposit/customerDepositFeed-${dateTime}.json"/>
 </entity-facade-xml>
