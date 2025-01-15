@@ -1,2 +1,2 @@
-# mantle-net-suite-connector
+# mantle-netsuite-connector
 NetSuite Connector in Moqui

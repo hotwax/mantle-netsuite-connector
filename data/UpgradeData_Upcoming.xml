@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<entity-facade-xml type="seed">
-   <!-- System Message Type for Create Order Feed for Netsuite -->
+<entity-facade-xml type="ext-upgrade">
+    <!-- ServiceJob data for create order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite"
+        serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="orderId" parameterValue=""/>
+        <parameters parameterName="fromOrderDate" parameterValue=""/>
+        <parameters parameterName="thruOrderDate" parameterValue=""/>
+        <parameters parameterName="includeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- System Message Type for Create Order Feed for Netsuite -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="PosCashOrderItemsFeed"
         description="Generate HotWax Create POS Order Feed for Netsuite"
         parentTypeId="LocalFeedFile"
@@ -20,20 +32,4 @@
 
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
         parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
-
-    <!-- System Message Type for Customer Deposit Feed for Netsuite -->
-    <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateCustomerDepositFeed"
-     description="Generate customer deposit feed from hotwax to Netsuite"
-     parentTypeId="LocalFeedFile"
-     sendPath="/home/${sftpUsername}/netsuite/salesorder/customerdeposit/Customer-Deposit-Feed--${systemMessageId}-${dateTime}.json"
-     sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-     receivePath="${contentRoot}/CustomerDeposit/customerDepositFeed-${dateTime}.json"/>
-
-    <!-- System Message Type for Create Customer Feed for Netsuite -->
-    <moqui.service.message.SystemMessageType systemMessageTypeId="CreateNetsuiteCustomerFeed"
-         description="Generate HotWax Create Customer Feed for Netsuite"
-         parentTypeId="LocalFeedFile"
-         sendPath="/home/${sftpUsername}/netsuite/customer/export"
-         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-         receivePath="${contentRoot}/Customer/customer-Feed-${dateTime}.csv"/>
 </entity-facade-xml>
