@@ -14,7 +14,7 @@
             </parameter>
             <parameter name="excludeShipmentMethod" type="List">
                 <description>Parameter to exclude the Orders from the specific shipment method or a list of shipping method
-                    like: POS_COMPLETED,STORE_PICKUP
+                    like: POS_COMPLETED
                 </description>
             </parameter>
             <parameter name="jobName">
