@@ -28,4 +28,12 @@
      sendPath="/home/${sftpUsername}/netsuite/salesorder/customerdeposit/Customer-Deposit-Feed--${systemMessageId}-${dateTime}.json"
      sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
      receivePath="${contentRoot}/CustomerDeposit/customerDepositFeed-${dateTime}.json"/>
+
+    <!-- System Message Type for Create Customer Feed for Netsuite -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="CreateNetsuiteCustomerFeed"
+         description="Generate HotWax Create Customer Feed for Netsuite"
+         parentTypeId="LocalFeedFile"
+         sendPath="/home/${sftpUsername}/netsuite/customer/export"
+         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+         receivePath="${contentRoot}/Customer/customer-Feed-${dateTime}.csv"/>
 </entity-facade-xml>
