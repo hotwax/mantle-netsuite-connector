@@ -306,4 +306,69 @@
             </having-econditions>
         </entity-condition>
     </view-entity>
+    <view-entity entity-name="CustomerView"  package="co.netsuite.customer">
+        <member-entity entity-alias="PER" entity-name="org.apache.ofbiz.party.party.Person"/>
+        <member-entity entity-alias="PROLE" entity-name="org.apache.ofbiz.party.party.PartyRole" join-from-alias="PER">
+            <key-map field-name="partyId"/>
+        </member-entity>
+        <member-entity entity-alias="PTY" entity-name="org.apache.ofbiz.party.party.Party" join-from-alias="PER">
+            <key-map field-name="partyId"/>
+        </member-entity>
+        <member-entity entity-alias="NSPID" entity-name="org.apache.ofbiz.party.party.PartyIdentification" join-from-alias="PTY" join-optional="true">
+            <key-map field-name="partyId"/>
+            <entity-condition>
+                <econdition field-name="partyIdentificationTypeId" operator="equals" value="NETSUITE_CUSTOMER_ID"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="PID" entity-name="org.apache.ofbiz.party.party.PartyIdentification" join-from-alias="PTY">
+            <key-map field-name="partyId"/>
+            <entity-condition>
+                <econdition field-name="partyIdentificationTypeId" operator="equals" value="SHOPIFY_CUST_ID"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="PCONTECH" entity-name="org.apache.ofbiz.party.contact.PartyContactMech" join-from-alias="PTY" join-optional="true">
+            <key-map field-name="partyId"/>
+            <entity-condition>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="PCONEML" entity-name="org.apache.ofbiz.party.contact.PartyContactMechPurpose" join-from-alias="PCONTECH" join-optional="true">
+            <key-map field-name="partyId"/>
+            <key-map field-name="contactMechId"/>
+            <entity-condition>
+                <econdition field-name="contactMechPurposeTypeId" operator="equals" value="PRIMARY_EMAIL"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="CONEMIL" entity-name="org.apache.ofbiz.party.contact.ContactMech" join-from-alias="PCONEML" join-optional="true">
+            <key-map field-name="contactMechId"/>
+        </member-entity>
+        <member-entity entity-alias="PCONPHON" entity-name="org.apache.ofbiz.party.contact.PartyContactMechPurpose" join-from-alias="PCONTECH" join-optional="true">
+            <key-map field-name="partyId"/>
+            <key-map field-name="contactMechId"/>
+            <entity-condition>
+                <econdition field-name="contactMechPurposeTypeId" operator="equals" value="PRIMARY_PHONE"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="CONTELE" entity-name="org.apache.ofbiz.party.contact.ContactMech" join-from-alias="PCONPHON" join-optional="true">
+            <key-map field-name="contactMechId"/>
+            <entity-condition>
+                <econdition field-name="contactMechTypeId" entity-alias="CONTELE" operator="equals" value="TELECOM_NUMBER"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="TELECOM" entity-name="org.apache.ofbiz.party.contact.TelecomNumber" join-from-alias="CONTELE" join-optional="true">
+            <key-map field-name="contactMechId"/>
+        </member-entity>
+        <entity-condition>
+            <econdition field-name="partyId" entity-alias="NSPID" operator="is-null"/>
+            <econdition field-name="roleTypeId" entity-alias="PROLE" operator="equals" value="CUSTOMER"/>
+        </entity-condition>
+        <alias name="externalId" field="partyId" entity-alias="PER"/>
+        <alias name="firstName" entity-alias="PER"/>
+        <alias name="lastName" entity-alias="PER"/>
+        <alias name="HCShopifyCustomerId" field="idValue" entity-alias="PID"/>
+        <alias name="email" field="infoString" function="max" entity-alias="CONEMIL"/>
+        <alias name="countryCode" field="countryCode" function="max" entity-alias="TELECOM"/>
+        <alias name="areaCode" field="areaCode" function="max" entity-alias="TELECOM"/>
+        <alias name="contactNumber" field="contactNumber" function="max" entity-alias="TELECOM"/>
+    </view-entity>
 </entities>
