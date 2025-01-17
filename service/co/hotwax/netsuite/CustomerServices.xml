@@ -207,6 +207,7 @@
                         customerData.status = "CUSTOMER-Closed Won"
                         customerData.taxable = "TRUE"
                         customerData.defaultOrderPriority = "5"
+                        customerData.externalId = customerData.HCShopifyCustomerId
 
                         customerData.firstName = (customer.firstName?.length() > 13 ? customer.firstName.substring(0, 13) : customer.firstName) ?: "X"
                         customerData.lastName = (customer.lastName?.length() > 13 ? customer.lastName.substring(0, 13) : customer.lastName) ?: "X"
