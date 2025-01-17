@@ -163,6 +163,14 @@
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
                  productStoreId:productStoreId], false)"/>
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+
+            <!-- Fetch the Groovy script resource path -->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
+                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                <field-map field-name="parameterName" value="resourcePath"/>
+            </entity-find-one>
+            <set field="scriptPath" from="groovyFileResource.parameterValue"/>
+
             <script>
                 import org.apache.commons.csv.CSVFormat
                 import org.apache.commons.csv.CSVPrinter
@@ -210,7 +218,15 @@
                         customerData.remove("areaCode")
                         customerData.remove("contactNumber")
 
-                        // Set headers only once
+                        // Execute Groovy script if available
+                        if (groovyFileResource) {
+                            Object scriptResult = ec.resource.script(scriptPath, null, [customerData: customerData])
+                            if (scriptResult instanceof Map) {
+                                customerData.putAll(scriptResult)
+                            }
+                        }
+
+                       // Set headers only once
                         if (csvHeaders == null) {
                             csvHeaders = customerData.keySet() as List
                             csvPrinter.printRecord(csvHeaders)
@@ -223,6 +239,7 @@
                     }
                 }
             </script>
+
             <!-- Save the Json Feed File path in System Message messageText -->
             <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
