@@ -10,6 +10,7 @@
         <parameters parameterName="thruOrderDate" parameterValue=""/>
         <parameters parameterName="includeShipmentMethod" parameterValue=""/>
         <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="isMultipleShippingMethod" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- System Message Type for Create Order Feed for Netsuite -->

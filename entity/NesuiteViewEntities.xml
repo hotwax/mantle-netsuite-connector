@@ -45,6 +45,19 @@
         <alias name="partyId" entity-alias="PID"/>
         <alias-all entity-alias="OH"/>
         <alias-all entity-alias="OIV"/>
+        <alias name="isMultipleShippingMethod" type="text-indicator">
+            <case>
+                <when expression="(SELECT COUNT(DISTINCT OISG.shipment_Method_Type_Id)
+                           FROM Order_Item_Ship_Group OISG
+                           WHERE OISG.ORDER_ID = OH.ORDER_ID) = 1">
+                    <complex-alias expression="'N'" />
+                </when>
+                <else>
+                    <complex-alias expression="'Y'" />
+                </else>
+            </case>
+        </alias>
+
     </view-entity>
     <!--Purpose of this view:
     - The primary purpose of this view-entity is to fetch the order-related data required by the service to prepare the order feed from Hotwax to NetSuite.

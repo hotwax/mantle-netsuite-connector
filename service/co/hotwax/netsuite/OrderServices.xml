@@ -28,6 +28,13 @@
                     like: POS_COMPLETED,STORE_PICKUP
                 </description>
             </parameter>
+            <parameter name="isMultipleShippingMethod">
+                <description>
+                    Parameter to include or exclude the orders which have multiple shipping methods.
+                    Example: Y to include the order with multiple shipping methods.
+                    N to not include the order with multiple shipping methods.
+                </description>
+            </parameter>
         </in-parameters>
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
@@ -66,8 +73,9 @@
                 if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
                 if(includeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
                 if(excludeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
+                if(isMultipleShippingMethod) netsuiteOrders_find.condition("isMultipleShippingMethod", EntityCondition.ComparisonOperator.EQUALS, isMultipleShippingMethod)
 
-                netsuiteOrders_find.selectField("orderId,partyId")
+                netsuiteOrders_find.selectField("orderId,partyId,isMultipleShippingMethod")
                 netsuiteOrders_find.distinct(true)
 
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
