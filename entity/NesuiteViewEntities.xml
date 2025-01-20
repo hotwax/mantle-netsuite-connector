@@ -362,7 +362,7 @@
             <econdition field-name="partyId" entity-alias="NSPID" operator="is-null"/>
             <econdition field-name="roleTypeId" entity-alias="PROLE" operator="equals" value="CUSTOMER"/>
         </entity-condition>
-        <alias name="externalId" field="partyId" entity-alias="PER"/>
+        <alias name="HCCustomerId" field="partyId" entity-alias="PER"/>
         <alias name="firstName" entity-alias="PER"/>
         <alias name="lastName" entity-alias="PER"/>
         <alias name="HCShopifyCustomerId" field="idValue" entity-alias="PID"/>
