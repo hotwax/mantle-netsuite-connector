@@ -10,7 +10,7 @@
         <parameters parameterName="thruOrderDate" parameterValue=""/>
         <parameters parameterName="includeShipmentMethod" parameterValue=""/>
         <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
-        <parameters parameterName="isMultipleShippingMethod" parameterValue=""/>
+        <parameters parameterName="isMixCartOrder" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- ServiceJob data for create order from HC to netsuite -->

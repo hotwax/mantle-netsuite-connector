@@ -45,7 +45,7 @@
         <alias name="partyId" entity-alias="PID"/>
         <alias-all entity-alias="OH"/>
         <alias-all entity-alias="OIV"/>
-        <alias name="isMultipleShippingMethod" type="text-indicator">
+        <alias name="isMixCartOrder" type="text-indicator">
             <case>
                 <when expression="(SELECT COUNT(DISTINCT OISG.shipment_Method_Type_Id)
                            FROM Order_Item_Ship_Group OISG
