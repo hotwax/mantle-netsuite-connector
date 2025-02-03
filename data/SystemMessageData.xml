@@ -40,4 +40,14 @@
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="CreateNetsuiteCustomerFeed"
        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
 
+    <moqui.service.message.SystemMessageType systemMessageTypeId="FulfilledOrderItemsFeedNetsuiteToHotwax"
+       description="Generate Fulfilled Order Items feed Netsuite to Hotwax"
+       parentTypeId="LocalFeedFile"
+       receiveResponseEnumId="MsgRrMove"
+       sendPath="${contentRoot}/Netsuite/FulfilledOrderItems"
+       receivePath="/home/${sftpUsername}/netsuite/salesorder/import/fulfillment-nifi"
+       receiveMovePath="/home/${sftpUsername}/netsuite/salesorder/import/fulfillment-nifi/archive"
+       consumeServiceName="co.hotwax.netsuite.OrderServices.consume#FulfilledOrderItemFeed"
+    />
+
 </entity-facade-xml>

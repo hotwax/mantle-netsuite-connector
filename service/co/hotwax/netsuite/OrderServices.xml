@@ -476,4 +476,54 @@
             <set field="orderMapDetail" from="processedOrderMap"/>
         </actions>
     </service>
+    <service verb="consume" noun="FulfilledOrderItemFeed" authenticate="anonymous-all">
+        <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>
+        <actions>
+            <entity-find-one entity-name="moqui.service.message.SystemMessage" value-field="systemMessage"/>
+
+            <if condition="!systemMessage.messageText">
+                <return type="warning" message="System message [${systemMessageId}] for Type ${systemMessage?.systemMessageTypeId} has no message text, not consuming."/>
+            </if>
+            <script><![CDATA[
+            import groovy.json.JsonOutput
+            import org.apache.commons.csv.*
+
+            def reader = new BufferedReader(new StringReader(ec.resource.getLocationReference(systemMessage.messageText).getText()))
+            def parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader)
+
+            def orderMap = [:]
+            for (record in parser.iterator()) {
+                def orderId = record.get("orderId")
+
+                def orderItem = [
+                    orderItemSeqId    : record.get("orderItemSeqId"),
+                    externalFacilityId: record.get("externalFacilityId"),
+                    shippedDate       : record.get("shippedDate") + ":00",
+                    quantity          : record.get("quantity"),
+                    trackingNumber    : record.get("trackingNumber") ?: "",
+                    "validation-result": "success"
+                ]
+
+                def carrierName = record.get("shiphawkCarrierName")?.trim()?.toLowerCase()?.replaceAll("\\s+", "_") ?: ""
+
+                if (!orderMap.containsKey(orderId)) {
+                    orderMap[orderId] = [
+                        orderId           : orderId,
+                        shipHawkShipmentId: record.get("shipHawkShipmentId") ?: "",
+                        shiphawkCarrierName: carrierName,
+                        items             : []
+                    ]
+                }
+                orderMap[orderId].items << orderItem
+            }
+            reader.close()
+            def jsonWriter = new StringWriter()
+            def jsonGen = new groovy.json.JsonBuilder(orderMap.collect { key, value -> [orderMap: value] })
+            jsonWriter << jsonGen.toPrettyString()
+
+            jsonResult = jsonWriter.toString()
+        ]]></script>
+        </actions>
+    </service>
+
 </services>

@@ -29,4 +29,13 @@
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
         <parameters parameterName="partyId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
+
+    <!-- ServiceJob data for polling csv file from sftp location -->
+    <moqui.service.job.ServiceJob jobName="poll_fulfilledItemsNetsuiteToHotwax"
+            description="Poll Csv file from sftp location of fulfilled order items feed netsuite to hotwax"
+            serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="FulfilledOrderItemsFeedNetsuiteToHotwax"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
+    </moqui.service.job.ServiceJob>
+
 </entity-facade-xml>
