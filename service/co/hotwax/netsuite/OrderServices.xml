@@ -28,6 +28,13 @@
                     like: POS_COMPLETED,STORE_PICKUP
                 </description>
             </parameter>
+            <parameter name="isMixCartOrder">
+                <description>
+                    Parameter to include or exclude the orders which have multiple shipping methods.
+                    Example: Y to include the order with multiple shipping methods.
+                    N to not include the order with multiple shipping methods.
+                </description>
+            </parameter>
         </in-parameters>
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
@@ -66,14 +73,14 @@
                 if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
                 if(includeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
                 if(excludeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
+                if(isMixCartOrder) netsuiteOrders_find.condition("isMixCartOrder", EntityCondition.ComparisonOperator.EQUALS, isMixCartOrder)
 
-                netsuiteOrders_find.selectField("orderId,partyId")
+                netsuiteOrders_find.selectField("orderId,partyId,isMixCartOrder")
                 netsuiteOrders_find.distinct(true)
 
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
                 try (ordersItr = netsuiteOrders_find.iterator()) {
             </script>
-
             <if condition="!ordersItr.hasNext()">
                 <script>ordersItr.close()</script>
                 <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
@@ -84,7 +91,7 @@
                               out-map="context"/>
                 <set field="orderMap" from="context?.orderMap"/>
                 <if condition="orderMap">
-                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
+                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap,isMixCartOrder:order.isMixCartOrder]"
                                   out-map="orderMapOut"/>
                     <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
                     This will retrieve the Groovy script resource path if configured.
@@ -216,6 +223,7 @@
     <service verb="add" noun="BusinessLogicInFeedData">
         <in-parameters>
             <parameter name="orderMap" type="Map"/>
+            <parameter name="isMixCartOrder"/>
         </in-parameters>
         <out-parameters>
             <parameter name="orderMapDetail" type="Map"/>
@@ -336,7 +344,14 @@
 
             <!-- Process Order Items -->
             <set field="orderItemList" from="orderMap.orderItems"/>
-            <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>(); ]]></script>
+            <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>();
+            String selectedShippingMethod = null;
+            if (isMixCartOrder) {
+                Set<String> shippingMethods = orderItemList*.shipmentMethodTypeId
+                    .findAll { it && it != 'POS_COMPLETED' && it != 'STOREPICKUP' }.toSet();
+                selectedShippingMethod = shippingMethods ? shippingMethods.first() : null;
+            }
+            ]]></script>
             <iterate list="orderItemList" entry="orderItem">
                 <!-- Determine if the item is closed -->
                 <script><![CDATA[
@@ -346,6 +361,10 @@
                     processedOrderItem.remove("itemStatus");
                     processedOrderItem.put("orderLineId", processedOrderItem.orderItemSeqId)
                 ]]></script>
+
+                <if condition="isMixCartOrder">
+                    <script>orderItem.shipmentMethodTypeId = selectedShippingMethod;</script>
+                </if>
 
                 <!-- Map Shipping Method -->
                 <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="ShippingMethodMappingList">
