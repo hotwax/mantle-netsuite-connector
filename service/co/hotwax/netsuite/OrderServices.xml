@@ -241,6 +241,7 @@
             <set field="orderDetails" from="orderLevelDetailList[0]"/>
             <script>
                 orderDetails.date = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(orderDetails.date.toString()))
+                orderDetails.shippingCost = orderDetails.shippingCost ?: "0"
             </script>
             <!-- Set orderItemList List to add the order Item Detail map -->
             <set field="orderItemList" from="[]"/>
@@ -517,7 +518,7 @@
 
             <!-- Add Processed Order Items to Processed Order Map -->
             <script><![CDATA[
-                processedOrderMap.put("externalId", processedOrderMap.orderId)
+                processedOrderMap.put("HCOrderId", processedOrderMap.orderId)
                 processedOrderMap.put("orderItems", processedOrderItemList);
             ]]></script>
             <!-- Prepare the Final Order Detail Map -->
