@@ -173,6 +173,7 @@
                             if (!record["location"]) missingFields.add("Location")
 
                             if (missingFields.isEmpty()) {
+                                System.out.println("we have required fields missing: for record: "+ record + missingFields)
                                 // Write valid record to the main CSV
                                 def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
                                 csvPrinter.printRecord(orderedRecord)
