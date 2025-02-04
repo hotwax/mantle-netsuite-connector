@@ -467,8 +467,7 @@
 
             <!-- Add Processed Order Items to Processed Order Map -->
             <script><![CDATA[
-            if ('POS Channel' == orderMap.salesChannel) {processedOrderMap.put("HCPOSOrderId", processedOrderMap.orderId)}
-            else{processedOrderMap.put("HCSalesOrderId", processedOrderMap.orderId)}
+                processedOrderMap.put("HCOrderId", processedOrderMap.orderId)
                 processedOrderMap.put("orderItems", processedOrderItemList);
             ]]></script>
             <!-- Prepare the Final Order Detail Map -->
