@@ -166,7 +166,7 @@
                         // Check for required fields and separate valid/invalid orders
                         flattenedOrders.each { record ->
                             def missingFields = []
-                            def requiredFields = ["customer", "date", "country", "billingCountry", "location"]
+                            def requiredFields = ["customer", "date", "country", "billingCountry"]
 
                             requiredFields.each { field ->
                                 if (!record[field]) {
