@@ -548,10 +548,12 @@
                     for (record in parser.iterator()) {
                         def orderId = record.get("orderId")
 
+                        shippedDate = ec.l10n.format(ec.l10n.parseDateTime(record.get("shippedDate"), "M/d/yyyy h:mm a"), "yyyy-MM-dd HH:mm:ss")
+
                         def orderItem = [
                             orderItemSeqId    : record.get("orderItemSeqId"),
                             externalFacilityId: record.get("externalFacilityId"),
-                            shippedDate       : record.get("shippedDate") + ":00",
+                            shippedDate       : shippedDate ,
                             quantity          : record.get("quantity"),
                             trackingNumber    : record.get("trackingNumber") ?: "",
                             "validation-result": "success"
