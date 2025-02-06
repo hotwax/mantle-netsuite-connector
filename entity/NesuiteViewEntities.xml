@@ -198,7 +198,7 @@
         <alias name="shippingAreaCode" field="areaCode" entity-alias="TNSP"/>
         <alias name="shippingContactNumber" field="contactNumber" entity-alias="TNSP"/>
         <alias name="billingContactMechId" field="contactMechId" entity-alias="PAB"/>
-        <alias name="billingAddress1" field="address2" entity-alias="PAB"/>
+        <alias name="billingAddress1" field="address1" entity-alias="PAB"/>
         <alias name="billingAddress2" field="address2" entity-alias="PAB"/>
         <alias name="billingCity" field="city" entity-alias="PAB"/>
         <alias name="billingState" field="stateProvinceGeoId" entity-alias="PAB"/>
