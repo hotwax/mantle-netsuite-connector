@@ -346,24 +346,13 @@
                 <date-filter/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="PCONEML" entity-name="org.apache.ofbiz.party.contact.PartyContactMechPurpose" join-from-alias="PCONTECH" join-optional="true">
-            <key-map field-name="partyId"/>
+        <member-entity entity-alias="CONEMIL" entity-name="org.apache.ofbiz.party.contact.ContactMech" join-from-alias="PCONTECH" join-optional="true">
             <key-map field-name="contactMechId"/>
             <entity-condition>
-                <econdition field-name="contactMechPurposeTypeId" operator="equals" value="PRIMARY_EMAIL"/>
+                <econdition field-name="contactMechTypeId" operator="equals" value="EMAIL_ADDRESS"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="CONEMIL" entity-name="org.apache.ofbiz.party.contact.ContactMech" join-from-alias="PCONEML" join-optional="true">
-            <key-map field-name="contactMechId"/>
-        </member-entity>
-        <member-entity entity-alias="PCONPHON" entity-name="org.apache.ofbiz.party.contact.PartyContactMechPurpose" join-from-alias="PCONTECH" join-optional="true">
-            <key-map field-name="partyId"/>
-            <key-map field-name="contactMechId"/>
-            <entity-condition>
-                <econdition field-name="contactMechPurposeTypeId" operator="equals" value="PRIMARY_PHONE"/>
-            </entity-condition>
-        </member-entity>
-        <member-entity entity-alias="CONTELE" entity-name="org.apache.ofbiz.party.contact.ContactMech" join-from-alias="PCONPHON" join-optional="true">
+        <member-entity entity-alias="CONTELE" entity-name="org.apache.ofbiz.party.contact.ContactMech" join-from-alias="PCONTECH" join-optional="true">
             <key-map field-name="contactMechId"/>
             <entity-condition>
                 <econdition field-name="contactMechTypeId" entity-alias="CONTELE" operator="equals" value="TELECOM_NUMBER"/>
