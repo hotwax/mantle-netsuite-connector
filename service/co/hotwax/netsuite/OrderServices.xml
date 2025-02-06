@@ -158,11 +158,9 @@
                         // Check for required fields and separate valid/invalid orders
                         flattenedOrders.each { record ->
                             def missingFields = []
-                            if (!record["customer"]) missingFields.add("Customer")
-                            if (!record["date"]) missingFields.add("Date")
-                            if (!record["country"]) missingFields.add("Country")
-                            if (!record["billingCountry"]) missingFields.add("Billing Country")
-                            if (!record["location"]) missingFields.add("Location")
+                            def requiredFields = ["customer", "date", "country", "billingCountry"]
+
+                            requiredFields.each { field -> if (!record[field]) { missingFields.add(field) } }
 
                             if (missingFields.isEmpty()) {
                                 // Write valid record to the main CSV
