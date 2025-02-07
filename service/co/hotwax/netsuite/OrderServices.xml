@@ -191,7 +191,6 @@
                                     missingFields.add(field)
                                 }
                             }
-                            def requiredFields = ["customer", "date", "country", "billingCountry"]
 
                             requiredFields.each { field -> if (!record[field]) { missingFields.add(field) } }
 
