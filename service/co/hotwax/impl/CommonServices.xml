@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="call" noun="GitLabApi">
+        <in-parameters>
+            <parameter name="branch" default-value="main"/>
+            <parameter name="systemMessageRemoteId"/>
+            <parameter name="projectName"/>
+            <parameter name="filePath"/>
+            <parameter name="additionalParameter" type="Map"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="success" type="Boolean" default-value="false"/>
+            <parameter name="fileContent"/>
+            <parameter name="errorText"/>
+        </out-parameters>
+        <actions>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
+            <script><![CDATA[
+                import java.util.Base64
+                import java.net.URLEncoder
+                import org.moqui.util.RestClient
+                import org.moqui.util.RestClient.RestResponse
+                import com.fasterxml.jackson.databind.ObjectMapper
+
+                success = false
+                fileContent = null
+                errorText = null
+
+                try {
+                    urlEncodedProjectName = URLEncoder.encode(projectName, "UTF-8")
+                    urlEncodedFilePath = URLEncoder.encode(filePath, "UTF-8")
+
+                    def parameters = ["ref": branch]
+
+                    String urlExpand = ec.resource.expand(systemMessageRemote.receiveUrl, "systemMessage",
+                        [projectName: urlEncodedProjectName, fileName: urlEncodedFilePath], false)
+
+                    RestClient restClient = ec.service.rest()
+                        .method(RestClient.GET)
+                        .uri(urlExpand)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("PRIVATE-TOKEN", systemMessageRemote.privateKey)
+
+                    if (additionalParameter) {
+                        parameters.putAll(additionalParameter)
+                    }
+                    restClient.addBodyParameters(parameters)
+                    responseText = null
+                    try {
+                        restResponse = restClient.call()
+                        if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
+                            logger.error("API error response : " + restResponse.text())
+                            errorText = restResponse.text()
+                            return
+                        }
+
+                        ObjectMapper objectMapper = new ObjectMapper()
+                        responseText = objectMapper.readValue(restResponse.text(), Map.class)
+
+                        if (responseText?.content) {
+                            byte[] decodedFileContent = Base64.decoder.decode(responseText.content)
+                            fileContent = new String(decodedFileContent, "UTF-8")
+                            success = true
+                        } else {
+                            errorText = "GitLab API response does not contain file content."
+                            logger.error(errorText)
+                        }
+                    } catch (Exception e) {
+                        logger.error("Error processing API response: " + e.getMessage(), e)
+                    }
+                }  catch (Exception e) {
+                    logger.error("Error calling the gitlab api:  ${e.getMessage()} ")
+                }
+            ]]></script>
+        </actions>
+    </service>
+
+    <service verb="store" noun="FileInDbResource">
+        <description>Creates or updates a file in Moqui's DbResource under a given parent directory.</description>
+        <in-parameters>
+            <parameter name="fileName" required="true"/>
+            <parameter name="fileContent" required="true"/>
+            <parameter name="parentResourceId" required="true"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="resourceId"/>
+            <parameter name="success" type="Boolean" default-value="false"/>
+            <parameter name="errorText"/>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+                import org.moqui.entity.EntityValue
+
+                success = false
+                resourceId = null
+                errorText = null
+                message = null
+                try {
+
+                    // Check if the file already exists under the given parent
+                    EntityValue existingFile = ec.entity.find("moqui.resource.DbResource")
+                        .condition("filename", fileName)
+                        .condition("parentResourceId", parentResourceId)
+                        .one()
+
+                    if (existingFile) {
+                        // Update existing file
+                        existingFile.set("lastUpdatedStamp", ec.user.nowTimestamp)
+                        existingFile.update()
+                        resourceId = existingFile.resourceId
+
+                        EntityValue fileData = ec.entity.find("moqui.resource.DbResourceFile")
+                            .condition("resourceId", existingFile.resourceId)
+                            .one()
+
+                        if (fileData) {
+                            fileData.set("fileData", fileContent).update()
+                        } else {
+                            ec.entity.makeValue("moqui.resource.DbResourceFile")
+                                .set("resourceId", existingFile.resourceId)
+                                .set("fileData", fileContent)
+                                .create()
+                        }
+                    } else {
+
+                        fileEntry = ec.entity.makeValue("moqui.resource.DbResource")
+                            .set("filename", fileName)
+                            .setSequencedIdPrimary()
+                            .set("isFile", "Y")
+                            .set("parentResourceId", parentResourceId)
+                            .create()
+
+                        ec.entity.makeValue("moqui.resource.DbResourceFile")
+                            .set("resourceId", fileEntry.resourceId)
+                            .set("fileData", fileContent)
+                            .create()
+
+                        resourceId = fileEntry.resourceId
+                    }
+                    success = true
+                } catch (Exception e) {
+                    errorText = "Error storing file in DbResource: ${e.message}"
+                    logger.error(errorText, e)
+                }
+            ]]></script>
+        </actions>
+    </service>
+
+    <service verb="update" noun="FileInNetsuiteDirectory">
+        <description>Wrapper service for storing NetSuite-related files in Moqui DBResource</description>
+        <in-parameters>
+            <parameter name="branch" default-value="main"/>
+            <parameter name="systemMessageRemoteId"/>
+            <parameter name="projectName"/>
+            <parameter name="filePath"/>
+            <parameter name="folderName"/>
+            <parameter name="additionalParameter" type="Map"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="success" type="Boolean" default-value="false"/>
+            <parameter name="errorText"/>
+            <parameter name="resourceId"/>
+        </out-parameters>
+        <actions>
+            <script>
+                import org.moqui.entity.EntityValue
+            </script>
+            <service-call name="co.hotwax.impl.CommonServices.call#GitLabApi" in-map="context" out-map="response"/>
+            <if condition="response.success">
+                <script><![CDATA[
+                    String fileName = filePath.substring(filePath.lastIndexOf("/") + 1)
+
+                    // Split folderName into path parts
+                    String[] folders = folderName.split("/")
+                    String currentParent = "Netsuite"
+
+                    for (String folder : folders) {
+                        EntityValue existingDir = ec.entity.find("moqui.resource.DbResource")
+                            .condition("filename", folder)
+                            .condition("parentResourceId", currentParent)
+                            .one()
+
+                        if (!existingDir) {
+                            existingDir = ec.entity.makeValue("moqui.resource.DbResource")
+                            existingDir.set("filename", folder)
+                                .setSequencedIdPrimary()
+                                .set("isFile", "N")
+                                .set("parentResourceId", currentParent)
+                                .create()
+                        }
+                        currentParent = existingDir.resourceId
+                    }
+                ]]></script>
+                <service-call name="co.hotwax.impl.CommonServices.store#FileInDbResource" in-map="[fileContent:response.fileContent, fileName:fileName, parentResourceId:currentParent]" out-map="storeResponse"/>
+                <set field="success" from="storeResponse.success"/>
+                <set field="errorText" from="storeResponse.errorText"/>
+                <set field="resourceId" from="storeResponse.resourceId"/>
+                <else>
+                    <set field="errorText" from="response.errorText"/>
+                    <set field="success" from="response.success"/>
+                </else>
+            </if>
+        </actions>
+    </service>
+</services>
