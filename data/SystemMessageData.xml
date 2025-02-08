@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="seed">
+   <moqui.basic.EnumerationType description="Netsuite System message Type" enumTypeId="NetsuiteMessageTypeEnum"/>
+
    <!-- System Message Type for Create Order Feed for Netsuite -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="PosCashOrderItemsFeed"
         description="Generate HotWax Create POS Order Feed for Netsuite"
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/cashsale/export/PosCashOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-        receivePath="${contentRoot}/CreateOrderFeed/cashsale/createOrderFeed-${dateTime}.csv"/>
+        receivePath="${contentRoot}/CreateOrderFeed/cashsale/createOrderFeed-${dateTime}.csv">
+        <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
+    </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuiteOrderItemsFeed"
         description="Generate HotWax Create Order Feed for Netsuite"
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/salesorder/export/CreatedOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-        receivePath="${contentRoot}/CreateOrderFeed/salesorder/createOrderFeed-${dateTime}.csv"/>
+        receivePath="${contentRoot}/CreateOrderFeed/salesorder/createOrderFeed-${dateTime}.csv">
+        <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
+    </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="PosCashOrderItemsFeed"
         parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
@@ -40,6 +46,25 @@
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="CreateNetsuiteCustomerFeed"
        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
 
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ReqFieldMisPosCashOrder"
+        description="Generate the required fields missing in the create pos order items in netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath="/home/${sftpUsername}/netsuite/cashsale/export/required_fields_missing/PosCashOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/CreateOrderFeed/cashsale/required_fields_missing/createOrderFeed-${dateTime}.csv"/>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ReqFieldMisOrderItems"
+        description="Generate the required fields missing in the create pos order items in netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath="/home/${sftpUsername}/netsuite/salesorder/export/required_fields_missing/PosCashOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/CreateOrderFeed/salesorder/required_fields_missing/createOrderFeed-${dateTime}.csv"/>
+
+    <moqui.basic.Enumeration description="Send Required filed missing fields POS orders" enumId="ReqFieldMisPosCashOrder" enumTypeId="NetsuiteMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Product Updates Feed" enumId="PosCashOrderItemsFeed" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="ReqFieldMisPosCashOrder" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+
+    <moqui.basic.Enumeration description="Send Required filed missing fields sales orders" enumId="ReqFieldMisOrderItems" enumTypeId="NetsuiteMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Product Updates Feed" enumId="NetSuiteOrderItemsFeed" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="ReqFieldMisOrderItems" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
     <moqui.service.message.SystemMessageRemote
        systemMessageRemoteId="GITLAB_PROJECT_FILE_REPO"
        authHeaderName="PRIVATE-TOKEN"

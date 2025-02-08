@@ -10,6 +10,7 @@
         <parameters parameterName="thruOrderDate" parameterValue=""/>
         <parameters parameterName="includeShipmentMethod" parameterValue=""/>
         <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="isMixCartOrder" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- System Message Type for Create Order Feed for Netsuite -->
@@ -32,4 +33,25 @@
 
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
         parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
+
+    <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="PosCashOrderItemsFeed"
+        parameterName="missingFieldSmtId" parameterValue="ReqFieldMisPosCashOrder" systemMessageRemoteId=""/>
+
+    <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
+        parameterName="resourcePath" parameterValue="ReqFieldMisOrderItems" systemMessageRemoteId=""/>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ReqFieldMisPosCashOrder"
+        description="Generate the required fields missing in the create pos order items in netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath="/home/${sftpUsername}/netsuite/cashsale/export/required_fields_missing/PosCashOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/CreateOrderFeed/cashsale/required_fields_missing/createOrderFeed-${dateTime}.csv"/>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ReqFieldMisOrderItems"
+        description="Generate the required fields missing in the create pos order items in netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath="/home/${sftpUsername}/netsuite/salesorder/export/required_fields_missing/PosCashOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/CreateOrderFeed/salesorder/required_fields_missing/createOrderFeed-${dateTime}.csv"/>
+
 </entity-facade-xml>
