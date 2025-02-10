@@ -183,8 +183,12 @@
                         // Check for required fields and separate valid/invalid orders
                         flattenedOrders.each { record ->
                             def missingFields = []
-                            def requiredFields = ["customer", "date", "country", "billingCountry"]
-
+                            if ("POS Channel" != orderMapDetail.salesChannel){
+                                def requiredFields = ["customer", "date", "country", "billingCountry"]
+                            }
+                            else{
+                                def requiredFields = ["customer", "date", "country"]
+                            }
                             requiredFields.each { field -> if (!record[field]) { missingFields.add(field) } }
 
                             if (missingFields.isEmpty()) {

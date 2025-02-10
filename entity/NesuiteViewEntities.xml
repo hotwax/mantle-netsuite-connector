@@ -207,7 +207,7 @@
         <alias name="billingCountryCode" field="countryCode" entity-alias="TNBP"/>
         <alias name="billingAreaCode" field="areaCode" entity-alias="TNBP"/>
         <alias name="billingContactNumber" field="contactNumber" entity-alias="TNBP"/>
-        <alias name="billingAddressee" field="toName" entity-alias="PAS"/>
+        <alias name="billingAddressee" field="toName" entity-alias="PAB"/>
         <alias name="billingEmail" field="infoString" entity-alias="CMBE"/>
         <alias name="email" field="infoString" entity-alias="CMSE"/>
         <alias name="shippingCost" field="amount" entity-alias="OADJ"/>
