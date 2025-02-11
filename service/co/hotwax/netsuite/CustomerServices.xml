@@ -56,7 +56,6 @@
             </script>
 
             <if condition="!depositItr.hasNext()">
-                <script>depositItr.close()</script>
                 <return message="No eligible customer deposit at ${nowDate}, not generating the HotWax Feed file."/>
             </if>
 
@@ -183,8 +182,11 @@
                     csvFile.parentFile.mkdirs()
                 }
 
+            try {
+                // Try-with-resources for BufferedWriter
                 Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8).withCloseable { writer ->
-                def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)
+                    // Try-with-resources for CSVPrinter
+                    new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader()).withCloseable { csvPrinter ->
 
                 // Fetch customers and check if there are eligible customers
                 def netsuiteCustomer_find = ec.entity.find("co.netsuite.customer.CustomerView")
@@ -196,8 +198,6 @@
                     if (!netsuiteCustomer_itr.hasNext()) {
                         return "No eligible customer at ${nowDate}, not generating the feed file."
                     }
-
-                    // Process and write customer data (streaming approach)
                     def csvHeaders = null
                     netsuiteCustomer_itr.each { customer ->
                         def customerData = [:]
@@ -238,9 +238,12 @@
                     }
                     csvPrinter.flush()
                     }
+                    }
                 }
-            </script>
-
+            } catch (Exception e) {
+                logger.error("Error preparing customer deposit file", e)
+            }
+        </script>
             <!-- Save the Json Feed File path in System Message messageText -->
             <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
