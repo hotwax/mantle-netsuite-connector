@@ -182,22 +182,24 @@
                     csvFile.parentFile.mkdirs()
                 }
 
+                 // Fetch customers and check if there are eligible customers
+                def netsuiteCustomer_find = ec.entity.find("co.netsuite.customer.CustomerView")
+                if (partyId) {
+                    netsuiteCustomer_find.condition("externalId", partyId)
+                }
+
+                if (!netsuiteCustomer_itr.hasNext()) {
+                    return "No eligible customer at ${nowDate}, not generating the feed file."
+                }
+
             try {
                 // Try-with-resources for BufferedWriter
                 Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8).withCloseable { writer ->
                     // Try-with-resources for CSVPrinter
                     new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader()).withCloseable { csvPrinter ->
 
-                // Fetch customers and check if there are eligible customers
-                def netsuiteCustomer_find = ec.entity.find("co.netsuite.customer.CustomerView")
-                if (partyId) {
-                    netsuiteCustomer_find.condition("externalId", partyId)
-                }
 
                 try (netsuiteCustomer_itr = netsuiteCustomer_find.iterator()) {
-                    if (!netsuiteCustomer_itr.hasNext()) {
-                        return "No eligible customer at ${nowDate}, not generating the feed file."
-                    }
                     def csvHeaders = null
                     netsuiteCustomer_itr.each { customer ->
                         def customerData = [:]
