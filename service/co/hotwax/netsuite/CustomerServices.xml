@@ -243,7 +243,7 @@
                     }
                 }
             } catch (Exception e) {
-                logger.error("Error preparing customer deposit file", e)
+                logger.error("Error preparing customer feed file", e)
             }
         </script>
             <!-- Save the Json Feed File path in System Message messageText -->
