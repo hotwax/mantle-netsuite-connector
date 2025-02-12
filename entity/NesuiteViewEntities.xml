@@ -45,6 +45,19 @@
         <alias name="partyId" entity-alias="PID"/>
         <alias-all entity-alias="OH"/>
         <alias-all entity-alias="OIV"/>
+        <alias name="isMixCartOrder" type="text-indicator">
+            <case>
+                <when expression="(SELECT COUNT(DISTINCT OISG.shipment_Method_Type_Id)
+                           FROM Order_Item_Ship_Group OISG
+                           WHERE OISG.ORDER_ID = OH.ORDER_ID) = 1">
+                    <complex-alias expression="'N'" />
+                </when>
+                <else>
+                    <complex-alias expression="'Y'" />
+                </else>
+            </case>
+        </alias>
+
     </view-entity>
     <!--Purpose of this view:
     - The primary purpose of this view-entity is to fetch the order-related data required by the service to prepare the order feed from Hotwax to NetSuite.
@@ -185,7 +198,7 @@
         <alias name="shippingAreaCode" field="areaCode" entity-alias="TNSP"/>
         <alias name="shippingContactNumber" field="contactNumber" entity-alias="TNSP"/>
         <alias name="billingContactMechId" field="contactMechId" entity-alias="PAB"/>
-        <alias name="billingAddress1" field="address2" entity-alias="PAB"/>
+        <alias name="billingAddress1" field="address1" entity-alias="PAB"/>
         <alias name="billingAddress2" field="address2" entity-alias="PAB"/>
         <alias name="billingCity" field="city" entity-alias="PAB"/>
         <alias name="billingState" field="stateProvinceGeoId" entity-alias="PAB"/>
@@ -194,7 +207,7 @@
         <alias name="billingCountryCode" field="countryCode" entity-alias="TNBP"/>
         <alias name="billingAreaCode" field="areaCode" entity-alias="TNBP"/>
         <alias name="billingContactNumber" field="contactNumber" entity-alias="TNBP"/>
-        <alias name="billingAddressee" field="toName" entity-alias="PAS"/>
+        <alias name="billingAddressee" field="toName" entity-alias="PAB"/>
         <alias name="billingEmail" field="infoString" entity-alias="CMBE"/>
         <alias name="email" field="infoString" entity-alias="CMSE"/>
         <alias name="shippingCost" field="amount" entity-alias="OADJ"/>
