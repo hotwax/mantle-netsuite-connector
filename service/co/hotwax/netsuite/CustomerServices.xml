@@ -193,10 +193,6 @@
          <return message="No eligible customer at ${nowDate}, not generating the HotWax Feed file."/>
         </if>
         <script>
-                if (!netsuiteCustomer_itr.hasNext()) {
-                    return "No eligible customer at ${nowDate}, not generating the feed file."
-                }
-
             try {
                 // Try-with-resources for BufferedWriter
                 Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8).withCloseable { writer ->
