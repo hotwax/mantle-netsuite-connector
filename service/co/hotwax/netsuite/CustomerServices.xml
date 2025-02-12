@@ -188,6 +188,8 @@
                     netsuiteCustomer_find.condition("externalId", partyId)
                 }
 
+                try (netsuiteCustomer_itr = netsuiteCustomer_find.iterator()) {
+
                 if (!netsuiteCustomer_itr.hasNext()) {
                     return "No eligible customer at ${nowDate}, not generating the feed file."
                 }
@@ -199,7 +201,6 @@
                     new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader()).withCloseable { csvPrinter ->
 
 
-                try (netsuiteCustomer_itr = netsuiteCustomer_find.iterator()) {
                     def csvHeaders = null
                     netsuiteCustomer_itr.each { customer ->
                         def customerData = [:]
@@ -238,12 +239,11 @@
                         // Write each row
                         csvPrinter.printRecord(csvHeaders.collect { key -> customerData[key] ?: "" })
                     }
-                    csvPrinter.flush()
-                    }
                     }
                 }
-            } catch (Exception e) {
-                logger.error("Error preparing customer deposit file", e)
+                } catch (Exception e) {
+                    ec.message.addError("Error preparing customer feed file ${e}")
+                }
             }
         </script>
             <!-- Save the Json Feed File path in System Message messageText -->
@@ -251,7 +251,7 @@
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                 messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
 
-            <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
+            <return message="Generating customer sync feed file with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}"/>
         </actions>
     </service>

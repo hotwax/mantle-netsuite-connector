@@ -181,7 +181,7 @@
                         // Check for required fields and separate valid/invalid orders
                         flattenedOrders.each { record ->
                             def missingFields = []
-                            def requiredFields = ["customer", "date", "country", "billingCountry"]
+                            def requiredFields = ["customer", "date", "country"]
 
                             requiredFields.each { field -> if (!record[field]) { missingFields.add(field) } }
 
@@ -201,13 +201,8 @@
                 </if>
             </iterate>
             <script>
-                    // Ensure data is written before closing
-                    if(csvPrinter)
-                        csvPrinter.flush()
-                    if (invalidCsvPrinter)
-                        invalidCsvPrinter.flush()
                     } catch (Exception e) {
-                        logger.error("Error preparing order feed file", e)
+                        ec.message.addError("Error preparing order feed file ${e}")
                     }
                 }
                 // Delete invalid file if empty
@@ -227,7 +222,7 @@
                     messageText:invalidFilePath]" out-map="MissingFieldSysMsgOut"/>
             </if>
 
-            <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
+            <return message="Generating Order Items Feed file with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}"/>
         </actions>
     </service>
