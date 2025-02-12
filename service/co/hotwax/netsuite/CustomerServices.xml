@@ -187,9 +187,12 @@
                 if (partyId) {
                     netsuiteCustomer_find.condition("externalId", partyId)
                 }
-
                 try (netsuiteCustomer_itr = netsuiteCustomer_find.iterator()) {
-
+            </script>
+        <if condition="!netsuiteCustomer_itr.hasNext()">
+         <return message="No eligible customer at ${nowDate}, not generating the HotWax Feed file."/>
+        </if>
+        <script>
                 if (!netsuiteCustomer_itr.hasNext()) {
                     return "No eligible customer at ${nowDate}, not generating the feed file."
                 }
