@@ -98,13 +98,7 @@
                 if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
                 if (!invalidFile.parentFile.exists()) invalidFile.parentFile.mkdirs()
                 def isFileEmpty = true
-
-                // Prepare CSV Writers for valid and invalid files
-                def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8)
-                def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8)
                 def csvHeaders = null
-                def csvPrinter = null
-                def invalidCsvPrinter = null
 
                 netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
@@ -121,9 +115,14 @@
                 try (ordersItr = netsuiteOrders_find.iterator()) {
             </script>
             <if condition="!ordersItr.hasNext()">
-                <script>ordersItr.close()</script>
                 <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
             </if>
+            <script>
+                try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
+                def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8);
+                def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
+                def invalidCsvPrinter = new CSVPrinter(invalidWriter, CSVFormat.DEFAULT)) {
+            </script>
 
             <iterate list="ordersItr" entry="order">
                 <service-call name="co.hotwax.netsuite.OrderServices.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
@@ -175,15 +174,14 @@
                         // Dynamically determine headers in the first iteration
                         if (!csvHeaders) {
                             csvHeaders = flattenedOrders[0].keySet().collect { it as String }
-                            csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
-
-                            invalidCsvPrinter = new CSVPrinter(invalidWriter, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
+                            csvPrinter.printRecord(csvHeaders)
+                            invalidCsvPrinter.printRecord(csvHeaders)
                         }
 
                         // Check for required fields and separate valid/invalid orders
                         flattenedOrders.each { record ->
                             def missingFields = []
-                            def requiredFields = ["customer", "date", "country", "billingCountry"]
+                            def requiredFields = ["customer", "date", "country"]
 
                             requiredFields.each { field -> if (!record[field]) { missingFields.add(field) } }
 
@@ -203,15 +201,11 @@
                 </if>
             </iterate>
             <script>
+                    } catch (Exception e) {
+                        ec.message.addError("Error preparing order feed file ${e}")
+                    }
                 }
-                if (csvPrinter) {
-                    csvPrinter.flush()
-                    csvPrinter.close()
-                }
-                if (invalidCsvPrinter) {
-                    invalidCsvPrinter.flush()
-                    invalidCsvPrinter.close()
-                }
+                // Delete invalid file if empty
                 if (isFileEmpty) {
                     invalidFile.delete()
                 }
@@ -228,7 +222,7 @@
                     messageText:invalidFilePath]" out-map="MissingFieldSysMsgOut"/>
             </if>
 
-            <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
+            <return message="Generating Order Items Feed file with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}"/>
         </actions>
     </service>
