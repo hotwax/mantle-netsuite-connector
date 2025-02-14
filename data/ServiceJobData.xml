@@ -10,5 +10,24 @@
         <parameters parameterName="thruOrderDate" parameterValue=""/>
         <parameters parameterName="includeShipmentMethod" parameterValue=""/>
         <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="isMixCartOrder" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- ServiceJob data for create order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CustomerDepositFeed" description="Generate HotWax Create Order Feed for Netsuite"
+        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerDepositFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="fromDate" parameterValue=""/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="jobName" parameterValue=""/>
+        <parameters parameterName="skipLastRunTimeUpdate" parameterValue=""/>
+        <parameters parameterName="lastRunTime"/>
+    </moqui.service.job.ServiceJob>
+    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" description="Generate HotWax Create Customer Feed for Netsuite"
+        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="partyId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 </entity-facade-xml>

@@ -28,21 +28,62 @@
                     like: POS_COMPLETED,STORE_PICKUP
                 </description>
             </parameter>
+            <parameter name="isMixCartOrder">
+                <description>
+                    Parameter to include or exclude the orders which have multiple shipping methods.
+                    Example: Y to include the order with multiple shipping methods.
+                    N to not include the order with multiple shipping methods.
+                </description>
+            </parameter>
         </in-parameters>
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
             <log message="Generating Order Feed file for Order ${orderId} at time ${nowDate}"/>
 
-            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null">
                 <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
             </if>
+
+
+            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="sendSmrParam">
+                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                <field-map field-name="parameterName" value="sendSmrId"/>
+            </entity-find-one>
+            <if condition="sendSmrParam">
+                <set field="sendSmrId" from="sendSmrParam.parameterValue"/>
+            </if>
+
+            <if condition="sendSmrId">
+                <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
+                    <field-map field-name="enumId" from="systemMessageTypeId"/>
+                </entity-find-one>
+
+                <if condition="enumValue &amp;&amp; enumValue.relatedEnumId">
+                    <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
+                        <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
+                    </entity-find-one>
+                    <if condition="!relatedSystemMessageType"><log level="warn" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing related system message."/></if>
+                    <else>
+                        <log level="warn" message="Related SystemMessageType to produce for ${systemMessage.systemMessageTypeId} not defined, not producing related system message."/>
+                    </else>
+                </if>
+                <else>
+                    <log level="warn" message="sendSmrId not defined for ${systemMessage.systemMessageTypeId} not defined, not producing related system message."/>
+                </else>
+            </if>
+
             <!-- Prepare csv File Path -->
             <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
                  productStoreId:productStoreId], false)"/>
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+
+            <!-- Prepare csv File Path -->
+            <set field="invalidFilePathRef" from="ec.resource.expand(relatedSystemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                 productStoreId:productStoreId], false)"/>
+            <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
 
             <script>
                 import org.apache.commons.csv.CSVFormat
@@ -53,12 +94,11 @@
                 import org.moqui.entity.EntityCondition
 
                 File csvFile = new File(csvFilePath)
-                if (!csvFile.parentFile.exists()) { csvFile.parentFile.mkdirs()}
-
-                // Prepare CSV Writer
-                def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8)
+                File invalidFile = new File(invalidFilePath)
+                if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
+                if (!invalidFile.parentFile.exists()) invalidFile.parentFile.mkdirs()
+                def isFileEmpty = true
                 def csvHeaders = null
-                def csvPrinter = null
 
                 netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
@@ -66,25 +106,30 @@
                 if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
                 if(includeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
                 if(excludeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
+                if(isMixCartOrder) netsuiteOrders_find.condition("isMixCartOrder", EntityCondition.ComparisonOperator.EQUALS, isMixCartOrder)
 
-                netsuiteOrders_find.selectField("orderId,partyId")
+                netsuiteOrders_find.selectField("orderId,partyId,isMixCartOrder")
                 netsuiteOrders_find.distinct(true)
 
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
                 try (ordersItr = netsuiteOrders_find.iterator()) {
             </script>
-
             <if condition="!ordersItr.hasNext()">
-                <script>ordersItr.close()</script>
                 <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
             </if>
+            <script>
+                try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
+                def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8);
+                def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
+                def invalidCsvPrinter = new CSVPrinter(invalidWriter, CSVFormat.DEFAULT)) {
+            </script>
 
             <iterate list="ordersItr" entry="order">
                 <service-call name="co.hotwax.netsuite.OrderServices.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
                               out-map="context"/>
                 <set field="orderMap" from="context?.orderMap"/>
                 <if condition="orderMap">
-                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap]"
+                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap,isMixCartOrder:order.isMixCartOrder]"
                                   out-map="orderMapOut"/>
                     <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
                     This will retrieve the Groovy script resource path if configured.
@@ -129,26 +174,41 @@
 
                         // Dynamically determine headers in the first iteration
                         if (!csvHeaders) {
-                        csvHeaders = flattenedOrders[0].keySet().collect { it as String }
-                        csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(csvHeaders as String[]))
+                            csvHeaders = flattenedOrders[0].keySet().collect { it as String }
+                            csvPrinter.printRecord(csvHeaders)
+                            invalidCsvPrinter.printRecord(csvHeaders)
                         }
 
-                        // Write rows to the CSV
-                        if (csvPrinter  &amp;&amp; !flattenedOrders.isEmpty()) {
-                            // Process orders and reorder JSON keys headers
-                            flattenedOrders.each { record ->
+                        // Check for required fields and separate valid/invalid orders
+                        flattenedOrders.each { record ->
+                            def missingFields = []
+                            def requiredFields = ["customer", "date", "country"]
+
+                            requiredFields.each { field -> if (!record[field]) { missingFields.add(field) } }
+
+                            if (missingFields.isEmpty()) {
+                                // Write valid record to the main CSV
                                 def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
                                 csvPrinter.printRecord(orderedRecord)
+                            } else {
+                                // Write invalid record to the invalid CSV
+                                def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
+                                invalidCsvPrinter.printRecord(orderedRecord)
+                                isFileEmpty = false
+
                             }
                         }
                     </script>
                 </if>
             </iterate>
             <script>
+                    } catch (Exception e) {
+                        ec.message.addError("Error preparing order feed file ${e}")
+                    }
                 }
-                if (csvPrinter) {
-                    csvPrinter.flush()
-                    csvPrinter.close()
+                // Delete invalid file if empty
+                if (isFileEmpty) {
+                    invalidFile.delete()
                 }
             </script>
             <!-- Save the Json Feed File path in System Message messageText -->
@@ -156,7 +216,14 @@
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                 messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
 
-            <log message="Generating  Order Items Feed file with type ${systemMessageTypeId} and
+            <if condition="!isFileEmpty">
+                <!-- Save the Json Feed File path in System Message messageText -->
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                    messageText:invalidFilePath]" out-map="MissingFieldSysMsgOut"/>
+            </if>
+
+            <return message="Generating Order Items Feed file with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}"/>
         </actions>
     </service>
@@ -191,6 +258,7 @@
             <set field="orderDetails" from="orderLevelDetailList[0]"/>
             <script>
                 orderDetails.date = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(orderDetails.date.toString()))
+                orderDetails.shippingCost = orderDetails.shippingCost ?: "0"
             </script>
             <!-- Set orderItemList List to add the order Item Detail map -->
             <set field="orderItemList" from="[]"/>
@@ -216,6 +284,7 @@
     <service verb="add" noun="BusinessLogicInFeedData">
         <in-parameters>
             <parameter name="orderMap" type="Map"/>
+            <parameter name="isMixCartOrder"/>
         </in-parameters>
         <out-parameters>
             <parameter name="orderMapDetail" type="Map"/>
@@ -331,7 +400,14 @@
 
             <!-- Process Order Items -->
             <set field="orderItemList" from="orderMap.orderItems"/>
-            <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>(); ]]></script>
+            <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>();
+            String selectedShippingMethod = null;
+            if (isMixCartOrder) {
+                Set<String> shippingMethods = orderItemList*.shipmentMethodTypeId
+                    .findAll { it && it != 'POS_COMPLETED' && it != 'STOREPICKUP' }.toSet();
+                selectedShippingMethod = shippingMethods ? shippingMethods.first() : null;
+            }
+            ]]></script>
             <iterate list="orderItemList" entry="orderItem">
                 <!-- Determine if the item is closed -->
                 <script><![CDATA[
@@ -341,6 +417,10 @@
                     processedOrderItem.remove("itemStatus");
                     processedOrderItem.put("orderLineId", processedOrderItem.orderItemSeqId)
                 ]]></script>
+
+                <if condition="isMixCartOrder">
+                    <script>orderItem.shipmentMethodTypeId = selectedShippingMethod;</script>
+                </if>
 
                 <!-- Map Shipping Method -->
                 <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="ShippingMethodMappingList">
@@ -478,7 +558,7 @@
 
             <!-- Add Processed Order Items to Processed Order Map -->
             <script><![CDATA[
-                processedOrderMap.put("externalId", processedOrderMap.orderId)
+                processedOrderMap.put("HCOrderId", processedOrderMap.orderId)
                 processedOrderMap.put("orderItems", processedOrderItemList);
             ]]></script>
             <!-- Prepare the Final Order Detail Map -->
