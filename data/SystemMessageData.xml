@@ -62,7 +62,4 @@
 
     <moqui.basic.Enumeration description="Send Required filed missing fields POS orders" enumId="ReqFieldMisPosCashOrder" enumTypeId="NetsuiteMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Product Updates Feed" enumId="PosCashOrderItemsFeed" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="ReqFieldMisPosCashOrder" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
-
-    <moqui.basic.Enumeration description="Send Required filed missing fields sales orders" enumId="ReqFieldMisOrderItems" enumTypeId="NetsuiteMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Product Updates Feed" enumId="NetSuiteOrderItemsFeed" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="ReqFieldMisOrderItems" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 </entity-facade-xml>

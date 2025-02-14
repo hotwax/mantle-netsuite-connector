@@ -163,7 +163,6 @@
                             item.remove("orderItemSeqId")
                             item.remove("isDiscountRow")
                             item.remove("productId")
-                            item.remove("productTypeId")
                             item.put("item", item.remove("netSuiteProductId"))
                             def flattenedOrder = [:]
                             flattenedOrder.putAll(order)
@@ -427,21 +426,6 @@
                     <econdition field-name="integrationTypeId" value="NETSUITE_SHP_MTHD"/>
                     <econdition field-name="mappingKey" from="orderItem.shipmentMethodTypeId"/>
                 </entity-find>
-
-                <if condition="!taxMappingList.isEmpty()">
-                    <!-- Loop through the tax mapping list to check for specific productTypeId match -->
-                    <set field="taxCode" value="${taxMappingList?.find { it.mappingKey == 'DEFAULT' }?.mappingValue}"/>
-
-                    <iterate list="taxMappingList" entry="mapping">
-                        <!-- Check if the mapping's key matches the productTypeId -->
-                        <if condition="mapping.mappingKey == orderItem.productTypeId">
-                            <set field="taxCode" from="mapping.mappingValue"/>
-                            <break/>
-                        </if>
-                    </iterate>
-                </if>
-                <!-- Add the taxCode to the processed order item -->
-                <set field="processedOrderItem.taxCode" from="taxCode"/>
 
                 <if condition="!ShippingMethodMappingList.isEmpty()">
                     <script><![CDATA[
