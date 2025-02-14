@@ -617,14 +617,13 @@
                      JsonGenerator generator = jsonFactory.createGenerator(pw)) {
 
                     generator.writeStartArray()
-
-
-                    def reader = new BufferedReader(new StringReader(ec.resource.getLocationReference(systemMessage.messageText).getText()))
-                    def parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader)
+                    /* Use try-with-resources to automatically close BufferedReader & CSVParser */
+                    try (BufferedReader reader = new BufferedReader(new StringReader(ec.resource.getLocationReference(systemMessage.messageText).getText()));
+                         CSVParser parser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader)) {
 
                     def orderMap = [:]
 
-                    for (record in parser.iterator()) {
+                    for (CSVRecord record : parser) {
                         def orderId = record.get("orderId")
 
                         shippedDate = ec.l10n.format(ec.l10n.parseDateTime(record.get("shippedDate"), "M/d/yyyy h:mm a"), "yyyy-MM-dd HH:mm:ss")
@@ -651,20 +650,19 @@
                         orderMap[orderId].items << orderItem
                     }
 
-                    reader.close()
-
                     // Write each order as a separate object in the JSON array
                     ObjectMapper mapper = new ObjectMapper()
                     for (orderEntry in orderMap) {
                         def orderJson = [orderMap: orderEntry.value]
                         mapper.writerWithDefaultPrettyPrinter().writeValue(generator, orderJson)
                     }
-
-                    generator.writeEndArray()
+                }
+                generator.writeEndArray()
                 }
 
             } catch (IOException e) {
                 logger.error("Error preparing Fulfilled Order Item Feed JSON file", e)
+                ec.message.addError("Error preparing order feed file ${e}")
             }
         ]]></script>
 
