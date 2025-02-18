@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="call" noun="GitLabApi">
+        <in-parameters>
+            <parameter name="branch" default-value="main"/>
+            <parameter name="systemMessageRemoteId"/>
+            <parameter name="projectName"/>
+            <parameter name="filePath"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="success" type="Boolean" default-value="false"/>
+            <parameter name="fileContent"/>
+            <parameter name="errorText"/>
+        </out-parameters>
+        <actions>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
+            <script><![CDATA[
+                import java.util.Base64
+                import java.net.URLEncoder
+                import org.moqui.util.RestClient
+                import org.moqui.util.RestClient.RestResponse
+                import com.fasterxml.jackson.databind.ObjectMapper
+                success = false
+                fileContent = null
+                errorText = null
+                try {
+                    urlEncodedProjectName = URLEncoder.encode(projectName, "UTF-8")
+                    urlEncodedFilePath = URLEncoder.encode(filePath, "UTF-8")
+                    def parameters = ["ref": branch]
+                    String urlExpand = ec.resource.expand(systemMessageRemote.receiveUrl, "systemMessage",
+                        [projectName: urlEncodedProjectName, fileName: urlEncodedFilePath], false)
+                    RestClient restClient = ec.service.rest()
+                        .method(RestClient.GET)
+                        .uri(urlExpand)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("PRIVATE-TOKEN", systemMessageRemote.privateKey)
+                    restClient.addBodyParameters(parameters)
+                    responseText = null
+                    try {
+                        restResponse = restClient.call()
+                        if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
+                            logger.error("API error response : " + restResponse.text())
+                            errorText = restResponse.text()
+                            return
+                        }
+                        ObjectMapper objectMapper = new ObjectMapper()
+                        responseText = objectMapper.readValue(restResponse.text(), Map.class)
+                        if (responseText?.content) {
+                            byte[] decodedFileContent = Base64.decoder.decode(responseText.content)
+                            fileContent = new String(decodedFileContent, "UTF-8")
+                            success = true
+                        } else {
+                            errorText = "GitLab API response does not contain file content."
+                            logger.error(errorText)
+                        }
+                    } catch (Exception e) {
+                        logger.error("Error processing API response: " + e.getMessage(), e)
+                    }
+                }  catch (Exception e) {
+                    logger.error("Error calling the gitlab api:  ${e.getMessage()} ")
+                }
+            ]]></script>
+        </actions>
+    </service>
+    <service verb="update" noun="FileInFileSystem">
+        <description>Fetches a file from GitLab and stores it in the file system.</description>
+        <in-parameters>
+            <parameter name="branch" default-value="main"/>
+            <parameter name="systemMessageRemoteId"/>
+            <parameter name="projectName"/>
+            <parameter name="filePath"/>
+            <parameter name="targetFilePath"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="success" type="Boolean" default-value="false"/>
+            <parameter name="errorText"/>
+            <parameter name="savedFilePath"/>
+        </out-parameters>
+        <actions>
+            <!-- Step 1: Fetch file content from GitLab -->
+            <service-call name="co.hotwax.helper.HelperServices.call#GitLabApi" in-map="context" out-map="apiResponse"/>
+            <log message="==========apiResponse.fileContent=============${apiResponse.fileContent}"/>
+            <set field="success" value="false" type="Boolean"/>
+            <set field="errorText"/>
+            <set field="savedFilePath"/>
+
+            <if condition="!apiResponse.success">
+                <set field="errorText" value="Failed to fetch file from GitLab: ${apiResponse.errorText}"/>
+                <return/>
+            </if>
+
+            <script><![CDATA[
+                import java.nio.file.Files
+                import java.nio.file.Paths
+                import java.nio.charset.StandardCharsets
+
+                // Expand the file path dynamically
+                def expandedFilePathRef = ec.resource.expand(targetFilePath, null, [:], false)
+                def expandedFilePath = ec.resource.getLocationReference(expandedFilePathRef).getUri().getPath()
+
+                // Create directories if they do not exist
+                def file = new File(expandedFilePath)
+                if (!file.parentFile.exists()) file.parentFile.mkdirs()
+
+                // Write content to file
+                Files.write(Paths.get(expandedFilePath), apiResponse.fileContent.getBytes(StandardCharsets.UTF_8))
+
+                logger.info("File successfully written to: ${expandedFilePath}")
+            ]]></script>
+            <set field="success" value="true" type="Boolean"/>
+            <set field="savedFilePath" from="expandedFilePath"/>
+        </actions>
+    </service>
+</services>
