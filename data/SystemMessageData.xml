@@ -65,4 +65,10 @@
 
     <moqui.basic.Enumeration description="Send Required filed missing fields sales orders" enumId="ReqFieldMisOrderItems" enumTypeId="NetsuiteMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Product Updates Feed" enumId="NetSuiteOrderItemsFeed" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="ReqFieldMisOrderItems" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+    <moqui.service.message.SystemMessageRemote
+       systemMessageRemoteId="GITLAB_PROJECT_FILE_REPO"
+       authHeaderName="PRIVATE-TOKEN"
+       privateKey=""
+       receiveUrl="https://git.hotwax.co/api/v4/projects/${projectName}/repository/files/${fileName}"
+       description="Remote repository configuration for fetching and managing project files from GitLab, including Groovy scripts, templates, and configuration files."/>
 </entity-facade-xml>
