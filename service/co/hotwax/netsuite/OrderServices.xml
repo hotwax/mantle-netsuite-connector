@@ -92,6 +92,7 @@
                 import java.nio.file.Paths
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
+                import co.hotwax.common.SchemaValidation
 
                 File csvFile = new File(csvFilePath)
                 File invalidFile = new File(invalidFilePath)
@@ -152,12 +153,19 @@
                             <set field="result" from="orderMapOut.orderMapDetail"/>
                         </else>
                     </if>
+                    <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="schemaPath">
+                        <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                        <field-map field-name="parameterName" value="schemaPath"/>
+                    </entity-find-one>
+                    <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
                     <script>
+
                         def order = context.get("result")
                         def orderItems = order.remove("orderItems")
                         def orderId = order.remove("orderName")
                         order.remove("salesChannelEnumCode")
                         def flattenedOrders = []
+
                         orderItems.each { item ->
                             item.put("orderId", orderId)
                             item.remove("orderItemSeqId")
@@ -180,21 +188,17 @@
 
                         // Check for required fields and separate valid/invalid orders
                         flattenedOrders.each { record ->
-                            def missingFields = []
-                            def requiredFields = ["customer", "date", "country"]
-
-                            requiredFields.each { field -> if (!record[field]) { missingFields.add(field) } }
-
-                            if (missingFields.isEmpty()) {
-                                // Write valid record to the main CSV
+                            try {
+                                def schemaValidation = new co.hotwax.common.SchemaValidation(ec.ecfi ,ec)
+                                schemaValidation.validateSchema(record, schemaLocation)
                                 def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
                                 csvPrinter.printRecord(orderedRecord)
-                            } else {
-                                // Write invalid record to the invalid CSV
+
+                            } catch (Exception e) {
+
                                 def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
                                 invalidCsvPrinter.printRecord(orderedRecord)
                                 isFileEmpty = false
-
                             }
                         }
                     </script>

@@ -38,6 +38,8 @@ dependencies {
     implementation project(':framework')
     //mySql Database jar
     runtimeOnly 'mysql:mysql-connector-java:8.0.33'
+    implementation 'org.everit.json:org.everit.json.schema:1.5.1'
+    implementation  'org.json:json:20160810'
 }
 
 // by default the Java plugin runs test on build, change to not do that (only run test if explicit task)
