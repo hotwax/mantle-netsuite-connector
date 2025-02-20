@@ -43,7 +43,7 @@ public class SchemaValidation {
     }
 
     private  Schema getSchema(String schemaLocation) {
-        schemaCache = ecfi.cacheFacade.getCache("json.validation.schema");
+        schemaCache = ecfi.cacheFacade.getCache("json.validation.schema", String.class, Schema.class);
 
         if (!schemaCache.containsKey(schemaLocation)) {
             try (InputStream inputStream = ec.getResource().getLocationStream(schemaLocation)) {
