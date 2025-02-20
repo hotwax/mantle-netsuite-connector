@@ -158,7 +158,13 @@
                         <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
                         <field-map field-name="parameterName" value="schemaPath"/>
                     </entity-find-one>
-                    <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
+                    <if condition="schemaPath">
+                        <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
+                        <else>
+                            <set field="schemaLocation" value="component://mantle-netsuite-connector/schemas/DefaultOrderSchema.json"/>
+                        </else>
+                    </if>
+
                     <script>
 
                         def order = context.get("result")
@@ -197,7 +203,6 @@
                                 isFileEmpty = false
 
                             } catch (Exception e) {
-                                System.out.println("adding record in the  missing file:" + e)
                                 def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
                                 orderedRecord.add(e.message)
                                 invalidCsvPrinter.printRecord(orderedRecord)
@@ -266,7 +271,7 @@
             <set field="orderDetails" from="orderLevelDetailList[0]"/>
             <script>
                 orderDetails.date = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(orderDetails.date.toString()))
-                orderDetails.shippingCost = orderDetails.shippingCost ?: "0"
+                orderDetails.shippingCost = orderDetails.shippingCost ?: BigDecimal.ZERO
             </script>
             <!-- Set orderItemList List to add the order Item Detail map -->
             <set field="orderItemList" from="[]"/>
@@ -312,8 +317,8 @@
                 String shippingPhone = preparePhoneNumber(orderMap.shippingCountryCode, orderMap.shippingAreaCode, orderMap.shippingContactNumber)
 
                 // Add results to the processed map, defaulting to empty string if null
-                processedOrderMap.billingPhone = billingPhone ?: " "
-                processedOrderMap.phone = shippingPhone ?: " "
+                processedOrderMap.billingPhone = billingPhone ?: null
+                processedOrderMap.phone = shippingPhone ?: null
 
                 // Remove the original phone-related fields from orderMap
                 processedOrderMap.remove("billingCountryCode")
