@@ -79,7 +79,6 @@
         <actions>
             <!-- Step 1: Fetch file content from GitLab -->
             <service-call name="co.hotwax.helper.HelperServices.call#GitLabApi" in-map="context" out-map="apiResponse"/>
-            <log message="==========apiResponse.fileContent=============${apiResponse.fileContent}"/>
             <set field="success" value="false" type="Boolean"/>
             <set field="errorText"/>
             <set field="savedFilePath"/>

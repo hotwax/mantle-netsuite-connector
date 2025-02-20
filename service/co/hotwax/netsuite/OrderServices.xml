@@ -98,6 +98,7 @@
                 File invalidFile = new File(invalidFilePath)
                 if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
                 if (!invalidFile.parentFile.exists()) invalidFile.parentFile.mkdirs()
+                def isReqFieldMissFileEmpty = true
                 def isFileEmpty = true
                 def csvHeaders = null
 
@@ -193,12 +194,14 @@
                                 schemaValidation.validateSchema(record, schemaLocation)
                                 def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
                                 csvPrinter.printRecord(orderedRecord)
+                                isFileEmpty = false
 
                             } catch (Exception e) {
-
+                                System.out.println("adding record in the  missing file:" + e)
                                 def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
+                                orderedRecord.add(e.message)
                                 invalidCsvPrinter.printRecord(orderedRecord)
-                                isFileEmpty = false
+                                isReqFieldMissFileEmpty = false
                             }
                         }
                     </script>
@@ -210,16 +213,18 @@
                     }
                 }
                 // Delete invalid file if empty
-                if (isFileEmpty) {
+                if (isReqFieldMissFileEmpty) {
                     invalidFile.delete()
                 }
             </script>
-            <!-- Save the Json Feed File path in System Message messageText -->
-            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
 
             <if condition="!isFileEmpty">
+                <!-- Save the Json Feed File path in System Message messageText -->
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                    messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
+            </if>
+            <if condition="!isReqFieldMissFileEmpty">
                 <!-- Save the Json Feed File path in System Message messageText -->
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                     in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
@@ -227,7 +232,7 @@
             </if>
 
             <return message="Generating Order Items Feed file with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}"/>
+                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut?.systemMessageId} and missing file response in ${MissingFieldSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
     <service verb="prepare" noun="OrdersFeedDataForNetSuite">
