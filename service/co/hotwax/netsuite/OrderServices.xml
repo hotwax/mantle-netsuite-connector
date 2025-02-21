@@ -413,6 +413,15 @@
             }
             ]]></script>
             <iterate list="orderItemList" entry="orderItem">
+
+                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList" limit="1">
+                    <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                    <econdition field-name="productId" from="orderItem.productId"/>
+                    <date-filter/>
+                    <order-by field-name="fromDate"/>
+                </entity-find>
+
+                <set field="orderItem.netSuiteProductId" from="goodIdentificationList[0].idValue"/>
                 <!-- Determine if the item is closed -->
                 <script><![CDATA[
                     Map<String, Object> processedOrderItem = new HashMap<>(orderItem);
