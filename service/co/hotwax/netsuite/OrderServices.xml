@@ -674,7 +674,7 @@
             </if>
 
             <return message="Created the fulfilledOrderItems Feed file at time ${ec.user.nowTimestamp} with type ${relatedSystemMessageType.systemMessageTypeId}
-                and remote ${sendSmrId} saved response in messages ${queueSystemMessageOut.systemMessageId}"/>
+                and remote ${sendSmrId} saved response in messages ${queueSystemMessageOut?.systemMessageId}"/>
         </actions>
     </service>
 </services>
