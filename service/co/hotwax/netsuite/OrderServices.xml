@@ -198,12 +198,12 @@
                             try {
                                 def schemaValidation = new co.hotwax.common.SchemaValidation(ec.ecfi ,ec)
                                 schemaValidation.validateSchema(record, schemaLocation)
-                                def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
+                                def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
                                 csvPrinter.printRecord(orderedRecord)
                                 isFileEmpty = false
 
                             } catch (Exception e) {
-                                def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
+                                def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
                                 orderedRecord.add(e.message)
                                 invalidCsvPrinter.printRecord(orderedRecord)
                                 isReqFieldMissFileEmpty = false
