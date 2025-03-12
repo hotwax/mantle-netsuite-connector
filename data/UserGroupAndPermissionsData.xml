@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed">
+  <userGroups userGroupId="NETSUITE" description="NetSuite Job Actions" groupTypeEnumId="UgtServiceJob"/>
+  
+  <userGroupPermissions userGroupId="NETSUITE" fromDate="0" userPermissionId="SJ_RUN_NOW_UPDATE"/>
+  <userGroupPermissions userGroupId="NETSUITE" fromDate="0" userPermissionId="SJ_STATUS_UPDATE"/>
+</entity-facade-xml>
