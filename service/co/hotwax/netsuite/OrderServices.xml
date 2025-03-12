@@ -92,11 +92,13 @@
                 import java.nio.file.Paths
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
+                import co.hotwax.common.SchemaValidation
 
                 File csvFile = new File(csvFilePath)
                 File invalidFile = new File(invalidFilePath)
                 if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
                 if (!invalidFile.parentFile.exists()) invalidFile.parentFile.mkdirs()
+                def isReqFieldMissFileEmpty = true
                 def isFileEmpty = true
                 def csvHeaders = null
 
@@ -152,12 +154,25 @@
                             <set field="result" from="orderMapOut.orderMapDetail"/>
                         </else>
                     </if>
+                    <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="schemaPath">
+                        <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                        <field-map field-name="parameterName" value="schemaPath"/>
+                    </entity-find-one>
+                    <if condition="schemaPath">
+                        <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
+                        <else>
+                            <set field="schemaLocation" value="component://mantle-netsuite-connector/schemas/DefaultOrderSchema.json"/>
+                        </else>
+                    </if>
+
                     <script>
+
                         def order = context.get("result")
                         def orderItems = order.remove("orderItems")
                         def orderId = order.remove("orderName")
                         order.remove("salesChannelEnumCode")
                         def flattenedOrders = []
+
                         orderItems.each { item ->
                             item.put("orderId", orderId)
                             item.remove("orderItemSeqId")
@@ -180,21 +195,18 @@
 
                         // Check for required fields and separate valid/invalid orders
                         flattenedOrders.each { record ->
-                            def missingFields = []
-                            def requiredFields = ["customer", "date", "country"]
-
-                            requiredFields.each { field -> if (!record[field]) { missingFields.add(field) } }
-
-                            if (missingFields.isEmpty()) {
-                                // Write valid record to the main CSV
-                                def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
+                            try {
+                                def schemaValidation = new co.hotwax.common.SchemaValidation(ec.ecfi ,ec)
+                                schemaValidation.validateSchema(record, schemaLocation)
+                                def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
                                 csvPrinter.printRecord(orderedRecord)
-                            } else {
-                                // Write invalid record to the invalid CSV
-                                def orderedRecord = csvHeaders.collect { key -> record[key] ?: "" }
-                                invalidCsvPrinter.printRecord(orderedRecord)
                                 isFileEmpty = false
 
+                            } catch (Exception e) {
+                                def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
+                                orderedRecord.add(e.message)
+                                invalidCsvPrinter.printRecord(orderedRecord)
+                                isReqFieldMissFileEmpty = false
                             }
                         }
                     </script>
@@ -206,16 +218,18 @@
                     }
                 }
                 // Delete invalid file if empty
-                if (isFileEmpty) {
+                if (isReqFieldMissFileEmpty) {
                     invalidFile.delete()
                 }
             </script>
-            <!-- Save the Json Feed File path in System Message messageText -->
-            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
 
             <if condition="!isFileEmpty">
+                <!-- Save the Json Feed File path in System Message messageText -->
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                    messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
+            </if>
+            <if condition="!isReqFieldMissFileEmpty">
                 <!-- Save the Json Feed File path in System Message messageText -->
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                     in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
@@ -223,7 +237,7 @@
             </if>
 
             <return message="Generating Order Items Feed file with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut.systemMessageId}"/>
+                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut?.systemMessageId} and missing file response in ${MissingFieldSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
     <service verb="prepare" noun="OrdersFeedDataForNetSuite">
@@ -257,7 +271,7 @@
             <set field="orderDetails" from="orderLevelDetailList[0]"/>
             <script>
                 orderDetails.date = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(orderDetails.date.toString()))
-                orderDetails.shippingCost = orderDetails.shippingCost ?: "0"
+                orderDetails.shippingCost = orderDetails.shippingCost ?: BigDecimal.ZERO
             </script>
             <!-- Set orderItemList List to add the order Item Detail map -->
             <set field="orderItemList" from="[]"/>
@@ -303,8 +317,8 @@
                 String shippingPhone = preparePhoneNumber(orderMap.shippingCountryCode, orderMap.shippingAreaCode, orderMap.shippingContactNumber)
 
                 // Add results to the processed map, defaulting to empty string if null
-                processedOrderMap.billingPhone = billingPhone ?: " "
-                processedOrderMap.phone = shippingPhone ?: " "
+                processedOrderMap.billingPhone = billingPhone ?: null
+                processedOrderMap.phone = shippingPhone ?: null
 
                 // Remove the original phone-related fields from orderMap
                 processedOrderMap.remove("billingCountryCode")

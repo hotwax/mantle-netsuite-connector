@@ -10,6 +10,7 @@
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/CreateOrderFeed/cashsale/createOrderFeed-${dateTime}.csv">
         <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
+        <parameters parameterName="SchemaPath" parameterValue=""/>
     </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuiteOrderItemsFeed"
@@ -19,6 +20,7 @@
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/CreateOrderFeed/salesorder/createOrderFeed-${dateTime}.csv">
         <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
+     <parameters parameterName="SchemaPath" parameterValue=""/>
     </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="PosCashOrderItemsFeed"
@@ -86,5 +88,12 @@
      <!-- Enumeration to create relation between FulfilledOrderItemsFeedNetsuiteToHotwax and SendFulfilledOrderItemsFeed SystemMessageType(s) -->
      <moqui.basic.Enumeration description="Send fulfilledOrderItem Feed" enumId="SendFulfilledOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum"/>
      <moqui.basic.Enumeration description="Product Updates Feed" enumId="FulfilledOrderItemsFeedNetsuiteToHotwax" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="SendFulfilledOrderItemsFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+
+     <moqui.service.message.SystemMessageRemote
+        systemMessageRemoteId="GITLAB_PROJECT_CONFIG"
+        authHeaderName="PRIVATE-TOKEN"
+        privateKey=""
+        receiveUrl="https://git.hotwax.co/api/v4/projects/${projectName}/repository/files/${fileName}"
+        description="Remote repository configuration for fetching and managing project files from GitLab, including Groovy scripts, templates, and schema files."/>
 
 </entity-facade-xml>
