@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="change" noun="ScriptStatus">
+        <description>Change NetSuite SuiteScript Status on given parameters</description>
+        <in-parameters>
+            <parameter name="jobName"/>
+            <parameter name="systemMessageRemoteId" default-value="NS_SCRIPT_RESTLET"/>
+            <parameter name="paused"/>
+        </in-parameters>
+        <actions>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
+            <if condition="systemMessageRemote == null"><return error="true" message="Could not find systemMessageRemote with ID ${systemMessageRemoteId}"/></if>
+
+            <entity-find-one entity-name="org.apache.ofbiz.common.property.SystemProperty" value-field="systemProperty" cache="true">
+                <field-map field-name="systemResourceId" from="'Restlet_Config'"/>
+                <field-map field-name="systemPropertyId" from="'netsuite.restlet.script.status'"/>
+            </entity-find-one>
+            <if condition="systemProperty == null"><return error="true" message="Could not find systemProperty with netsuite.restlet.script.status in Restlet_Config"/></if>
+
+            <script>
+                <![CDATA[
+                import org.moqui.util.RestClient;
+                import groovy.json.JsonOutput;
+                import org.moqui.util.RestClient.RestResponse;
+                import co.hotwax.netsuite.NetSuiteHelper;
+                
+                restletURL = null;
+                if (systemMessageRemote != null) {
+                    restletURL = systemMessageRemote.sendUrl;
+                }
+                if (systemProperty != null) {
+                    restletId = systemProperty.systemPropertyValue;
+                    restletURL = restletURL + restletId;
+                }
+
+                accessToken = NetSuiteHelper.generateAcessToken(ec, ec.ecfi, systemMessageRemoteId);
+
+                if (accessToken) {
+                    RestClient restClient = ec.service.rest()
+
+                    restClient.method("POST")
+                    restClient.uri(restletURL)
+                    restClient.contentType("application/json")
+                    restClient.addHeader("Authorization", "Bearer ${accessToken}")
+
+                    restClient.jsonObject([name:jobName, paused: paused])
+                    try {
+                        RestClient.RestResponse restResponse = restClient.call()
+                        responseMap = restResponse.jsonObject();
+                        statusCode = restResponse.getStatusCode()
+                        if (statusCode != 200 ) {
+                            ec.logger.error("Unsuccessful with status code: ${statusCode} and response: ${responseMap}")
+                            return ec.message.addError("Failed to update netsuite suitescript status. Status Code: ${statusCode}")
+
+                        }
+                        ec.logger.info("RESTlet Response: ${responseMap}")
+                    } catch (Exception e) {
+                        ec.logger.error("Error in API call Error: ${e.getMessage()}")
+                        return ec.message.addError("Error in API call Error: ${e.getMessage()}")
+                    }
+                }
+                ]]></script>
+        </actions>
+    </service>
+
+    <service verb="run" noun="DummySuiteScript">
+        <description>This is a dummy service without any business logic</description>
+        <in-parameters>
+            <parameter name="jobName"/>
+        </in-parameters>
+        <actions>
+        </actions>
+    </service>
+
+    <service verb="run" noun="SuiteScript">
+        <description>Run NetSuite SuiteScript</description>
+        <in-parameters>
+            <parameter name="jobName"/>
+            <parameter name="systemMessageRemoteId" default-value="NS_SCRIPT_RESTLET"/>
+        </in-parameters>
+        <actions>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
+            <if condition="systemMessageRemote == null"><return error="true" message="Could not find systemMessageRemote with ID ${systemMessageRemoteId}"/></if>
+
+            <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="serviceJobParameter" cache="true">
+                <field-map field-name="jobName" from="jobName"/>
+                <field-map field-name="parameterName" from="'scriptType'"/>
+            </entity-find-one>
+            <if condition="serviceJobParameter == null"><return error="true" message="Could not find serviceJobParameter with jobName ${jobName}"/></if>
+
+            <entity-find-one entity-name="org.apache.ofbiz.common.property.SystemProperty" value-field="systemProperty" cache="true">
+                <field-map field-name="systemResourceId" from="'Restlet_Config'"/>
+                <field-map field-name="systemPropertyId" from="'netsuite.restlet.script.run'"/>
+            </entity-find-one>
+            <if condition="systemProperty == null"><return error="true" message="Could not find systemProperty with netsuite.restlet.script.run in Restlet_Config"/></if>
+
+            <script>
+                <![CDATA[
+                import org.moqui.util.RestClient;
+                import groovy.json.JsonOutput;
+                import org.moqui.util.RestClient.RestResponse;
+                import co.hotwax.netsuite.NetSuiteHelper
+
+                restletURL = null;
+                scriptType = null;
+
+                if (systemMessageRemote != null) {
+                    restletURL = systemMessageRemote.sendUrl;
+                }
+
+                if (serviceJobParameter != null) {
+                    scriptType = serviceJobParameter.parameterValue;
+                }
+
+                if (systemProperty != null) {
+                    restletId = systemProperty.systemPropertyValue;
+                    restletURL = restletURL + restletId;
+                }
+
+                accessToken = NetSuiteHelper.generateAcessToken(ec, ec.ecfi, systemMessageRemoteId);
+
+                if (accessToken) {
+                    RestClient restClient = ec.service.rest()
+
+                    restClient.method("POST")
+                    restClient.uri(restletURL)
+                    restClient.contentType("application/json")
+                    restClient.addHeader("Authorization", "Bearer ${accessToken}")
+
+                    restClient.jsonObject([name: jobName, scriptType:scriptType])
+                    try {
+                        RestClient.RestResponse restResponse = restClient.call()
+                        statusCode = restResponse.getStatusCode()
+                        if (statusCode != 200 ) {
+                            ec.logger.error("Unsuccessful with status code: ${statusCode} and response: ${restResponse}")
+                            return ec.message.addError("Failed to run netsuite suitescript. Status Code: ${statusCode}")
+                        }
+                        responseMesg = restResponse.text();
+                        ec.logger.info("RESTlet Response Message: ${responseMesg}")
+                    } catch (Exception e) {
+                        ec.logger.error("Error in API call Error: ${e.getMessage()}")
+                        return ec.message.addError("Error in API call Error: ${e.getMessage()}")
+                    }
+                }
+            ]]></script>
+        </actions>
+    </service>
+</services>
