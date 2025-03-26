@@ -17,67 +17,12 @@ under the License.
 -->
 
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://moqui.org/xsd/service-definition-3.xsd">
-    <service verb="change" noun="ScriptStatus">
+    <service verb="change" noun="NetSuiteScriptStatus"  type="netsuite-rest" location="netsuite.restlet.script.status" method="post" authenticate="false">
         <description>Change NetSuite SuiteScript Status on given parameters</description>
         <in-parameters>
             <parameter name="jobName"/>
-            <parameter name="systemMessageRemoteId" default-value="NS_SCRIPT_RESTLET"/>
             <parameter name="paused"/>
         </in-parameters>
-        <actions>
-            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
-            <if condition="systemMessageRemote == null"><return error="true" message="Could not find systemMessageRemote with ID ${systemMessageRemoteId}"/></if>
-
-            <entity-find-one entity-name="org.apache.ofbiz.common.property.SystemProperty" value-field="systemProperty" cache="true">
-                <field-map field-name="systemResourceId" from="'Restlet_Config'"/>
-                <field-map field-name="systemPropertyId" from="'netsuite.restlet.script.status'"/>
-            </entity-find-one>
-            <if condition="systemProperty == null"><return error="true" message="Could not find systemProperty with netsuite.restlet.script.status in Restlet_Config"/></if>
-
-            <script>
-                <![CDATA[
-                import org.moqui.util.RestClient;
-                import groovy.json.JsonOutput;
-                import org.moqui.util.RestClient.RestResponse;
-                import co.hotwax.netsuite.NetSuiteHelper;
-                
-                restletURL = null;
-                if (systemMessageRemote != null) {
-                    restletURL = systemMessageRemote.sendUrl;
-                }
-                if (systemProperty != null) {
-                    restletId = systemProperty.systemPropertyValue;
-                    restletURL = restletURL + restletId;
-                }
-
-                accessToken = NetSuiteHelper.generateAcessToken(ec, ec.ecfi, systemMessageRemoteId);
-
-                if (accessToken) {
-                    RestClient restClient = ec.service.rest()
-
-                    restClient.method("POST")
-                    restClient.uri(restletURL)
-                    restClient.contentType("application/json")
-                    restClient.addHeader("Authorization", "Bearer ${accessToken}")
-
-                    restClient.jsonObject([name:jobName, paused: paused])
-                    try {
-                        RestClient.RestResponse restResponse = restClient.call()
-                        responseMap = restResponse.jsonObject();
-                        statusCode = restResponse.getStatusCode()
-                        if (statusCode != 200 ) {
-                            ec.logger.error("Unsuccessful with status code: ${statusCode} and response: ${responseMap}")
-                            return ec.message.addError("Failed to update netsuite suitescript status. Status Code: ${statusCode}")
-
-                        }
-                        ec.logger.info("RESTlet Response: ${responseMap}")
-                    } catch (Exception e) {
-                        ec.logger.error("Error in API call Error: ${e.getMessage()}")
-                        return ec.message.addError("Error in API call Error: ${e.getMessage()}")
-                    }
-                }
-                ]]></script>
-        </actions>
     </service>
 
     <service verb="run" noun="DummySuiteScript">
@@ -89,77 +34,84 @@ under the License.
         </actions>
     </service>
 
-    <service verb="run" noun="SuiteScript">
-        <description>Run NetSuite SuiteScript</description>
+    <service verb="run" noun="NetSuiteScript"  type="netsuite-rest" location="netsuite.restlet.script.run" method="post" authenticate="false">
+        <description>Call NetSuite Run SuiteScript Service.</description>
         <in-parameters>
             <parameter name="jobName"/>
-            <parameter name="systemMessageRemoteId" default-value="NS_SCRIPT_RESTLET"/>
+            <parameter name="scriptType"/>
+        </in-parameters>
+    </service>
+
+    <service verb="call" noun="RunNetSuiteScript">
+        <in-parameters>
+            <parameter name="jobName"/>
         </in-parameters>
         <actions>
-            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
-            <if condition="systemMessageRemote == null"><return error="true" message="Could not find systemMessageRemote with ID ${systemMessageRemoteId}"/></if>
-
             <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="serviceJobParameter" cache="true">
                 <field-map field-name="jobName" from="jobName"/>
                 <field-map field-name="parameterName" from="'scriptType'"/>
             </entity-find-one>
             <if condition="serviceJobParameter == null"><return error="true" message="Could not find serviceJobParameter with jobName ${jobName}"/></if>
 
-            <entity-find-one entity-name="org.apache.ofbiz.common.property.SystemProperty" value-field="systemProperty" cache="true">
-                <field-map field-name="systemResourceId" from="'Restlet_Config'"/>
-                <field-map field-name="systemPropertyId" from="'netsuite.restlet.script.run'"/>
-            </entity-find-one>
-            <if condition="systemProperty == null"><return error="true" message="Could not find systemProperty with netsuite.restlet.script.run in Restlet_Config"/></if>
+            <set field="inMap" from="[:]"/>
+            <set field="inMap.jobName" from="jobName"/>
+            <set field="inMap.scriptType" from="serviceJobParameter.parameterValue"/>
+            <service-call name="co.hotwax.netsuite.NetSuiteRestletServices.run#NetSuiteScript"
+                          in-map="inMap" out-map="result"/>
+        </actions>
+    </service>
 
+    <service verb="get" noun="ScriptCronExpression"  type="netsuite-rest" location="netsuite.restlet.script.cronexpression" method="get">
+        <description>Get NetSuite SuiteScript Cron Expressions </description>
+        <in-parameters>
+            <parameter name="jobName"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="recurrenceMinutes"/>
+        </out-parameters>
+    </service>
+
+    <service verb="call" noun="GetScriptCronExpression" >
+        <description>Call Get NetSuite SuiteScript Cron Expressions </description>
+        <in-parameters>
+            <parameter name="jobName"/>
+        </in-parameters>
+        <actions>
+            <set field="inMap" from="[:]"/>
+            <set field="inMap.jobName" from="jobName"/>
+            <service-call name="co.hotwax.netsuite.NetSuiteRestletServices.get#ScriptCronExpression"
+                          in-map="inMap" out-map="result"/>
             <script>
                 <![CDATA[
-                import org.moqui.util.RestClient;
-                import groovy.json.JsonOutput;
-                import org.moqui.util.RestClient.RestResponse;
-                import co.hotwax.netsuite.NetSuiteHelper
+                    String cronExp = null
+                    recurrenceMinutes = result.recurrenceMinutes
+                    recurrenceMinutes = recurrenceMinutes as Integer  // Convert to Integer
 
-                restletURL = null;
-                scriptType = null;
-
-                if (systemMessageRemote != null) {
-                    restletURL = systemMessageRemote.sendUrl;
-                }
-
-                if (serviceJobParameter != null) {
-                    scriptType = serviceJobParameter.parameterValue;
-                }
-
-                if (systemProperty != null) {
-                    restletId = systemProperty.systemPropertyValue;
-                    restletURL = restletURL + restletId;
-                }
-
-                accessToken = NetSuiteHelper.generateAcessToken(ec, ec.ecfi, systemMessageRemoteId);
-
-                if (accessToken) {
-                    RestClient restClient = ec.service.rest()
-
-                    restClient.method("POST")
-                    restClient.uri(restletURL)
-                    restClient.contentType("application/json")
-                    restClient.addHeader("Authorization", "Bearer ${accessToken}")
-
-                    restClient.jsonObject([name: jobName, scriptType:scriptType])
-                    try {
-                        RestClient.RestResponse restResponse = restClient.call()
-                        statusCode = restResponse.getStatusCode()
-                        if (statusCode != 200 ) {
-                            ec.logger.error("Unsuccessful with status code: ${statusCode} and response: ${restResponse}")
-                            return ec.message.addError("Failed to run netsuite suitescript. Status Code: ${statusCode}")
-                        }
-                        responseMesg = restResponse.text();
-                        ec.logger.info("RESTlet Response Message: ${responseMesg}")
-                    } catch (Exception e) {
-                        ec.logger.error("Error in API call Error: ${e.getMessage()}")
-                        return ec.message.addError("Error in API call Error: ${e.getMessage()}")
+                    if (recurrenceMinutes && recurrenceMinutes < 60) {
+                        cronExp = "0 */${recurrenceMinutes} * * * ?"
+                    } else if (recurrenceMinutes && recurrenceMinutes >= 60) {
+                        hours = recurrenceMinutes / 60
+                        cronExp = "0 0 */${hours} * * ?"
+                    } else {
+                        cronExp = "0 0 0 * * ?"
                     }
-                }
             ]]></script>
+            <if condition="cronExp &amp;&amp; jobName">
+                <service-call name="update#moqui.service.job.ServiceJob"
+                              in-map="[jobName:jobName, cronExpression:cronExp]"/>
+            </if>
         </actions>
+    </service>
+
+    <service verb="store" noun="SFTPConfiguration"  type="netsuite-rest" location="netsuite.restlet.sftp.sftpconfiguration" method="post" authenticate="false">
+        <description>Store SFTP Configurataion in NetSuite </description>
+        <in-parameters>
+            <parameter name="hostName"/>
+            <parameter name="userName"/>
+            <parameter name="port"/>
+            <parameter name="hostKey"/>
+            <parameter name="defaultDirectory"/>
+            <parameter name="secretId"/>
+        </in-parameters>
     </service>
 </services>

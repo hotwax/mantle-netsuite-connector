@@ -2,6 +2,12 @@
 <entity-facade-xml type="seed">
   <userGroups userGroupId="NETSUITE" description="NetSuite Job Actions" groupTypeEnumId="UgtServiceJob"/>
   
-  <userGroupPermissions userGroupId="NETSUITE" fromDate="0" userPermissionId="SJ_RUN_NOW_UPDATE"/>
+  <userGroupPermissions userGroupId="NETSUITE" fromDate="0" userPermissionId="SJ_RUN_NOW"/>
   <userGroupPermissions userGroupId="NETSUITE" fromDate="0" userPermissionId="SJ_STATUS_UPDATE"/>
+
+  <artifactGroups artifactGroupId="NETSUITE_API" description="NetSuite API (via root resource)">
+    <artifacts artifactTypeEnumId="AT_REST_PATH" inheritAuthz="Y" artifactName="/netsuite"/>
+    <!-- Full permissions for the ADMIN user group -->
+    <authz artifactAuthzId="NETSUITE_API_ADMIN" userGroupId="ADMIN" authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+  </artifactGroups>
 </entity-facade-xml>

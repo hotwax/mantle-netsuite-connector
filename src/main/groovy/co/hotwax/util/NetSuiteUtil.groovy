@@ -1,4 +1,4 @@
-package co.hotwax.netsuite
+package co.hotwax.util
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -12,20 +12,21 @@ import java.security.spec.PKCS8EncodedKeySpec
 import org.moqui.entity.EntityValue
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 
-public class NetSuiteHelper {
+public class NetSuiteUtil {
     /*
       * Method to get acess token from NetSuite
       * The value of the access_token parameter is in JSON Web Token (JWT) format.
       * The access token is valid for 60 minutes.
     */
-    public static String generateAcessToken(ExecutionContext ec, ExecutionContextFactoryImpl ecfi, String systemMessageRemoteId) {
+    public static String generateAcessToken(ExecutionContextFactoryImpl ecfi) {
+        ExecutionContext ec = ecfi.getExecutionContext();
         try {
             String accessToken = null
             long iat = System.currentTimeMillis() / 1000
             long exp = iat + 4000
 
             EntityValue systemMessageRemote = ecfi.entityFacade.find("moqui.service.message.SystemMessageRemote")
-                    .condition("systemMessageRemoteId", systemMessageRemoteId).useCache(true).disableAuthz().one();
+                    .condition("systemMessageRemoteId", "NS_SCRIPT_RESTLET").useCache(true).disableAuthz().one();
             String tokenEndpoint = null;
             String certificateId = null;
             String consumerKey = null;
@@ -96,5 +97,14 @@ public class NetSuiteHelper {
             ec.getLogger().error("Error generating JWT: " + e.getMessage());
             return ec.message.addError("Error in generating JWT: " + e.getMessage())
         }
+    }
+
+    public static String getNetSuiteRestletInstanceUrl(ExecutionContextFactoryImpl ecfi) {
+        String netSuiteInstanceUrl = null;
+        EntityValue netSuiteInstance = ecfi.entityFacade.find("moqui.service.message.SystemMessageRemote").condition("systemMessageRemoteId", "NS_SCRIPT_RESTLET").useCache(true).disableAuthz().one();
+        if (netSuiteInstance != null && netSuiteInstance.getString("sendUrl") != null) {
+            netSuiteInstanceUrl =  netSuiteInstance.getString("sendUrl");
+        }
+        return netSuiteInstanceUrl;
     }
 }

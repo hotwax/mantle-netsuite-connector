@@ -1,22 +1,29 @@
 <secas xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-eca-3.xsd">
 
     <seca id="ChangeScriptStatus" service="update#moqui.service.job.ServiceJob" when="post-service" run-on-error="false">
-        <condition><expression>topic == 'NETSUITE'</expression></condition>
+        <condition>
+            <expression>
+                serviceJob = ec.entity.find("moqui.service.job.ServiceJob")
+                .condition("jobName", jobName).useCache(true).disableAuthz().one();
+                permissionGroupId = serviceJob.permissionGroupId
+                permissionGroupId == 'NETSUITE'
+            </expression>
+        </condition>
         <actions>
-            <service-call name="co.hotwax.netsuite.NetSuiteRestletServices.change#ScriptStatus" in-map="context"/>
+            <service-call name="co.hotwax.netsuite.NetSuiteRestletServices.change#NetSuiteScriptStatus" in-map="context"/>
         </actions>
     </seca>
     <seca id="RunScript" service="co.hotwax.ofbiz.JobServices.run#ServiceJob" when="post-service" run-on-error="false">
         <condition>
             <expression>
-            serviceJob = ec.entity.find("moqui.service.job.ServiceJob")
-            .condition("jobName", jobName).useCache(true).disableAuthz().one();
-            topic = serviceJob.topic
-            topic == 'NETSUITE'
+                serviceJob = ec.entity.find("moqui.service.job.ServiceJob")
+                .condition("jobName", jobName).useCache(true).disableAuthz().one();
+                permissionGroupId = serviceJob.permissionGroupId
+                permissionGroupId == 'NETSUITE'
             </expression>
         </condition>
         <actions>
-            <service-call name="co.hotwax.netsuite.NetSuiteRestletServices.run#SuiteScript" in-map="context"/>
+            <service-call name="co.hotwax.netsuite.NetSuiteRestletServices.call#RunNetSuiteScript" in-map="context"/>
         </actions>
     </seca>
 </secas>
