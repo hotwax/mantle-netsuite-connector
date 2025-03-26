@@ -44,6 +44,6 @@
     <moqui.basic.Enumeration enumId="NS_IMP_CASH_SALE" enumCode="NS_IMP_CASH_SALE" description="NetSuite Import Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
 
     <moqui.service.job.ServiceJob jobName="HC_SC_ImportCashSale" description="Import Cash Sale Orders CSV in NetSuite"
-        serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" topic="NETSUITE" jobTypeEnumId="NS_IMP_CASH_SALE"/>
+        serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CASH_SALE"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCashSale" parameterName="scriptType" parameterValue="SCHEDULED"/>
 </entity-facade-xml>
