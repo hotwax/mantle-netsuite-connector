@@ -5,4 +5,7 @@
     <cache-list warm-on-start="false">
         <cache name="json.validation.schema" value-type="Map"/>
     </cache-list>
+    <service-facade>
+        <service-type name="netsuite-rest" runner-class="co.hotwax.impl.service.runner.NetSuiteRestServiceRunner"/>
+    </service-facade>
 </moqui-conf>
