@@ -6,7 +6,7 @@
                 serviceJob = ec.entity.find("moqui.service.job.ServiceJob")
                 .condition("jobName", jobName).useCache(true).disableAuthz().one();
                 permissionGroupId = serviceJob.permissionGroupId
-                permissionGroupId == 'NETSUITE'
+                permissionGroupId == 'NETSUITE' &amp;&amp; paused != null
             </expression>
         </condition>
         <actions>
