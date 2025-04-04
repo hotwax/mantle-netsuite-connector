@@ -96,4 +96,24 @@
         receiveUrl="https://git.hotwax.co/api/v4/projects/${projectName}/repository/files/${fileName}"
         description="Remote repository configuration for fetching and managing project files from GitLab, including Groovy scripts, templates, and schema files."/>
 
+    <!--
+    NetSuite restlet url    => SystemMessageRemote.sendUrl
+    NetSuite privateKey     => SystemMessageRemote.privateKey
+    NetSuite token          => SystemMessageRemote.receiveUrl
+    NetSuite consumerKey    => SystemMessageRemote.sharedSecret
+    NetSuite certificateId  => SystemMessageRemote.sendSharedSecret
+    NetSuite accountId      => SystemMessageRemote.remoteId
+    -->
+    <moqui.service.message.SystemMessageRemote systemMessageRemoteId="NS_SCRIPT_RESTLET"
+        description="NetSuite Restlet Configuration"
+        sendUrl=""
+        receiveUrl=""
+        privateKey=""
+        sharedSecret=""
+        sendSharedSecret=""/>
+
+    <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.script.status" systemPropertyValue="696&amp;deploy=1"/>
+    <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.script.run" systemPropertyValue="697&amp;deploy=1"/>
+    <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.script.cronexpression" systemPropertyValue="698&amp;deploy=1"/>
+    <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.sftp.sftpconfiguration" systemPropertyValue="800&amp;deploy=1"/>
 </entity-facade-xml>
