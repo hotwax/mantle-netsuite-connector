@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<entity-facade-xml type="seed">
+<entity-facade-xml type="ext-seed">
   <userGroups userGroupId="NETSUITE" description="NetSuite Job Actions" groupTypeEnumId="UgtServiceJob"/>
   
   <userGroupPermissions userGroupId="NETSUITE" fromDate="0" userPermissionId="SJ_RUN_NOW"/>
