@@ -116,4 +116,44 @@
     <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.script.run" systemPropertyValue="697&amp;deploy=1"/>
     <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.script.cronexpression" systemPropertyValue="698&amp;deploy=1"/>
     <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.sftp.sftpconfiguration" systemPropertyValue="800&amp;deploy=1"/>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrder"
+      description=""
+      parentTypeId="LocalFeedFile"
+      consumeServiceName="co.hotwax.netsuite.OrderServices.generate#OMSFeed"
+      receivePath="/home/${sftpUsername}/netsuite/transferorder/csv"
+      receiveResponseEnumId="MsgRrMove"
+      receiveMovePath="/home/${sftpUsername}/netsuite/transferorder/csv/archive"
+      sendServiceName="co.hotwax.netsuite.OrderServices.process#TransferOrder"
+      sendPath="${contentRoot}/netsuite/transferOrder">
+    </moqui.service.message.SystemMessageType>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrder"
+       description=""
+       parentTypeId="LocalFeedFile"
+       consumeServiceName="co.hotwax.netsuite.OrderServices.generate#OMSFeed"
+       receivePath="/home/${sftpUsername}/netsuite/transferorder/csv"
+       receiveResponseEnumId="MsgRrMove"
+       receiveMovePath="/home/${sftpUsername}/netsuite/transferorder/csv/archive"
+       sendServiceName="co.hotwax.netsuite.OrderServices.process#TransferOrder"
+       sendPath="${contentRoot}/netsuite/transferOrder">
+    </moqui.service.message.SystemMessageType>
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll transfer order Feed"
+      serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
+      <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrder"/>
+      <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
+    </moqui.service.job.ServiceJob>
+
+    <!--Todo: Add the consume service name written in oms-->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ProcessTransferOrder"
+         description=""
+         receivePath="${contentRoot}/netsuite/transferOrder/MappedFile/TransferOrder-${systemMessageId}-${dateTime}.json"
+         parentTypeId="LocalFeedFile"
+         consumeServiceName=""
+         sendService="">
+    </moqui.service.message.SystemMessageType>
+
+    <moqui.basic.Enumeration description="process transfer order" enumId="ProcessTransferOrder" enumTypeId="NetsuiteMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="import transfer order" enumId="ImportTransferOrder" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="ProcessTransferOrder" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+
 </entity-facade-xml>
