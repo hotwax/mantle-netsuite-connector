@@ -701,7 +701,7 @@
         </actions>
     </service>
 
-    <service verb="generate" noun="OMSFeed">
+    <service verb="generate" noun="OMSFeed" transaction-timeout="7200">
         <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>
         <actions>
             <!-- Fetch the SystemMessage record -->
@@ -727,7 +727,7 @@
                 <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
             </entity-find-one>
 
-            <set field="jsonFilePathRef" from="ec.resource.expand(relatedSystemMessageType.receivePath, null,
+            <set field="jsonFilePathRef" from="ec.resource.expand(systemMessage.sendPath, null,
             [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
             dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss')], false)"/>
             <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
@@ -784,7 +784,7 @@
                     parentMessageId:systemMessageId, statusId:'SmsgReceived', isOutgoing:'N', initDate:ec.user.nowTimestamp]" out-map="context"/>
         </actions>
     </service>
-    <service verb="process" noun="TransferOrder">
+    <service verb="map" noun="TransferOrder">
         <in-parameters>
             <parameter name="payload" type="Map"/>
         </in-parameters>
@@ -793,6 +793,22 @@
         </out-parameters>
         <actions>
             <set field="payload.entryDate" from="ec.user.nowTimestamp"/>
+            <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="originFacilityId">
+                <econdition field-name="externalId" from="payload.originFacilityExternalId"/>
+            </entity-find>
+            <set field="payload.originFacilityId" from="originFacilityId[0]?.facilityId"/>
+            <set field="payload.shipGroups[0].facilityId" from="originFacilityId[0]?.facilityId"/>
+
+            <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="orderFacilityExternalId">
+                <econdition field-name="externalId" from="payload.shipGroups[0].orderFacilityExternalId"/>
+            </entity-find>
+            <set field="payload.shipGroups[0].orderFacilityId" from="orderFacilityExternalId[0].facilityId"/>
+
+            <set field="payload.originFacilityId" from="originFacilityId[0]?.facilityId"/>
+            <script>
+                payload.shipGroups[0].remove("orderFacilityExternalId")
+                payload.remove("originFacilityExternalId")
+            </script>
             <iterate list="payload.shipGroups[0].items" entry="item">
                 <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
                     <econdition field-name="goodIdentificationTypeId" from="item.productIdType"/>
@@ -802,11 +818,42 @@
                 </entity-find>
                 <set field="item.productId" from="goodIdentifications[0]?.productId" default-value=""/>
                 <script>
-                    item.remove(productIdType)
-                    item.remove(productIdValue)
+                    item.remove("productIdType")
+                    item.remove("productIdValue")
                 </script>
             </iterate>
-            <set field="payload" from="payload"/>
+        </actions>
+    </service>
+
+    <service verb="consume" noun="NetsuiteFeed" transaction-timeout="7200">
+        <description>Service to consume the Netsuite Feed.</description>
+        <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>
+        <actions>
+            <!-- Fetch the systemMessage from the incoming systemMessageId -->
+            <entity-find-one entity-name="moqui.service.message.SystemMessage" value-field="systemMessage">
+                <field-map field-name="systemMessageId"/>
+            </entity-find-one>
+
+            <!-- Find SystemMessageType related to systemMessage.systemMessageType to produce corresponding system message -->
+            <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
+                <field-map field-name="enumId" from="systemMessage.systemMessageTypeId"/>
+            </entity-find-one>
+
+            <!-- If no enumValue then return -->
+            <if condition="!enumValue || !enumValue.relatedEnumId">
+                <return error="true" message="Related SystemMessageType to produce for ${systemMessage?.systemMessageTypeId} not defined,  not producing related system message."/>
+            </if>
+
+            <!-- Fetch the related systemMessageType -->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
+                <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
+            </entity-find-one>
+
+            <!-- If no related systemMessageType then return -->
+            <if condition="!relatedSystemMessageType"><return error="true" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing related system message."/></if>
+
+            <!-- Call the receive#IncomingSystemMessage service to further consume feed -->
+            <service-call name="org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage" in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId, messageText:systemMessage.messageText, remoteMessageId:systemMessageId]"/>
         </actions>
     </service>
 </services>
