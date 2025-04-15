@@ -298,7 +298,6 @@
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" value="SALES_ORDER"/>
             <econdition field-name="statusId" operator="not-equals" value="PAYMENT_REFUNDED" entity-alias="OPP"/>
-            <econdition field-name="paymentMethodTypeId" operator="not-equals" value="EXT_SHOP_GFT_CARD" entity-alias="OPP"/>
             <having-econditions combine="or">
                 <econditions>
                     <econdition field-name="statusCount" operator="equals" value="1"/>
