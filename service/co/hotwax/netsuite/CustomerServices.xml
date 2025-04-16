@@ -17,6 +17,12 @@
                     like: POS_COMPLETED
                 </description>
             </parameter>
+            <parameter name="excludePaymentMethod" type="List">
+                <description>Parameter to exclude the specific payment method or a list of payment method</description>
+            </parameter>
+            <parameter name="includePaymentMethod" type="List">
+                <description>Parameter to include the specific payment method or a list of payment method</description>
+            </parameter>
             <parameter name="jobName">
                 <description>The name of the scheduled job to fetch the last run time for preparing customer deposit feed.</description>
             </parameter>
@@ -50,6 +56,8 @@
                 customerDeposit_find = ec.entity.find("co.hotwax.financial.CustomerDepositSyncView")
                 if(fromDate) customerDeposit_find.condition("fromDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromDate)
                 if(excludeShipmentMethod) customerDeposit_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
+                if(excludePaymentMethod) customerDeposit_find.condition("paymentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludePaymentMethod)
+                if(includePaymentMethod) customerDeposit_find.condition("paymentMethodTypeId",EntityCondition.ComparisonOperator.IN, includePaymentMethod)
 
                 // Using try-with-resources to automatically close the EntityListIterator 'depositItr'
                 try (depositItr = customerDeposit_find.iterator()) {
