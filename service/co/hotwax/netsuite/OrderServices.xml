@@ -700,4 +700,107 @@
                 and remote ${sendSmrId} saved response in messages ${queueSystemMessageOut?.systemMessageId}"/>
         </actions>
     </service>
+
+    <service verb="generate" noun="ShipmentsReceiptFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="orderId">
+                <description>Parameter to fetch shipment receipt details for a specific orderId.</description>
+            </parameter>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote ID to send Shipment Receipt Feed.</description>
+            </parameter>
+            <parameter name="systemMessageTypeId" required="true">
+                <description>The System Message Type ID for generating Shipment Receipt Feed.</description>
+            </parameter>
+            <parameter name="sinceReceivedDate">
+                <description>Parameter to fetch Shipment Receipt details received after a specific date.</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+
+            <log message="Generating Shipments Receipt Feed file for Shipment ${shipmentId} at time ${nowDate}"/>
+
+            <script>
+                import com.fasterxml.jackson.core.JsonGenerator
+                import com.fasterxml.jackson.core.JsonFactory
+                import com.fasterxml.jackson.databind.ObjectMapper
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                //Performing entity find operation using groovy script
+                <!-- Fetch the eligible Shipments from the ShipmentAndItemAndReceipt View to prepare the Shipment Receipt Feed -->
+                shipmentReceipt_find = ec.entity.find("co.hotwax.warehouse.OrderItemAndShipmentReceipt")
+                if(orderId) shipmentReceipt_find.condition("orderId", orderId)
+                if(sinceReceivedDate)
+                shipmentReceipt_find.havingCondition(ec.entity.conditionFactory.makeCondition("receivedDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceReceivedDate))
+
+                // Using try-with-resources to automatically close the EntityListIterator 'shipmentReceiptItr'
+                try (shipmentReceiptItr = shipmentReceipt_find.iterator()) {
+            </script>
+            <!-- If no transfer order in shipmentReceiptItr, then don't generate the file -->
+            <if condition="!shipmentReceiptItr.hasNext()">
+                <return message="No eligible Transfer Order for Shipments Receipts Feed at ${nowDate}, not generating the HotWax Feed file."/>
+            </if>
+
+            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+
+            <!-- Prepare Shipment Receipt JSON File Path -->
+            <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
+            <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
+                dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
+            <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
+
+            <!-- Prepare the Shipment Receipt Feed file -->
+            <script>
+                try {
+                //json file
+                File shipmentsReceiptFeedFile = new File(jsonFilePath)
+                if (!shipmentsReceiptFeedFile.parentFile.exists()) shipmentsReceiptFeedFile.parentFile.mkdirs()
+                JsonFactory jfactory = new JsonFactory()
+
+                /* Declaring the PrintWriter and JsonGenerator resources in the the try statement,
+                so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
+                try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, shipmentsReceiptFeedFile);
+                JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
+                jGenerator.writeStartArray()
+            </script>
+
+            <iterate list="shipmentReceiptItr" entry="shipmentReceipt">
+
+                <service-call name="create#co.hotwax.integration.shipment.ShipmentReceiptHistory" in-map="[orderId:shipmentReceipt.orderId,
+                    orderItemSeqId:shipmentReceipt.orderItemSeqId, productId:shipmentReceipt.productId,
+                    createdDate:nowDate, comments:'Order Item sent as part of Shipments Receipt Feed.']"/>
+
+                <set field="shipmentMap" from="[order_id:shipmentReceipt.orderExternalId,
+                    line_id:shipmentReceipt.orderItemExternalId, quantity:shipmentReceipt.totalQuantityAccepted]"/>
+
+                <script>
+                    new ObjectMapper()
+                        .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
+                        .writerWithDefaultPrettyPrinter().writeValue(jGenerator, shipmentMap)
+                </script>
+            </iterate>
+            <script>
+                            jGenerator.writeEndArray()
+                        }
+                    } catch (IOException e) {
+                        logger.info("Error preparing Shipments Receipt Feed file", e)
+                    }
+                }
+            </script>
+
+            <!-- Call queue#SystemMessage that will save the json file path in messageText and
+            send the file to sftp using send service configured in SystemMessageType -->
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                messageText:jsonFilePathRef, productStoreId:productStoreId]" out-map="shipmentsReceiptFeedSysMsgOut"/>
+
+            <return message="Completed the Shipments Receipt Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+                remote ${systemMessageRemoteId} saved response in messages ${shipmentsReceiptFeedSysMsgOut?.systemMessageId}"/>
+        </actions>
+    </service>
 </services>
