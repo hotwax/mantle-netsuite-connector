@@ -372,4 +372,32 @@
         <alias name="areaCode" field="areaCode" function="max" entity-alias="TELECOM"/>
         <alias name="contactNumber" field="contactNumber" function="max" entity-alias="TELECOM"/>
     </view-entity>
+
+    <view-entity entity-name="OrderItemAndShipmentReceipt" package="co.hotwax.warehouse">
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="SR" entity-name="org.apache.ofbiz.shipment.receipt.ShipmentReceipt" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="SIH" entity-name="co.hotwax.integration.shipment.ShipmentItemHistory" join-from-alias="SR" join-optional="true">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <key-map field-name="receiptId"/>
+        </member-entity>
+        <alias entity-alias="OH" name="orderId"/>
+        <alias entity-alias="OH" name="orderName"/>
+        <alias entity-alias="OH" field="externalId" name="orderExternalId"/>
+        <alias entity-alias="OI" name="orderItemSeqId"/>
+        <alias entity-alias="OI" field="externalId" name="orderItemExternalId"/>
+        <alias entity-alias="OI" name="productId"/>
+        <alias entity-alias="SR" name="totalQuantityAccepted" field="quantityAccepted"/>
+        <alias entity-alias="SR" name="receiptId"/>
+        <alias entity-alias="SR" name="receivedDate" field="datetimeReceived"/>
+        <entity-condition>
+            <econdition entity-alias="SIH" field-name="shipmentId" operator="equals" value=""/>
+        </entity-condition>
+    </view-entity>
 </entities>
