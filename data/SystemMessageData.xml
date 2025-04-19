@@ -120,7 +120,7 @@
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrder"
         description=""
         parentTypeId="LocalFeedFile"
-        consumeServiceName="co.hotwax.netsuite.OrderServices.consume#NetsuiteFeed"
+        consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/export"
         receiveResponseEnumId="MsgRrMove"
         receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/export/archive"
@@ -131,7 +131,7 @@
             description="Generate OMS transfer order Feed"
             parentTypeId="LocalFeedFile"
             sendPath="${contentRoot}/netsuite/transferOrder/omsTransferOrderFeed/TransferOrder-${dateTime}-${systemMessageId}.json"
-            consumeServiceName="co.hotwax.netsuite.OrderServices.generate#OMSFeed"
+            consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
             sendServiceName="co.hotwax.netsuite.OrderServices.map#TransferOrder">
     </moqui.service.message.SystemMessageType>
 
