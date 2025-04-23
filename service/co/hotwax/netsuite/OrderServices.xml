@@ -775,6 +775,7 @@
             <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
                 dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
+
             <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
 
             <!-- Prepare the Transfer Order Fulfilled Items Feed file  -->
@@ -794,31 +795,41 @@
             </script>
 
             <iterate list="fulfilledTransferOrdersItr" entry="fulfilledTransferOrder">
+
                 <log message="Generating feed for the Transfer shipment ${fulfilledTransferOrder.shipmentId}"/>
+
                 <entity-find entity-name="org.apache.ofbiz.shipment.shipment.ShipmentPackageRouteSegDetail" list="shipmentPackageRouteSegDetails">
                     <econdition field-name="shipmentId" from="fulfilledTransferOrder.shipmentId"/>
                 </entity-find>
+
                 <set field="trackingNumber" from="shipmentPackageRouteSegDetails[0]?.trackingCode"/>
+
                 <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:trackingNumber]" type="NewMap"/>
 
                 <entity-find entity-name="co.hotwax.warehouse.FulfilledTransferOrderItem" list="fulfilledItems">
                     <econdition field-name="shipmentId" from="fulfilledTransferOrder.shipmentId"/>
                 </entity-find>
+
                 <set field="items" from="[]"/>
+
                 <iterate list="fulfilledItems" entry="fulfilledItem">
+
                     <script>
                         itemMap = [
-                        lineId: fulfilledItem.orderItemExternalId,
-                        quantity: fulfilledItem.shippedQuantity,
-                        tag: "hotwax-fulfilled"
+                            lineId: fulfilledItem.orderItemExternalId,
+                            quantity: fulfilledItem.shippedQuantity,
+                            tag: "hotwax-fulfilled"
                         ]
                         items.add(itemMap)
                     </script>
+
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledItem.orderId,
                         orderItemSeqId:fulfilledItem.orderItemSeqId, shipmentId:fulfilledTransferOrder.shipmentId,
                         comments:'Order Item sent as part of Transfer Fulfilled Order Items Feed', createdDate:nowDate,
                         externalFulfillmentId:'_NA_']"/>
+
                 </iterate>
+
                 <set field="fulfillmentDetails.items" from="items"/>
 
                 <script>
@@ -841,6 +852,7 @@
             <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                 messageText:jsonFilePathRef, productStoreId:productStoreId]" out-map="fulfillmentFeedSysMsgOut"/>
+
             <return message="Completed Transfer Order Fulfilled Items Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${fulfillmentFeedSysMsgOut?.systemMessageId}"/>
         </actions>
