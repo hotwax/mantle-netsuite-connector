@@ -117,8 +117,9 @@
     <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.script.cronexpression" systemPropertyValue="698&amp;deploy=1"/>
     <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.sftp.sftpconfiguration" systemPropertyValue="800&amp;deploy=1"/>
 
+ <!-- systemMessage type  -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrder"
-        description=""
+        description="SystemMessageType to Import Transfer Orders from SFTP Location"
         parentTypeId="LocalFeedFile"
         consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/export"
@@ -128,23 +129,18 @@
     </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateOMSTransferOrderFeed"
-            description="Generate OMS transfer order Feed"
+            description="SystemMessageType to Generate OMS Feed for Transfer Order"
             parentTypeId="LocalFeedFile"
             sendPath="${contentRoot}/netsuite/transferOrder/omsTransferOrderFeed/TransferOrder-${dateTime}-${systemMessageId}.json"
             consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
             sendServiceName="co.hotwax.netsuite.OrderServices.map#TransferOrder">
     </moqui.service.message.SystemMessageType>
 
-    <moqui.basic.Enumeration description="" enumId="ImportTransferOrder" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
-    <!--OMS system message type the consume service name is configured in OMS component -->
-    <moqui.service.message.SystemMessageType systemMessageTypeId="CreateTransferOrder"
-         description=""
-         receivePath=""
-         parentTypeId="LocalFeedFile"
-         consumeServiceName=""
-         sendService="">
-    </moqui.service.message.SystemMessageType>
+    <!-- OMS system message type the consume service name is configured in OMS component -->
+    <!-- Todo: check if we needed to define this system message type here also. -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="CreateTransferOrder"/>
 
+    <moqui.basic.Enumeration description="" enumId="ImportTransferOrder" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
     <moqui.basic.Enumeration description="create transfer order" enumId="CreateTransferOrder" enumTypeId="OMSMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="import transfer order" enumId="GenerateOMSTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="generate transfer order" enumId="GenerateOMSTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
 </entity-facade-xml>

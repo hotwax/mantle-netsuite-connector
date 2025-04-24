@@ -709,22 +709,28 @@
         </out-parameters>
         <actions>
             <set field="payload.entryDate" from="ec.user.nowTimestamp"/>
+
             <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="originFacilityId">
                 <econdition field-name="externalId" from="payload.originFacilityExternalId"/>
             </entity-find>
+
             <set field="payload.originFacilityId" from="originFacilityId[0]?.facilityId"/>
+
             <set field="payload.shipGroups[0].facilityId" from="originFacilityId[0]?.facilityId"/>
 
             <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="orderFacilityExternalId">
                 <econdition field-name="externalId" from="payload.shipGroups[0].orderFacilityExternalId"/>
             </entity-find>
+
             <set field="payload.shipGroups[0].orderFacilityId" from="orderFacilityExternalId[0].facilityId"/>
 
             <set field="payload.originFacilityId" from="originFacilityId[0]?.facilityId"/>
+
             <script>
                 payload.shipGroups[0].remove("orderFacilityExternalId")
                 payload.remove("originFacilityExternalId")
             </script>
+
             <iterate list="payload.shipGroups[0].items" entry="item">
                 <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
                     <econdition field-name="goodIdentificationTypeId" from="item.productIdType"/>
@@ -732,7 +738,9 @@
                     <date-filter/>
                     <order-by field-name="fromDate"/>
                 </entity-find>
+
                 <set field="item.productId" from="goodIdentifications[0]?.productId" default-value=""/>
+
                 <script>
                     item.remove("productIdType")
                     item.remove("productIdValue")
