@@ -59,5 +59,6 @@
         <parameters parameterName="productStoreIds"/>
         <parameters parameterName="systemMessageTypeId"/>
         <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="parentFacilityTypeIds"/>
     </moqui.service.job.ServiceJob>
 </entity-facade-xml>

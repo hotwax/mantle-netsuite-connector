@@ -700,16 +700,15 @@
                 and remote ${sendSmrId} saved response in messages ${queueSystemMessageOut?.systemMessageId}"/>
         </actions>
     </service>
-
     <service verb="generate" noun="TransferOrderFulfilledItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>
             Service to generate Transfer Order Fulfilled Items Feed JSON shipment wise
         </description>
         <in-parameters>
-            <parameter name="systemMessageRemoteId">
+            <parameter name="systemMessageRemoteId" required="true">
                 <description>The System Message Remote ID for generating the Transfer Order Fulfilled Items Feed.</description>
             </parameter>
-            <parameter name="systemMessageTypeId">
+            <parameter name="systemMessageTypeId" required="true">
                 <description>The System Message Type ID for generating the Transfer Order Fulfilled Items Feed.</description>
             </parameter>
             <parameter name="orderId">
@@ -736,6 +735,12 @@
                     and for single value use - SM_STORE.
                 </description>
             </parameter>
+            <parameter name="parentFacilityTypeIds" type="List">
+                <description>
+                    List of parent Facility Type Ids for generating Transfer Order Fulfilled Items Feed.
+                    For passing the parent Facility Type Ids as list, add values like - PHYSICAL_STORE,DISTRIBUTION_CENTER,VIRTUAL_FACILITY and for single value use - PHYSICAL_STORE.
+                </description>
+            </parameter>
         </in-parameters>
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
@@ -746,16 +751,43 @@
                 import com.fasterxml.jackson.core.JsonFactory
                 import com.fasterxml.jackson.databind.ObjectMapper
                 import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
 
-                fulfilledTransferOrder_find = ec.entity.find("co.hotwax.warehouse.FulfilledTransferOrderItem")
+                def fulfilledTransferOrder_find = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
+                dynamicView = fulfilledTransferOrder_find.makeEntityDynamicView()
+                dynamicView.setEntityName("FulfilledTransferOrder")
+
+                dynamicView.addMemberEntity("OH", "org.apache.ofbiz.order.order.OrderHeader", null, null, null)
+                dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem","OH", true,["orderId":"orderId"])
+                dynamicView.addMemberEntity("OSH", "org.apache.ofbiz.order.order.OrderShipment","OI", true,["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
+                dynamicView.addMemberEntity("SH", "org.apache.ofbiz.shipment.shipment.Shipment", "OSH", true, ["shipmentId":"shipmentId"])
+                dynamicView.addMemberEntity("SRS", "org.apache.ofbiz.shipment.shipment.ShipmentRouteSegment", "SH", true, ["shipmentId":"shipmentId"])
+                dynamicView.addMemberEntity("OFH", "co.hotwax.integration.order.OrderFulfillmentHistory", "OSH", true, ["shipmentId":"shipmentId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
+                dynamicView.addMemberEntity("OISG", "org.apache.ofbiz.order.order.OrderItemShipGroup",  "OI", true, ["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId"])
+                dynamicView.addMemberEntity("F", "org.apache.ofbiz.product.facility.Facility", "OISG", true, ["facilityId":"facilityId"])
+                dynamicView.addMemberEntity("FT", "org.apache.ofbiz.product.facility.FacilityType", "F",  true, ["facilityTypeId":"facilityTypeId"])
+
+                dynamicView.addAlias("OH", "orderId")
+                dynamicView.addAlias("OH", "orderName")
+                dynamicView.addAlias("OH", "orderTypeId")
+                dynamicView.addAlias("OH", "orderStatusId", "statusId", null)
+                dynamicView.addAlias("OH", "orderExternalId", "externalId", null)
+                dynamicView.addAlias("OSH", "shipmentId")
+                dynamicView.addAlias("SRS", "trackingIdNumber")
+                dynamicView.addAlias("SH", "shipmentStatusId", "statusId", null)
+                dynamicView.addAlias("FT", "parentFacilityTypeId", "parentTypeId", null)
+                dynamicView.addAlias("OFH", "fulfillmentLogId")
+
                 fulfilledTransferOrder_find.condition("shipmentStatusId", "SHIPMENT_SHIPPED")
+                fulfilledTransferOrder_find.condition("fulfillmentLogId", EntityCondition.IS_NULL, null)
+
                 if(orderId) fulfilledTransferOrder_find.condition("orderId", orderId)
                 if(orderItemSeqId) fulfilledTransferOrder_find.condition("orderItemSeqId", orderItemSeqId)
                 if(orderStatusId) fulfilledTransferOrder_find.condition("orderStatusId", orderStatusId)
                 if(orderTypeId) fulfilledTransferOrder_find.condition("orderTypeId", orderTypeId)
                 if(productStoreIds) fulfilledTransferOrder_find.condition("productStoreId",EntityCondition.ComparisonOperator.IN, productStoreIds)
-                fulfilledTransferOrder_find.selectField("shipmentId,orderExternalId,orderName")
-                fulfilledTransferOrder_find.distinct(true)
+                if(parentFacilityTypeIds) fulfilledTransferOrder_find.condition("parentFacilityTypeId",EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
+                fulfilledTransferOrder_find.selectField("shipmentId,orderExternalId,orderName,trackingIdNumber")
 
                 // Using try-with-resources to automatically close the EntityListIterator 'fulfilledTransferOrdersItr'
                 try (fulfilledTransferOrdersItr = fulfilledTransferOrder_find.iterator()) {
@@ -796,30 +828,35 @@
 
             <iterate list="fulfilledTransferOrdersItr" entry="fulfilledTransferOrder">
 
-                <log message="Generating feed for the Transfer shipment ${fulfilledTransferOrder.shipmentId}"/>
+                <log message="============Generating feed for the Transfer order ${fulfilledTransferOrder.orderName}============="/>
 
-                <entity-find entity-name="org.apache.ofbiz.shipment.shipment.ShipmentPackageRouteSegDetail" list="shipmentPackageRouteSegDetails">
-                    <econdition field-name="shipmentId" from="fulfilledTransferOrder.shipmentId"/>
-                </entity-find>
-
-                <set field="trackingNumber" from="shipmentPackageRouteSegDetails[0]?.trackingCode"/>
-
-                <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:trackingNumber]" type="NewMap"/>
-
-                <entity-find entity-name="co.hotwax.warehouse.FulfilledTransferOrderItem" list="fulfilledItems">
-                    <econdition field-name="shipmentId" from="fulfilledTransferOrder.shipmentId"/>
-                </entity-find>
+                <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:trackingIdNumber]" type="NewMap"/>
 
                 <set field="items" from="[]"/>
+
+                <script>
+                    def entityFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
+                    dynamicView = entityFind.makeEntityDynamicView()
+                    dynamicView.setEntityName("transferOrderItems")
+
+                    dynamicView.addMemberEntity("OH", "org.apache.ofbiz.order.order.OrderHeader", null, null, null)
+                    dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem","OH", true,["orderId":"orderId"])
+                    dynamicView.addMemberEntity("OSH", "org.apache.ofbiz.order.order.OrderShipment","OI", true,["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
+
+                    dynamicView.addAlias("OH", "orderId")
+                    dynamicView.addAlias("OI", "orderItemSeqId")
+                    dynamicView.addAlias("OI", "orderItemExternalId", "externalId", null)
+                    dynamicView.addAlias("OSH", "shipmentId")
+                    dynamicView.addAlias("OSH", "shippedQuantity", "quantity", null)
+
+                    entityFind.condition("shipmentId", fulfilledTransferOrder.shipmentId)
+                    try (fulfilledItems = entityFind.iterator()) {
+                </script>
 
                 <iterate list="fulfilledItems" entry="fulfilledItem">
 
                     <script>
-                        itemMap = [
-                            lineId: fulfilledItem.orderItemExternalId,
-                            quantity: fulfilledItem.shippedQuantity,
-                            tag: "hotwax-fulfilled"
-                        ]
+                        itemMap = [ lineId: fulfilledItem.orderItemExternalId, quantity: fulfilledItem.shippedQuantity, tag: "hotwax-fulfilled" ]
                         items.add(itemMap)
                     </script>
 
@@ -829,6 +866,9 @@
                         externalFulfillmentId:'_NA_']"/>
 
                 </iterate>
+                <script>
+                    }
+                </script>
 
                 <set field="fulfillmentDetails.items" from="items"/>
 
