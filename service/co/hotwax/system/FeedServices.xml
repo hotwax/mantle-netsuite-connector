@@ -1,6 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
 
+    <service verb="consume" noun="NetSuiteFeed" transaction-timeout="7200">
+        <description>Service to consume the NetSuite Feed.</description>
+        <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>
+        <actions>
+            <!-- Fetch the systemMessage from the incoming systemMessageId -->
+            <entity-find-one entity-name="moqui.service.message.SystemMessage" value-field="systemMessage">
+                <field-map field-name="systemMessageId"/>
+            </entity-find-one>
+
+            <!-- Find SystemMessageType related to systemMessage.systemMessageType to produce corresponding system message -->
+            <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
+                <field-map field-name="enumId" from="systemMessage.systemMessageTypeId"/>
+            </entity-find-one>
+
+            <!-- If no enumValue then return -->
+            <if condition="!enumValue || !enumValue.relatedEnumId">
+                <return error="true" message="Related SystemMessageType to produce for ${systemMessage?.systemMessageTypeId} not defined,  not producing related system message."/>
+            </if>
+
+            <!-- Fetch the related systemMessageType -->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
+                <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
+            </entity-find-one>
+
+            <!-- If no related systemMessageType then return -->
+            <if condition="!relatedSystemMessageType"><return error="true" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing related system message."/></if>
+
+            <!-- Call the receive#IncomingSystemMessage service to further consume feed -->
+            <service-call name="org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage" in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId,
+                messageText:systemMessage.messageText, remoteMessageId:systemMessageId, parentMessageId:systemMessageId]"/>
+        </actions>
+    </service>
+
     <service verb="generate" noun="OMSFeed" transaction-timeout="7200">
         <description>Service to generate OMS feed.</description>
         <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>
@@ -82,7 +115,6 @@
                     }
             </script>
 
-
             <!-- Find SystemMessageType related to systemMessage.systemMessageType to produce corresponding system message -->
             <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
                 <field-map field-name="enumId" from="systemMessage.systemMessageTypeId"/>
@@ -101,41 +133,9 @@
             <!-- If no related systemMessageType then return -->
             <if condition="!relatedSystemMessageType"><return error="true" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing related system message."/></if>
 
-            <service-call name="create#moqui.service.message.SystemMessage" in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId,
-                messageText:jsonFilePathRef, remoteMessageId: jsonFilePathRef.substring(jsonFilePathRef.lastIndexOf('/')+1),
-                parentMessageId:systemMessageId, statusId:'SmsgReceived', isOutgoing:'N', initDate:ec.user.nowTimestamp]" out-map="context"/>
-        </actions>
-    </service>
-
-    <service verb="consume" noun="NetsuiteFeed" transaction-timeout="7200">
-        <description>Service to consume the Netsuite Feed.</description>
-        <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>
-        <actions>
-            <!-- Fetch the systemMessage from the incoming systemMessageId -->
-            <entity-find-one entity-name="moqui.service.message.SystemMessage" value-field="systemMessage">
-                <field-map field-name="systemMessageId"/>
-            </entity-find-one>
-
-            <!-- Find SystemMessageType related to systemMessage.systemMessageType to produce corresponding system message -->
-            <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
-                <field-map field-name="enumId" from="systemMessage.systemMessageTypeId"/>
-            </entity-find-one>
-
-            <!-- If no enumValue then return -->
-            <if condition="!enumValue || !enumValue.relatedEnumId">
-                <return error="true" message="Related SystemMessageType to produce for ${systemMessage?.systemMessageTypeId} not defined,  not producing related system message."/>
-            </if>
-
-            <!-- Fetch the related systemMessageType -->
-            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
-                <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
-            </entity-find-one>
-
-            <!-- If no related systemMessageType then return -->
-            <if condition="!relatedSystemMessageType"><return error="true" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing related system message."/></if>
-
-            <!-- Call the receive#IncomingSystemMessage service to further consume feed -->
-            <service-call name="org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage" in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId, messageText:systemMessage.messageText, remoteMessageId:systemMessageId]"/>
+            <service-call name="org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage" in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId,
+                messageText:jsonFilePathRef, remoteMessageId:jsonFilePathRef.substring(jsonFilePathRef.lastIndexOf('/')+1),
+                parentMessageId:systemMessageId]" async="true"/>
         </actions>
     </service>
 </services>
