@@ -50,14 +50,14 @@
     </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="OMSTransferOrderFeed"
-        description="Create Transfer Order in OMS"
+        description="Create Transfer Order Feed for OMS"
         parentTypeId="LocalFeedFile"
         consumeServiceName="co.hotwax.orderledger.system.FeedServices.consume#OMSFeed"
         sendServiceName="co.hotwax.orderledger.order.TransferOrderServcies.create#TransferOrder"
         sendPath="${contentRoot}/oms/TransferOrderFeed">
     </moqui.service.message.SystemMessageType>
 
-    <moqui.basic.Enumeration description="Create Transfer Order in OMS" enumId="OMSTransferOrderFeed" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Transfer Order Feed for OMS" enumId="OMSTransferOrderFeed" enumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS" enumId="GenerateOMSTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Transfer Order" enumId="ImportTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 </entity-facade-xml>
