@@ -47,8 +47,10 @@
         serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CASH_SALE"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCashSale" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
+    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer order" enumTypeId="ORDER_SYS_JOB"/>
+
     <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Order Feed from SFTP location"
-        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_TRANSORD_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrderFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
     </moqui.service.job.ServiceJob>

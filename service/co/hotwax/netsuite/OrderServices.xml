@@ -710,41 +710,36 @@
         <actions>
             <set field="payload.entryDate" from="ec.user.nowTimestamp"/>
 
-            <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="originFacilityId">
-                <econdition field-name="externalId" from="payload.originFacilityExternalId"/>
-            </entity-find>
-
-            <set field="payload.originFacilityId" from="originFacilityId[0]?.facilityId"/>
-
-            <set field="payload.shipGroups[0].facilityId" from="originFacilityId[0]?.facilityId"/>
-
-            <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="orderFacilityExternalId">
-                <econdition field-name="externalId" from="payload.shipGroups[0].orderFacilityExternalId"/>
-            </entity-find>
-
-            <set field="payload.shipGroups[0].orderFacilityId" from="orderFacilityExternalId[0].facilityId"/>
-
-            <set field="payload.originFacilityId" from="originFacilityId[0]?.facilityId"/>
-
+            <set field="externalFacilityIdList" from="[]"/>
+            
+            <set field="originFacilityExternalId" from="payload.remove('originFacilityExternalId')"/>
+            <set field="orderFacilityExternalId" from="payload.shipGroups[0].remove('orderFacilityExternalId')"/>
+            
             <script>
-                payload.shipGroups[0].remove("orderFacilityExternalId")
-                payload.remove("originFacilityExternalId")
+                externalFacilityIdList.add(originFacilityExternalId)
+                externalFacilityIdList.add(orderFacilityExternalId)
             </script>
 
+            <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="facilityList" cache="true">
+                <econdition field-name="externalId" operator="in" from="externalFacilityIdList"/>
+            </entity-find>
+
+            <set field="shipGroup.facilityId" from="facilityList.find({ it.externalId == originFacilityExternalId })?.facilityId"/>
+            <set field="payload.originFacilityId" from="shipGroup.facilityId"/>
+            <set field="shipGroup.orderFacilityId" from="facilityList.find({ it.externalId == orderFacilityExternalId })?.facilityId"/>
+
             <iterate list="payload.shipGroups[0].items" entry="item">
+                <set field="productIdType" from="item.remove('productIdType')"/>
+                <set field="productIdValue" from="item.remve('productIdValue')"
+
                 <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
-                    <econdition field-name="goodIdentificationTypeId" from="item.productIdType"/>
-                    <econdition field-name="idValue" from="item.productIdValue"/>
+                    <econdition field-name="goodIdentificationTypeId" from="productIdType"/>
+                    <econdition field-name="idValue" from="productIdValue"/>
                     <date-filter/>
-                    <order-by field-name="fromDate"/>
+                    <order-by field-name="-fromDate"/>
                 </entity-find>
 
-                <set field="item.productId" from="goodIdentifications[0]?.productId" default-value=""/>
-
-                <script>
-                    item.remove("productIdType")
-                    item.remove("productIdValue")
-                </script>
+                <set field="item.productId" from="goodIdentifications?.first?.productId" default-value=""/>
             </iterate>
         </actions>
     </service>

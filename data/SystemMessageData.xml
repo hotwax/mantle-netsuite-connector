@@ -124,26 +124,26 @@
         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/export"
         receiveResponseEnumId="MsgRrMove"
         receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/export/archive"
-        sendPath="${contentRoot}/netsuite/transferOrder">
+        sendPath="${contentRoot}/netsuite/TransferOrderFeed">
     </moqui.service.message.SystemMessageType>
 
-    <moqui.service.message.SystemMessageType systemMessageTypeId="NetsuiteTransferOrderFeed"
+    <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateOMSTransferOrderFeed"
             description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS"
             parentTypeId="LocalFeedFile"
-            sendPath="${contentRoot}/netsuite/transferOrder/omsTransferOrderFeed/TransferOrder-${dateTime}-${systemMessageId}.json"
+            sendPath="${contentRoot}/netsuite/OMSTransferOrderFeed/OMSTransferOrderFeed-${dateTime}-${systemMessageId}.json"
             consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
             sendServiceName="co.hotwax.netsuite.OrderServices.map#TransferOrder">
     </moqui.service.message.SystemMessageType>
 
-    <moqui.service.message.SystemMessageType systemMessageTypeId="OMSTransferOrder"
+    <moqui.service.message.SystemMessageType systemMessageTypeId="OMSTransferOrderFeed"
          description="Create Transfer Order in OMS"
          parentTypeId="LocalFeedFile"
          consumeServiceName="co.hotwax.orderledger.system.FeedServices.consume#OMSFeed"
          sendServiceName="co.hotwax.oms.order.TransferOrderServcies.create#TransferOrder"
-         sendPath="${contentRoot}/oms/transferOrder">
+         sendPath="${contentRoot}/oms/TransferOrderFeed">
     </moqui.service.message.SystemMessageType>
 
-    <moqui.basic.Enumeration description="Create Transfer Order in OMS" enumId="OMSTransferOrder" enumTypeId="OMSMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS" enumId="NetsuiteTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Import Transfer Order" enumId="ImportTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="NetsuiteTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Create Transfer Order in OMS" enumId="OMSTransferOrderFeed" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS" enumId="GenerateOMSTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Import Transfer Order" enumId="ImportTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 </entity-facade-xml>
