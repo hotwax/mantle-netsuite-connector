@@ -700,21 +700,24 @@
                 and remote ${sendSmrId} saved response in messages ${queueSystemMessageOut?.systemMessageId}"/>
         </actions>
     </service>
-    <service verb="map" noun="TransferOrder">
+    <service verb="map" noun="TransferOrder" transaction-timeout="1800">
         <in-parameters>
-            <parameter name="payload" type="Map"/>
+            <parameter name="payload" type="Map">
+                <description>The order map from NetSuite to be mapped as per OMS.</description>
+            </parameter>
         </in-parameters>
         <out-parameters>
-            <parameter name="payload"/>
+            <parameter name="payload">
+                <description>The order map with mapped fields for OMS.</description>
+            </parameter>
         </out-parameters>
         <actions>
             <set field="payload.entryDate" from="ec.user.nowTimestamp"/>
 
+            <!-- Get HC Facility ID for both origin and destination Facility of TO  -->
             <set field="externalFacilityIdList" from="[]"/>
-            
             <set field="originFacilityExternalId" from="payload.remove('originFacilityExternalId')"/>
             <set field="orderFacilityExternalId" from="payload.shipGroups[0].remove('orderFacilityExternalId')"/>
-            
             <script>
                 externalFacilityIdList.add(originFacilityExternalId)
                 externalFacilityIdList.add(orderFacilityExternalId)
@@ -723,11 +726,11 @@
             <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="facilityList" cache="true">
                 <econdition field-name="externalId" operator="in" from="externalFacilityIdList"/>
             </entity-find>
-
             <set field="shipGroup.facilityId" from="facilityList.find({ it.externalId == originFacilityExternalId })?.facilityId"/>
             <set field="payload.originFacilityId" from="shipGroup.facilityId"/>
             <set field="shipGroup.orderFacilityId" from="facilityList.find({ it.externalId == orderFacilityExternalId })?.facilityId"/>
 
+            <!-- Get HC Product ID for TO items  -->
             <iterate list="payload.shipGroups[0].items" entry="item">
                 <set field="productIdType" from="item.remove('productIdType')"/>
                 <set field="productIdValue" from="item.remve('productIdValue')"
@@ -739,7 +742,7 @@
                     <order-by field-name="-fromDate"/>
                 </entity-find>
 
-                <set field="item.productId" from="goodIdentifications?.first?.productId" default-value=""/>
+                <set field="item.productId" from="goodIdentifications?.first?.productId"/>
             </iterate>
         </actions>
     </service>
