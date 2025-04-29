@@ -702,7 +702,7 @@
     </service>
     <service verb="map" noun="TransferOrder" transaction-timeout="1800">
         <in-parameters>
-            <parameter name="payload" type="Map">
+            <parameter name="payload" type="Map" required="true">
                 <description>The order map from NetSuite to be mapped as per OMS.</description>
             </parameter>
         </in-parameters>
