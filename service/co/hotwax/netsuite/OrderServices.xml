@@ -828,8 +828,6 @@
 
             <iterate list="fulfilledTransferOrdersItr" entry="fulfilledTransferOrder">
 
-                <log message="============Generating feed for the Transfer order ${fulfilledTransferOrder.orderName}============="/>
-
                 <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:trackingIdNumber]" type="NewMap"/>
 
                 <set field="items" from="[]"/>
