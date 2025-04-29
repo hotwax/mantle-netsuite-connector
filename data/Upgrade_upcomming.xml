@@ -1,57 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-upgrade">
-    <moqui.service.message.SystemMessageType systemMessageTypeId="FulfilledOrderItemsFeedNetsuiteToHotwax"
-        description="Fetch Fulfilled Order Items feed Netsuite to Hotwax"
-        parentTypeId="LocalFeedFile"
-        receiveResponseEnumId="MsgRrMove"
-        sendPath="${contentRoot}/Netsuite/FulfilledOrderItems"
-        receivePath="/home/${sftpUsername}/netsuite/salesorder/import/fulfillment-nifi"
-        receiveMovePath="/home/${sftpUsername}/netsuite/salesorder/import/fulfillment-nifi/archive"
-        consumeServiceName="co.hotwax.netsuite.OrderServices.consume#FulfilledOrderItemFeed">
-        <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
-        </moqui.service.message.SystemMessageType>
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Order Feed from SFTP location"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrder"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
+    </moqui.service.job.ServiceJob>
 
-        <moqui.service.message.SystemMessageType systemMessageTypeId="SendFulfilledOrderItemsFeed"
-        description="Send Fulfilled Order Items feed Netsuite to Hotwax"
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrderFeed"
+        description="Import Transfer Orders Feed file from SFTP location"
         parentTypeId="LocalFeedFile"
-        receivePath="${contentRoot}/Netsuite/Fulfillment/fulfilledOrderItemFeed-${dateTime}.json"
-        sendPath="/home/${sftpUsername}/netsuite/salesorder/import/fulfillment/FulfilledOrderItemsFeed-${systemMessageId}-${dateTime}.json"
-        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"/>
-
-        <!-- Enumeration to create relation between FulfilledOrderItemsFeedNetsuiteToHotwax and SendFulfilledOrderItemsFeed SystemMessageType(s) -->
-        <moqui.basic.EnumerationType description="Netsuite System message Type" enumTypeId="NetsuiteMessageTypeEnum"/>
-        <moqui.basic.Enumeration description="Send fulfilledOrderItem Feed" enumId="SendFulfilledOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum"/>
-        <moqui.basic.Enumeration description="Product Updates Feed" enumId="FulfilledOrderItemsFeedNetsuiteToHotwax" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="SendFulfilledOrderItemsFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
-
-    <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrder"
-        description="SystemMessageType to Import Transfer Orders from SFTP Location"
-        parentTypeId="LocalFeedFile"
-        consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
+        consumeServiceName="co.hotwax.system.FeedServices.consume#NetSuiteFeed"
         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/export"
         receiveResponseEnumId="MsgRrMove"
         receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/export/archive"
         sendPath="${contentRoot}/netsuite/transferOrder">
     </moqui.service.message.SystemMessageType>
 
-    <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateOMSTransferOrderFeed"
-            description="SystemMessageType to Generate OMS Feed for Transfer Order"
+    <moqui.service.message.SystemMessageType systemMessageTypeId="NetsuiteTransferOrderFeed"
+            description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS"
             parentTypeId="LocalFeedFile"
             sendPath="${contentRoot}/netsuite/transferOrder/omsTransferOrderFeed/TransferOrder-${dateTime}-${systemMessageId}.json"
             consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
             sendServiceName="co.hotwax.netsuite.OrderServices.map#TransferOrder">
     </moqui.service.message.SystemMessageType>
 
-    <!-- OMS system message type the consume service name is configured in OMS component -->
-    <!-- Todo: check if we needed to define this system message type here also. -->
-    <moqui.service.message.SystemMessageType systemMessageTypeId="CreateTransferOrder"/>
+    <moqui.service.message.SystemMessageType systemMessageTypeId="OMSTransferOrder"
+         description="Create Transfer Order in OMS"
+         parentTypeId="LocalFeedFile"
+         consumeServiceName="co.hotwax.orderledger.system.FeedServices.consume#OMSFeed"
+         sendServiceName="co.hotwax.oms.order.TransferOrderServcies.create#TransferOrder"
+         sendPath="${contentRoot}/oms/transferOrder">
+    </moqui.service.message.SystemMessageType>
 
-    <moqui.basic.Enumeration description="" enumId="ImportTransferOrder" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="create transfer order" enumId="CreateTransferOrder" enumTypeId="OMSMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="generate transfer order" enumId="GenerateOMSTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
-
-    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Order Feed from SFTP location"
-        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrder"/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
-    </moqui.service.job.ServiceJob>
+    <moqui.basic.Enumeration description="Create Transfer Order in OMS" enumId="OMSTransferOrder" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS" enumId="NetsuiteTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Import Transfer Order" enumId="ImportTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="NetsuiteTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 </entity-facade-xml>
