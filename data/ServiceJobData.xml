@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<entity-facade-xml type="seed">
+<entity-facade-xml type="ext-seed">
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite"
         serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
@@ -23,6 +23,8 @@
         <parameters parameterName="jobName" parameterValue=""/>
         <parameters parameterName="skipLastRunTimeUpdate" parameterValue=""/>
         <parameters parameterName="lastRunTime"/>
+        <parameters parameterName="includePaymentMethod"/>
+        <parameters parameterName="excludePaymentMethod"/>
     </moqui.service.job.ServiceJob>
     <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" description="Generate HotWax Create Customer Feed for Netsuite"
         serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
