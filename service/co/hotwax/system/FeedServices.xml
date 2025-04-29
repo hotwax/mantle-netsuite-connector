@@ -48,7 +48,7 @@
 
             <set field="nowDate" from="ec.user.nowTimestamp"/>
 
-            <!-- Prepare the file path for products feed -->
+            <!-- Prepare the file path for oms feed -->
             <!-- Using sendPath from SystemMessageType to prepare the jsonFilePathRef -->
             <set field="jsonFilePathRef" from="ec.resource.expand(systemMessage.sendPath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
