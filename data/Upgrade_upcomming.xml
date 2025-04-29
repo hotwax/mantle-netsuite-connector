@@ -32,7 +32,7 @@
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrderFeed"
         description="Import Transfer Orders Feed file from SFTP location"
         parentTypeId="LocalFeedFile"
-        consumeServiceName="co.hotwax.system.FeedServices.consume#NetSuiteFeed"
+        consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/export"
         receiveResponseEnumId="MsgRrMove"
         receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/export/archive"
