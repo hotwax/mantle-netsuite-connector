@@ -40,19 +40,7 @@
         <actions>
             <!-- Fetch the SystemMessage record -->
             <entity-find-one entity-name="moqui.service.message.SystemMessageAndType" value-field="systemMessage"/>
-
-            <!-- Fetch the systemMessageTypeParameter to send the required parameters in the send service -->
-            <entity-find entity-name="moqui.service.message.SystemMessageTypeParameter" list="systemMessageTypeParameters">
-                <econdition field-name="systemMessageTypeId" from="systemMessage.systemMessageTypeId"/>
-            </entity-find>
-
-            <set field="additionalParameters" from="[:]"/>
-
-            <!-- Fetch the systemMessageTypeParameter to send the required parameters in the send service -->
-            <iterate list="systemMessageTypeParameters" entry="systemMessageTypeParameter">
-                <script>additionalParameters.put(systemMessageTypeParameter.parameterName, systemMessageTypeParameter.parameterValue)</script>
-            </iterate>
-
+            
             <!-- Check if sendService is configured for the systemMessageType -->
             <if condition="!systemMessage.sendServiceName">
                 <return error="true" message="Send service name not configured, not sending the systemMessage"/>
@@ -94,7 +82,7 @@
                 ]]></script>
 
             <!-- For each json map call the send service configured in systemMessageType -->
-            <service-call name="${systemMessage.sendServiceName}" in-map="[payload:jsonMap] + additionalParameters" out-map="responseOut"/>
+            <service-call name="${systemMessage.sendServiceName}" in-map="[payload:jsonMap]" out-map="responseOut"/>
 
             <!-- Check if jsonOut then write the contents to the file. -->
             <if condition="responseOut.payload">
