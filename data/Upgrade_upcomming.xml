@@ -31,7 +31,6 @@
         <parameters parameterName="orderId"/>
         <parameters parameterName="orderItemSeqId"/>
         <parameters parameterName="orderStatusId"/>
-        <parameters parameterName="orderTypeId"/>
         <parameters parameterName="productStoreIds"/>
         <parameters parameterName="systemMessageTypeId"/>
         <parameters parameterName="systemMessageRemoteId"/>
