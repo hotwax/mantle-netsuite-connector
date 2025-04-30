@@ -152,7 +152,7 @@
                 <iterate list="fulfilledItems" entry="fulfilledItem">
 
                     <script>
-                        itemMap = [lineId: fulfilledItem.orderItemExternalId, quantity: fulfilledItem.shippedQuantity, tag: "hotwax-fulfilled"]
+                        itemMap = [lineId:fulfilledItem.orderItemExternalId, quantity:fulfilledItem.shippedQuantity, tags:"hotwax-fulfilled"]
                         items.add(itemMap)
                     </script>
 
