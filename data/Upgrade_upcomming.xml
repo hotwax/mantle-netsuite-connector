@@ -24,7 +24,7 @@
         <moqui.basic.Enumeration description="Product Updates Feed" enumId="FulfilledOrderItemsFeedNetsuiteToHotwax" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="SendFulfilledOrderItemsFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
         <!-- Template service job to generate Fulfilled Order Items Feed for transfer orders -->
-        <moqui.service.job.ServiceJob jobName="generate_TransferOrderFulfilledItemsFeed"
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderFulfilledItemsFeed"
             description="Template Service Job to generate the Transfer Orders Fulfilled Items Feed from HotWax"
             serviceName="co.hotwax.netsuite.FulfillmentServices.generate#TransferOrderFulfilledItemsFeed"
             cronExpression="0 0 0 * * ?" paused="Y">
@@ -45,6 +45,5 @@
         sendPath="/home/${sftpUsername}/netsuite/transferorderV2/oms-fulfillment/TransferOrderFulfilledItemsFeed-${systemMessageId}-${dateTime}.json"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/netsuite/transferorder/TransferOrderFulfilledItemsFeed/TransferOrderFulfilledItemsFeed-${dateTime}.json"/>
-
-
+    
 </entity-facade-xml>
