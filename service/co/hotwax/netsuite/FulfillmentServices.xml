@@ -124,7 +124,7 @@
 
             <iterate list="fulfilledTransferOrdersItr" entry="fulfilledTransferOrder">
 
-                <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:trackingIdNumber]" type="NewMap"/>
+                <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:trackingIdNumber,shipment_id:fulfilledTransferOrder.shipmentId]" type="NewMap"/>
 
                 <set field="items" from="[]"/>
 
