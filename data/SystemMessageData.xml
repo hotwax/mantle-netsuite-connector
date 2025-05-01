@@ -146,7 +146,7 @@
          receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-store"
          receiveResponseEnumId="MsgRrMove"
          receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-store/archive"
-         sendPath="${contentRoot}/netsuite/transferOrder/storeFulfillment">
+         sendPath="${contentRoot}/netsuite/StoreFulfillmentFeed">
     </moqui.service.message.SystemMessageType>
 
      <!--
@@ -156,6 +156,6 @@
             sendServiceName="${mapping service define for the feed that will be consumed}"
         Since no mapping is needed for this specific import, we directly consume the NetSuite feed in OMS without generating the OMS feed.
     -->
-    <moqui.basic.Enumeration description="update Transfer Order Shipment in OMS" enumId="OMSUpdateTOShipment" enumTypeId="OMSMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Import Transfer Order Fulfillment from NS" enumId="ImportStoreToFulfillment" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSUpdateTOShipment" relatedEnumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="update Transfer Order Shipment in OMS" enumId="OMSUpdateTOShipmentFeed" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Import Transfer Order Fulfillment from NS" enumId="ImportStoreToFulfillment" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSUpdateTOShipmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
 </entity-facade-xml>

@@ -60,12 +60,11 @@
          receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-store"
          receiveResponseEnumId="MsgRrMove"
          receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-store/archive"
-         sendPath="${contentRoot}/netsuite/transferOrder/storeFulfillment">
+         sendPath="${contentRoot}/netsuite/StoreFulfillmentFeed">
     </moqui.service.message.SystemMessageType>
 
-    <moqui.basic.Enumeration description="update Transfer Order Shipment in OMS" enumId="OMSUpdateTOShipment" enumTypeId="OMSMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Import Transfer Order Fulfillment from NS" enumId="ImportStoreToFulfillment" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSUpdateTOShipment" relatedEnumTypeId="OMSMessageTypeEnum"/>
-
+    <moqui.basic.Enumeration description="update Transfer Order Shipment in OMS" enumId="OMSUpdateTOShipmentFeed" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Import Transfer Order Fulfillment from NS" enumId="ImportStoreToFulfillment" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSUpdateTOShipmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration enumId="POL_TO_FULFILLMENT_FD" enumCode="POL_TO_FULFILLMENT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
 
     <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMENT_FD"
