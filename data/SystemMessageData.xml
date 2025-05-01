@@ -141,13 +141,13 @@
 
     <!-- System Message Types and enum to import Warehouse Transfer Order Fulfillment Feed from NetSuite to OMS -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportWhToFulfillmentFeed"
-        description="Import Warehouse Fulfilled Transfer Order Fulfillment Feed file from SFTP location"
-        parentTypeId="LocalFeedFile"
-        consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
-        receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh"
-        receiveResponseEnumId="MsgRrMove"
-        receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh/archive"
-        sendPath="${contentRoot}/netsuite/WhToFulfillmentFeed">
+            description="Import Warehouse Fulfilled Transfer Order Fulfillment Feed file from SFTP location"
+            parentTypeId="LocalFeedFile"
+            consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
+            receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh"
+            receiveResponseEnumId="MsgRrMove"
+            receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh/archive"
+            sendPath="${contentRoot}/netsuite/WhToFulfillmentFeed">
     </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateOMSWhToFulfillmentFeed"
