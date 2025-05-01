@@ -715,25 +715,18 @@
             <set field="payload.entryDate" from="ec.user.nowTimestamp"/>
 
             <!-- Get HC Facility ID for both origin and destination Facility of TO  -->
-            <set field="externalFacilityIdList" from="[]"/>
-            <set field="originFacilityExternalId" from="payload.remove('originFacilityExternalId')"/>
-            <set field="orderFacilityExternalId" from="payload.shipGroups[0].remove('orderFacilityExternalId')"/>
-            <script>
-                externalFacilityIdList.add(originFacilityExternalId)
-                externalFacilityIdList.add(orderFacilityExternalId)
-            </script>
-
+            <set field="externalFacilityIdList" from="[payload.remove('originFacilityExternalId'), payload.shipGroups[0].remove('orderFacilityExternalId')]"/>
             <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="facilityList" cache="true">
                 <econdition field-name="externalId" operator="in" from="externalFacilityIdList"/>
             </entity-find>
-            <set field="shipGroup.facilityId" from="facilityList.find({ it.externalId == originFacilityExternalId })?.facilityId"/>
-            <set field="payload.originFacilityId" from="shipGroup.facilityId"/>
-            <set field="shipGroup.orderFacilityId" from="facilityList.find({ it.externalId == orderFacilityExternalId })?.facilityId"/>
+            <set field="payload.shipGroups[0].facilityId" from="facilityList.find {  it.externalId == externalFacilityIdList[0] }?.facilityId"/>
+            <set field="payload.originFacilityId" from="payload.shipGroups[0].facilityId"/>
+            <set field="payload.shipGroups[0].orderFacilityId" from="facilityList.find {  it.externalId == externalFacilityIdList[1] }?.facilityId"/>
 
             <!-- Get HC Product ID for TO items  -->
             <iterate list="payload.shipGroups[0].items" entry="item">
                 <set field="productIdType" from="item.remove('productIdType')"/>
-                <set field="productIdValue" from="item.remve('productIdValue')"
+                <set field="productIdValue" from="item.remove('productIdValue')"/>
 
                 <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
                     <econdition field-name="goodIdentificationTypeId" from="productIdType"/>
