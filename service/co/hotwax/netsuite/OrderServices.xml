@@ -735,12 +735,10 @@
 
             <!-- Get HC Product ID for TO items  -->
             <iterate list="payload.shipGroups[0].items" entry="item">
-                <set field="productIdType" from="item.remove('productIdType')"/>
-                <set field="productIdValue" from="item.remove('productIdValue')"/>
 
                 <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
-                    <econdition field-name="goodIdentificationTypeId" from="productIdType"/>
-                    <econdition field-name="idValue" from="productIdValue"/>
+                    <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
+                    <econdition field-name="idValue" from="item.remove('productIdValue')"/>
                     <date-filter/>
                     <order-by field-name="-fromDate"/>
                 </entity-find>
