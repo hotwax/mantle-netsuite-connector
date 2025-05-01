@@ -23,4 +23,25 @@
         <moqui.basic.Enumeration description="Send fulfilledOrderItem Feed" enumId="SendFulfilledOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum"/>
         <moqui.basic.Enumeration description="Product Updates Feed" enumId="FulfilledOrderItemsFeedNetsuiteToHotwax" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="SendFulfilledOrderItemsFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ImportStoreToFulfillment"
+         description="Import Store Fulfill TO fulfillment Feed file from SFTP location"
+         parentTypeId="LocalFeedFile"
+         consumeServiceName="co.hotwax.system.FeedServices.consume#NetSuiteFeed"
+         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-store"
+         receiveResponseEnumId="MsgRrMove"
+         receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-store/archive"
+         sendPath="${contentRoot}/netsuite/transferOrder/storeFulfillment">
+    </moqui.service.message.SystemMessageType>
+
+    <moqui.basic.Enumeration description="update Transfer Order Shipment in OMS" enumId="OMSUpdateTOShipment" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Import Transfer Order Fulfillment from NS" enumId="ImportStoreToFulfillment" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSUpdateTOShipment" relatedEnumTypeId="OMSMessageTypeEnum"/>
+
+    <moqui.basic.Enumeration enumId="POL_TO_FULFILLMENT_FD" enumCode="POL_TO_FULFILLMENT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMENT_FD"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillment"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
 </entity-facade-xml>
