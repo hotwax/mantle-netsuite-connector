@@ -52,4 +52,43 @@
     <moqui.basic.Enumeration description="Transfer Order Feed for OMS" enumId="OMSTransferOrderFeed" enumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS" enumId="GenerateOMSTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Transfer Order" enumId="ImportTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+
+    <!-- Service Job to poll Transfer Orders Feed file from NetSuite -->
+    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Orders Feed from SFTP location"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_TRANSORD_FD">
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrderFeed"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- Service Job to poll Warehouse Fulfillments Feed file from NetSuite -->
+    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_WhFulfillment" description="Poll Warehouse Fulfillments Feed from SFTP location"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMENT_FD">
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportWhFulfillmentFeed"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- System Message Types and enum to import Warehouse Fulfillment Feed from NetSuite to OMS -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ImportWhFulfillmentFeed"
+        description="Import Warehouse Fulfillment Feed file from SFTP location"
+        parentTypeId="LocalFeedFile"
+        consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
+        receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment"
+        receiveResponseEnumId="MsgRrMove"
+        receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh/archive"
+        sendPath="${contentRoot}/netsuite/WhFulfillmentFeed">
+    </moqui.service.message.SystemMessageType>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateOMSWhFulfillmentFeed"
+            description="Generate mapped Feed file for Warehouse Fulfillment from NetSuite to create Shipment in OMS"
+            parentTypeId="LocalFeedFile"
+            sendPath="${contentRoot}/netsuite/OMSWhFulfillmentFeed/OMSWhFulfillmentFeed-${dateTime}-${systemMessageId}.json"
+            consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
+            sendServiceName="co.hotwax.netsuite.OrderServices.map#TransferOrderFulfillment">
+    </moqui.service.message.SystemMessageType>
+
+    <moqui.basic.Enumeration description="Warehouse Fulfillment Feed for OMS" enumId="OMSWhFulfillmentFeed" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Generate mapped Feed file of Warehouse Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSWhFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSWhFulfillmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Import Warehouse Fulfillment" enumId="ImportWhFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSWhFulfillmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 </entity-facade-xml>
