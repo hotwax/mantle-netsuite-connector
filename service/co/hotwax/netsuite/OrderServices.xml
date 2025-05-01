@@ -719,9 +719,19 @@
             <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="facilityList" cache="true">
                 <econdition field-name="externalId" operator="in" from="externalFacilityIdList"/>
             </entity-find>
-            <set field="payload.shipGroups[0].facilityId" from="facilityList.find {  it.externalId == externalFacilityIdList[0] }?.facilityId"/>
-            <set field="payload.originFacilityId" from="payload.shipGroups[0].facilityId"/>
-            <set field="payload.shipGroups[0].orderFacilityId" from="facilityList.find {  it.externalId == externalFacilityIdList[1] }?.facilityId"/>
+
+            <!-- use filed-map-list to filter the facilityList based on the externalFacilityIdList-->
+            <filter-map-list list="facilityList" to-list="originFacilities">
+                <field-map field-name="externalId" from="externalFacilityIdList[0]"/>
+            </filter-map-list>
+
+            <filter-map-list list="facilityList" to-list="orderFacilities">
+                <field-map field-name="externalId" from="externalFacilityIdList[1]"/>
+            </filter-map-list>
+
+            <set field="payload.shipGroups[0].facilityId" from="originFacilities[0].facilityId"/>
+            <set field="payload.originFacilityId" from="originFacilities[0].facilityId"/>
+            <set field="payload.shipGroups[0].orderFacilityId" from="orderFacilities[0].facilityId"/>
 
             <!-- Get HC Product ID for TO items  -->
             <iterate list="payload.shipGroups[0].items" entry="item">
