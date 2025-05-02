@@ -131,15 +131,14 @@
                 <script>
 
                     // dynamicView to fetch item details for eligible shipmentId
-                    def entityFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
+                    def entityFind = ec.entity.find("org.apache.ofbiz.order.order.OrderItem")
                     dynamicView = entityFind.makeEntityDynamicView()
                     dynamicView.setEntityName("transferOrderItems")
 
-                    dynamicView.addMemberEntity("OH", "org.apache.ofbiz.order.order.OrderHeader", null, null, null)
-                    dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem","OH", true,["orderId":"orderId"])
+                    dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem", null, null, null)
                     dynamicView.addMemberEntity("OSH", "org.apache.ofbiz.order.order.OrderShipment","OI", true,["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
 
-                    dynamicView.addAlias("OH", "orderId")
+                    dynamicView.addAlias("OI", "orderId")
                     dynamicView.addAlias("OI", "orderItemSeqId")
                     dynamicView.addAlias("OI", "orderItemExternalId", "externalId", null)
                     dynamicView.addAlias("OSH", "shipmentId")
