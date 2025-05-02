@@ -7,7 +7,6 @@
                 <description>The Transfer Order Fulfillment map from NetSuite to be mapped as per Shipment in OMS.</description>
                 <parameter name="transferOrderId"/>
                 <parameter name="externalId"/>
-                <parameter name="shipmentType"/>
                 <parameter name="trackingNumber"/>
                 <parameter name="items" type="List">
                     <parameter name="itemMap" type="Map">
@@ -20,12 +19,12 @@
             </parameter>
         </in-parameters>
         <out-parameters>
-            <parameter name="jsonOut" type="Map">
+            <parameter name="payload" type="Map">
                 <description>The Shipment map with mapped fields for OMS.</description>
                 <parameter name="orderId"/>
                 <parameter name="externalId"/>
-                <parameter name="shipmentType"/>
                 <parameter name="trackingNumber"/>
+                <parameter name="shipmentStatusId"/>
                 <parameter name="items" type="List">
                     <parameter name="itemMap" type="Map">
                         <parameter name="orderItemSeqId"/>
@@ -38,7 +37,9 @@
             </parameter>
         </out-parameters>
         <actions>
-            <set field="jsonOut" from="payload"/>
+            <!-- By default, external fulfilled shipments for WH TOs will be created in SHIPMENT_SHIPPED status -->
+            <set field="payload.shipmentStatusId" value="SHIPMENT_SHIPPED"/>
+
             <!-- Get HC Order ID -->
             <entity-find entity-name="org.apache.ofbiz.order.order.OrderHeader" list="orderList">
                 <econdition field-name="externalId" from="payload.remove('transferOrderId')"/>
