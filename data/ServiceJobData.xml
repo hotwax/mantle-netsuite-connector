@@ -56,7 +56,6 @@
     </moqui.service.job.ServiceJob>
 
     <moqui.basic.Enumeration enumId="POL_TO_FULFILLMENT_FD" enumCode="POL_TO_FULFILLMENT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
-
     <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMENT_FD"
         serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillment"/>
