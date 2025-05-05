@@ -47,6 +47,14 @@
         serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CASH_SALE"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCashSale" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
+    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer order" enumTypeId="ORDER_SYS_JOB"/>
+
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Order Feed from SFTP location"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_TRANSORD_FD">
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrderFeed"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
     <!-- Template Service Job to generate Shipments Receipt Feed from HotWax -->
     <moqui.basic.Enumeration enumId="GEN_SHPMNT_RCPT_FD" enumCode="GEN_SHPMNT_RCPT_FD" description="Generate Transfer Order Shipment Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.service.job.ServiceJob jobName="generate_ShipmentsReceiptFeed" jobTypeEnumId="GEN_SHPMNT_RCPT_FD"
