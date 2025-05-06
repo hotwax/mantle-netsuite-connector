@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
 
-    <service verb="map" noun="TransferOrderFulfillment" transaction-timeout="1800">
+    <service verb="map" noun="WhTransferOrderFulfillment" transaction-timeout="1800">
+        <description>
+            Service to map Warehouse to Store Transfer Order Fulfillment from NetSuite in OMS.
+            The Warehouse TOs are fulfilled by third party, and so shipments in OMS will be created in Shipped Status.
+        </description>
         <in-parameters>
             <parameter name="payload" type="Map" required="true">
                 <description>The Transfer Order Fulfillment map from NetSuite to be mapped as per Shipment in OMS.</description>
