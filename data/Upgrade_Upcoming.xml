@@ -80,7 +80,7 @@
             sendServiceName="co.hotwax.netsuite.TransferOrderServices.map#WhTransferOrderFulfillment">
     </moqui.service.message.SystemMessageType>
 
-    <moqui.basic.Enumeration description="Warehouse Transfer Order Fulfillment Feed for OMS" enumId="OMSWhToFulfillmentFeed" enumTypeId="OMSMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Generate mapped Feed file of Warehouse TO Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSWhToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSWhToFulfillmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Warehouse Transfer Order Fulfillment Feed for OMS" enumId="OMSCreateTOShipmentFeed" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Generate mapped Feed file of Warehouse TO Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSWhToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSCreateTOShipmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Warehouse Fulfillment" enumId="ImportWhToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSWhToFulfillmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 </entity-facade-xml>
