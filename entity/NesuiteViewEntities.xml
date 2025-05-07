@@ -295,6 +295,7 @@
         <alias name="shipmentMethodTypeId" entity-alias="OISG" is-aggregate="true"/>
         <alias name="statusCount" field="statusId" entity-alias="OS" function="count"/>
         <alias name="status" field="statusId" entity-alias="OS" function="max"/>
+        <alias name="HCOrderId" field="orderId" entity-alias="OH"/>
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" value="SALES_ORDER"/>
             <econdition field-name="statusId" operator="not-equals" value="PAYMENT_REFUNDED" entity-alias="OPP"/>
