@@ -151,7 +151,7 @@
     </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateOMSCreateTOShipmentFeed"
-            description="Generate mapped Feed file for Warehouse TO Fulfillment from NetSuite to create Shipment in OMS"
+            description="Generate mapped Feed file from Warehouse TO Fulfillment of NetSuite to Create TO Shipment in OMS"
             parentTypeId="LocalFeedFile"
             sendPath="${contentRoot}/netsuite/OMSWhToFulfillmentFeed/OMSWhToFulfillmentFeed-${dateTime}-${systemMessageId}.json"
             consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
