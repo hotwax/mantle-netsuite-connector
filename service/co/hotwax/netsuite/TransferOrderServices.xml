@@ -21,7 +21,7 @@
                 <description>The Shipment map with mapped fields for OMS.</description>
                 <parameter name="shipmentId"/>
                 <parameter name="externalId"/>
-                <parameter name="ShipmentItem" type="List">
+                <parameter name="items" type="List">
                     <parameter name="itemMap" type="Map">
                         <parameter name="shipmentItemSeqId"/>
                         <parameter name="externalId"/>
