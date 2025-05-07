@@ -55,7 +55,7 @@
 
     <!-- Service Job to poll Warehouse Fulfillment Feed file from NetSuite -->
     <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
-    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_WhFulfillment" description="Poll Warehouse Fulfillments Feed from SFTP location"
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Wh_TO_Fulfillment" description="Poll Warehouse Transfer Order Fulfillments Feed from SFTP location"
         serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMENT_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportWhToFulfillmentFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
