@@ -92,24 +92,33 @@
                     JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
                         jGenerator.writeStartArray()
             </script>
-            <iterate list="depositItr" entry="cusDeposit">
 
-                <entity-find entity-name="co.hotwax.integration.IntegrationTypeMapping" list="paymentMapping">
-                    <econdition field-name="integrationTypeId" value="NETSUITE_PMT_MTHD"/>
+            <entity-find entity-name="co.hotwax.integration.IntegrationTypeMapping" list="paymentMapping" cache="true">
+                <econdition field-name="integrationTypeId" value="NETSUITE_PMT_MTHD"/>
+            </entity-find>
+
+            <iterate list="depositItr" entry="cusDeposit">
+                <set field="customerDeposit" from="[:]"/>
+                <set field="paymentMethod" from="(paymentMapping.find { it.mappingKey == cusDeposit.paymentMethodTypeId } ?: paymentMapping.find { it.mappingKey == 'DEFAULT' })?.mappingValue"/>
+
+                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentifications">
+                    <econdition field-name="orderId" from="cusDeposit.hotwaxOrderId"/>
                 </entity-find>
 
+                <filter-map-list list="orderIdentifications" to-list="shopifyOrderNumberList">
+                    <field-map field-name="orderIdentificationTypeId" value="SHOPIFY_ORD_NO"/>
+                </filter-map-list>
+                <filter-map-list list="orderIdentifications" to-list="shopifyOrderIdList">
+                    <field-map field-name="orderIdentificationTypeId" value="SHOPIFY_ORD_ID"/>
+                </filter-map-list>
+                <filter-map-list list="orderIdentifications" to-list="shopifyOrderNameList">
+                    <field-map field-name="orderIdentificationTypeId" value="SHOPIFY_ORD_NAME"/>
+                </filter-map-list>
+
+                <set field="customerDeposit" from="[totalAmount:cusDeposit.totalAmount, externalId:cusDeposit.externalId, orderId:cusDeposit.orderId, paymentMethod:paymentMethod,
+                    shopifyOrderNumber:shopifyOrderNumberList[0]?.idValue, shopifyOrderId:shopifyOrderIdList[0]?.idValue, shopifyOrderName:shopifyOrderNameList[0]?.idValue]"/>
+
                 <script>
-                        def customerDeposit = new HashMap(cusDeposit);
-                        String paymentMethodTypeId = cusDeposit.paymentMethodTypeId;
-                        def specificMapping = paymentMapping.find { it.mappingKey == paymentMethodTypeId };
-                        def defaultMapping = specificMapping ?: paymentMapping.find { it.mappingKey == 'DEFAULT' };
-                        customerDeposit['paymentMethod'] = defaultMapping?.mappingValue;
-                        customerDeposit.remove('paymentMethodTypeId');
-                        customerDeposit.remove('fromDate');
-                        customerDeposit.remove('shipmentMethodTypeId');
-                        customerDeposit.remove('orderPaymentPreferenceId');
-                        customerDeposit.remove("statusCount")
-                        customerDeposit.remove("status")
 
                         new ObjectMapper()
                         .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
