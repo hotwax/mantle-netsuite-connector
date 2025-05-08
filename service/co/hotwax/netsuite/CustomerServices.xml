@@ -93,7 +93,7 @@
                         jGenerator.writeStartArray()
             </script>
 
-            <entity-find entity-name="co.hotwax.integration.IntegrationTypeMapping" list="paymentMapping">
+            <entity-find entity-name="co.hotwax.integration.IntegrationTypeMapping" list="paymentMapping" cache="true">
                 <econdition field-name="integrationTypeId" value="NETSUITE_PMT_MTHD"/>
             </entity-find>
 
