@@ -102,7 +102,7 @@
                 <set field="paymentMethod" from="(paymentMapping.find { it.mappingKey == cusDeposit.paymentMethodTypeId } ?: paymentMapping.find { it.mappingKey == 'DEFAULT' })?.mappingValue"/>
 
                 <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentifications">
-                    <econdition field-name="orderId" from="cusDeposit.HCOrderId"/>
+                    <econdition field-name="orderId" from="cusDeposit.hotwaxOrderId"/>
                 </entity-find>
 
                 <filter-map-list list="orderIdentifications" to-list="shopifyOrderNumberList">
