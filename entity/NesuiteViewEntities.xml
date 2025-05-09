@@ -407,24 +407,36 @@
         <member-entity entity-alias="FT"  entity-name="org.apache.ofbiz.product.facility.FacilityType" join-from-alias="F">
             <key-map field-name="facilityTypeId"/>
         </member-entity>
+        <member-entity entity-alias="FGM" entity-name="org.apache.ofbiz.product.facility.FacilityGroupMember" join-from-alias="F" join-optional="true">
+            <key-map field-name="facilityId"/>
+            <entity-condition>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
         <member-entity entity-alias="ODR" entity-name="org.apache.ofbiz.order.order.OrderRole" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
         </member-entity>
         <alias entity-alias="OIA" field="attrValue" name="netsuiteItemLineId"/>
-        <alias entity-alias="OH" field="orderId" name="externalId"/>
+        <alias entity-alias="OH" field="orderId" name="orderId"/>
+        <alias entity-alias="OH" field="statusId" name="orderStatusId"/>
         <alias entity-alias="OI" field="orderItemSeqId" name="itemSeqId"/>
         <alias entity-alias="OI" field="quantity" name="orderItemQuantity"/>
         <alias entity-alias="OI" field="productId" name="productId"/>
+        <alias entity-alias="OI" field="statusId" name="itemStatusId"/>
         <alias entity-alias="OISG" name="shipmentMethodTypeId"/>
         <alias entity-alias="OH" name="entryDate"/>
-        <alias entity-alias="OISGINR" field="quantity" name="quantity"/>
-        <alias entity-alias="F" field="externalId" name="location"/>
+        <alias entity-alias="OISGINR" field="quantity" name="reservedItemQuantity" function="sum"/>
+        <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
         <alias entity-alias="OISG" field="contactMechId" name="shippingContactMech"/>
+        <alias entity-alias="ODR" field="partyId" name="customerPartyId"/>
         <entity-condition>
             <econditions combine="and">
                 <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
-                <econdition entity-alias="FT" field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
                 <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
+                <econditions combine="or">
+                    <econdition entity-alias="FT" field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
+                    <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="NETSUITE_FULFILLMENT"/>
+                </econditions>
                 <econditions combine="or">
                     <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value="REJECT"/>
                     <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value=""/>
