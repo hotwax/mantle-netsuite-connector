@@ -138,4 +138,13 @@
     <moqui.basic.Enumeration description="Transfer Order Feed for OMS" enumId="OMSTransferOrderFeed" enumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS" enumId="GenerateOMSTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSTransferOrderFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Transfer Order" enumId="ImportTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+
+    <!-- System Message Type for Fulfilled Order Items Feed for Transfer Order -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderFulfilledItemsFeed"
+        description="Generate HotWax Fulfilled Order Items Feed for Transfer Orders"
+        parentTypeId="LocalFeedFile"
+        sendPath="/home/${sftpUsername}/netsuite/transferorderv2/oms-fulfillment/TransferOrderFulfilledItemsFeed-${systemMessageId}-${dateTime}.json"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/netsuite/transferorder/TransferOrderFulfilledItemsFeed/TransferOrderFulfilledItemsFeed-${dateTime}.json"/>
+
 </entity-facade-xml>
