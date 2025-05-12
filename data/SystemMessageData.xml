@@ -140,7 +140,7 @@
     <moqui.basic.Enumeration description="Import Transfer Order" enumId="ImportTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
     <!-- System Message Type for Transfer Order Shipments Receipt Feed -->
-    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrdersReceiptFeed"
+    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderShipmentReceiptFeed"
             description="Generate HotWax Transfer Orders Shipment Receipt Feed"
             parentTypeId="LocalFeedFile"
             sendPath="/home/${sftpUsername}/netsuite/transferorderv2/Receipt/TransferOrdersReceiptFeed-${systemMessageId}-${dateTime}.json"
