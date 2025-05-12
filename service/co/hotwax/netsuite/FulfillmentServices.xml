@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
 
-    <service verb="generate" noun="TransferOrderFulfilledItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <service verb="generate" noun="TransferOrderShipmentFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>
             Service to generate Transfer Order Fulfilled Items Feed.
         </description>
@@ -51,22 +51,24 @@
 
                 def fulfilledTransferOrder_find = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
                 dynamicView = fulfilledTransferOrder_find.makeEntityDynamicView()
-                dynamicView.setEntityName("FulfilledTransferOrder")
+                dynamicView.setEntityName("FulfilledTransferOrderItem")
 
                 dynamicView.addMemberEntity("OH", "org.apache.ofbiz.order.order.OrderHeader", null, null, null)
-                dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem","OH", true,["orderId":"orderId"])
-                dynamicView.addMemberEntity("OSH", "org.apache.ofbiz.order.order.OrderShipment","OI", true,["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
-                dynamicView.addMemberEntity("SH", "org.apache.ofbiz.shipment.shipment.Shipment", "OSH", true, ["shipmentId":"shipmentId"])
-                dynamicView.addMemberEntity("SRS", "org.apache.ofbiz.shipment.shipment.ShipmentRouteSegment", "SH", true, ["shipmentId":"shipmentId"])
+                dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem","OH", false,["orderId":"orderId"])
+                dynamicView.addMemberEntity("OISG", "org.apache.ofbiz.order.order.OrderItemShipGroup",  "OI", false, ["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId"])
+
+                dynamicView.addMemberEntity("F", "org.apache.ofbiz.product.facility.Facility", "OISG", false, ["facilityId":"facilityId"])
+                dynamicView.addMemberEntity("FT", "org.apache.ofbiz.product.facility.FacilityType", "F",  false, ["facilityTypeId":"facilityTypeId"])
+
+                dynamicView.addMemberEntity("OSH", "org.apache.ofbiz.order.order.OrderShipment","OI", false,["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
+
+                dynamicView.addMemberEntity("SH", "org.apache.ofbiz.shipment.shipment.Shipment", "OSH", false, ["shipmentId":"shipmentId"])
+                dynamicView.addMemberEntity("SRS", "org.apache.ofbiz.shipment.shipment.ShipmentRouteSegment", "SH", false, ["shipmentId":"shipmentId"])
+
                 dynamicView.addMemberEntity("OFH", "co.hotwax.integration.order.OrderFulfillmentHistory", "OSH", true, ["shipmentId":"shipmentId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
-                dynamicView.addMemberEntity("OISG", "org.apache.ofbiz.order.order.OrderItemShipGroup",  "OI", true, ["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId"])
-                dynamicView.addMemberEntity("F", "org.apache.ofbiz.product.facility.Facility", "OISG", true, ["facilityId":"facilityId"])
-                dynamicView.addMemberEntity("FT", "org.apache.ofbiz.product.facility.FacilityType", "F",  true, ["facilityTypeId":"facilityTypeId"])
 
                 dynamicView.addAlias("OH", "orderId")
-                dynamicView.addAlias("OH", "orderName")
                 dynamicView.addAlias("OH", "orderTypeId")
-                dynamicView.addAlias("OH", "orderStatusId", "statusId", null)
                 dynamicView.addAlias("OH", "orderExternalId", "externalId", null)
                 dynamicView.addAlias("OSH", "shipmentId")
                 dynamicView.addAlias("SRS", "trackingIdNumber")
@@ -80,10 +82,9 @@
 
                 if(orderId) fulfilledTransferOrder_find.condition("orderId", orderId)
                 if(orderItemSeqId) fulfilledTransferOrder_find.condition("orderItemSeqId", orderItemSeqId)
-                if(orderStatusId) fulfilledTransferOrder_find.condition("orderStatusId", orderStatusId)
                 if(productStoreIds) fulfilledTransferOrder_find.condition("productStoreId",EntityCondition.ComparisonOperator.IN, productStoreIds)
                 if(parentFacilityTypeIds) fulfilledTransferOrder_find.condition("parentFacilityTypeId",EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
-                fulfilledTransferOrder_find.selectField("shipmentId,orderExternalId,orderName,trackingIdNumber")
+                fulfilledTransferOrder_find.selectField("shipmentId,orderExternalId,trackingIdNumber")
                 fulfilledTransferOrder_find.distinct(true)
 
 
@@ -93,7 +94,7 @@
 
             <!-- If no orders in fulfilledTransferOrdersItr, then don't generate the file -->
             <if condition="!fulfilledTransferOrdersItr.hasNext()">
-                <return message="No eligible orders for Fulfilled Transfer Order Items Feed at ${nowDate}, not generating the HotWax Feed file."/>
+                <return message="No eligible orders for Fulfilled Transfer Order Items Feed at ${nowDate}, not generating the TO Shipment Feed File for NetSuite."/>
             </if>
 
             <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
@@ -126,19 +127,19 @@
 
             <iterate list="fulfilledTransferOrdersItr" entry="fulfilledTransferOrder">
 
-                <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:fulfilledTransferOrder.trackingIdNumber,shipment_id:fulfilledTransferOrder.shipmentId]" type="NewMap"/>
+                <set field="fulfillmentDetails" from="[orderId:fulfilledTransferOrder.orderExternalId, trackingNumber:fulfilledTransferOrder.trackingIdNumber, shipmentId:fulfilledTransferOrder.shipmentId]"/>
 
                 <set field="items" from="[]"/>
 
                 <script>
 
                     // dynamicView to fetch item details for eligible shipmentId
-                    def entityFind = ec.entity.find("org.apache.ofbiz.order.order.OrderItem")
+                    def entityFind = ec.entity.find("org.apache.ofbiz.order.order.OrderShipment")
                     dynamicView = entityFind.makeEntityDynamicView()
                     dynamicView.setEntityName("transferOrderItems")
 
-                    dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem", null, null, null)
-                    dynamicView.addMemberEntity("OSH", "org.apache.ofbiz.order.order.OrderShipment","OI", true,["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
+                    dynamicView.addMemberEntity("OSH", "org.apache.ofbiz.order.order.OrderShipment", null, null, null)
+                    dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem", "OSH", false, ["shipGroupSeqId":"shipGroupSeqId","orderId":"orderId", "orderItemSeqId":"orderItemSeqId"])
 
                     dynamicView.addAlias("OI", "orderId")
                     dynamicView.addAlias("OI", "orderItemSeqId")
@@ -158,8 +159,8 @@
                     </script>
 
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledItem.orderId,
-                        orderItemSeqId:fulfilledItem.orderItemSeqId, shipmentId:fulfilledTransferOrder.shipmentId,
-                        comments:'Order Item sent as part of Transfer Fulfilled Order Items Feed', createdDate:nowDate,
+                        orderItemSeqId:fulfilledItem.orderItemSeqId, shipmentId:fulfilledItem.shipmentId,
+                        comments:'Order Item sent as part of Transfer Order Shipment Feed', createdDate:nowDate,
                         externalFulfillmentId:'_NA_']"/>
 
                 </iterate>

@@ -115,13 +115,12 @@
 
     <!-- Template service job to generate Fulfilled Order Items Feed for transfer orders -->
     <moqui.basic.Enumeration enumId="GEN_TO_FULFILLMENT_FD" enumCode="GEN_TO_FULFILLMENT_FD" description="Generate Store TO Item Fulfillment Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
-    <moqui.service.job.ServiceJob jobName="generate_TransferOrderFulfilledItemsFeed" jobTypeEnumId="GEN_TO_FULFILLMENT_FD"
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentFeed" jobTypeEnumId="GEN_TO_FULFILLMENT_FD"
         description="Template Service Job to generate the Transfer Orders Fulfilled Items Feed from HotWax"
-        serviceName="co.hotwax.netsuite.FulfillmentServices.generate#TransferOrderFulfilledItemsFeed"
+        serviceName="co.hotwax.netsuite.FulfillmentServices.generate#TransferOrderShipmentFeed"
         cronExpression="0 0 0 * * ?" paused="Y">
         <parameters parameterName="orderId"/>
         <parameters parameterName="orderItemSeqId"/>
-        <parameters parameterName="orderStatusId"/>
         <parameters parameterName="productStoreIds"/>
         <parameters parameterName="systemMessageTypeId"/>
         <parameters parameterName="systemMessageRemoteId"/>
@@ -129,12 +128,11 @@
     </moqui.service.job.ServiceJob>
 
      <!-- System Message Type for Fulfilled Order Items Feed for Transfer Order -->
-    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderFulfilledItemsFeed"
+    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderShipmentFeed"
         description="Generate HotWax Fulfilled Order Items Feed for Transfer Orders"
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/transferorderv2/oms-fulfillment/TransferOrderFulfilledItemsFeed-${systemMessageId}-${dateTime}.json"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/netsuite/transferorder/TransferOrderFulfilledItemsFeed/TransferOrderFulfilledItemsFeed-${dateTime}.json"/>
-
 
 </entity-facade-xml>

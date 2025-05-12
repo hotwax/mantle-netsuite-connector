@@ -185,7 +185,7 @@
     <moqui.basic.Enumeration description="Import Store Fulfillment" enumId="ImportStoreToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSUpdateTOShipmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
     <!-- System Message Type for Fulfilled Order Items Feed for Transfer Order -->
-    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderFulfilledItemsFeed"
+    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderShipmentFeed"
         description="Generate HotWax Fulfilled Order Items Feed for Transfer Orders"
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/transferorderv2/oms-fulfillment/TransferOrderFulfilledItemsFeed-${systemMessageId}-${dateTime}.json"
