@@ -18,11 +18,6 @@
             <parameter name="orderItemSeqId">
                 <description>Parameter to fetch Transfer Order Fulfilled item details for a specific orderItemSeqId.</description>
             </parameter>
-            <parameter name="orderStatusId">
-                <description>
-                    Parameter to fetch Transfer Order Fulfilled item details for a specific Order Status ID.
-                </description>
-            </parameter>
             <parameter name="productStoreIds" type="List">
                 <description>
                     List of product Store Ids for generating Transfer Order Fulfilled Items feed.
