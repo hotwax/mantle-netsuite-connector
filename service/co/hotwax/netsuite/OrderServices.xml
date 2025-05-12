@@ -747,4 +747,149 @@
             </iterate>
         </actions>
     </service>
+    <service verb="generate" noun="BrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <description>
+        Service to generate Brokered Order Items Feed for the new order sync flow with added check for NetsuiteItemLineId and takes count per feed which can take in a limit parameter
+        to include a specific number of records in the Feed File.
+        If no limit is set, default-value of limit parameter will be considered to fetch the
+        eligible orders for the feed.
+    </description>
+    <in-parameters>
+    <parameter name="brokeredOrdersCountPerFeed" type="Integer">
+        <description>The number of orders to be included in the Brokered Order Items Feed.</description>
+    </parameter>
+    <parameter name="orderId">
+        <description>Parameter to fetch Order details for a specific orderId.</description>
+    </parameter>
+    <parameter name="orderItemSeqId">
+        <description>Parameter to fetch Order details for a specific orderItemSeqId.</description>
+    </parameter>
+    <parameter name="systemMessageTypeId" required="true">
+        <description>The System Message Type ID for generating the Brokered Order Items Feed.</description>
+    </parameter>
+    <parameter name="systemMessageRemoteId" required="true">
+        <description>The System Message Remote Id for generating the Brokered Order Items Feed.</description>
+    </parameter>
+    <parameter name="parentFacilityTypeIds" type="List">
+        <description>
+            List of parent Facility Type Ids for generating Brokered Orders Items Feed.
+            For passing the parent Facility Type Ids as list, add values like - DISTRIBUTION_CENTER,PHYSICAL_STORE,VIRTUAL_FACILITY and for single value use - DISTRIBUTION_CENTER.
+        </description>
+    </parameter>
+    <parameter name="facilityGroupIds" type="List">
+        <description>
+            List of facility group ids for generating Brokered Orders Items Feed.
+        </description>
+    </parameter>
+    <parameter name="productStoreIds" type="List">
+        <description>
+            List of product store ids for generating Brokered Orders Items Feed.
+        </description>
+    </parameter>
+    </in-parameters>
+    <out-parameters>
+        <parameter name="brokeredFeedOrdersCount" type="Integer">
+            <description>The number of orders in the Brokered Order Items Feed.</description>
+        </parameter>
+        <parameter name="brokeredOrderItemsList" type="List"/>
+    </out-parameters>
+        <actions>
+            <!-- variable to use for counting the number of orders in the feed, no available method to
+                 directly get the count from iterator, if .size() is used, the iterator is consumed and
+                 so no data to iterate further and create the feed -->
+            <set field="brokeredFeedOrdersCount" from="0"/>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+
+            <log message="Generating Brokered Orders and Items Feed Feed file of HotWax for parentFacilityTypeId ${parentFacilityTypeIds}, Order ${orderId} at time ${nowDate}"/>
+
+            <!-- Fetch items from the BrokeredOrderItemsSyncQueue for identifying the orders ready for preparing Feed -->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+            <!-- Prepare Brokered Order and Items Feed JSON File Path -->
+            <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                        [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                         productStoreId:productStoreId], false)"/>
+            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+            <log message="productStoreIds: ${productStoreIds}, facilityGroupIds: ${facilityGroupIds}, orderId: ${orderId}, itemStatusId: ITEM_APPROVED"/>
+
+            <script>
+                import org.apache.commons.csv.CSVFormat
+                import org.apache.commons.csv.CSVPrinter
+                import java.nio.file.Files
+                import java.nio.file.Paths
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                ec.logger.info("================Starting script to generate CSV from BrokeredOrderItemsFeed===========")
+                File csvFile = new File(csvFilePath)
+                if(!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
+                def isFileEmpty = true
+                def csvHeaders = null
+
+                brokeredOrders_find = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed")
+                .condition("itemStatusId", "ITEM_APPROVED")
+                if(orderId) brokeredOrders_find.condition("orderId", orderId)
+                if(orderItemSeqId) brokeredOrders_find.condition("orderItemSeqId", orderItemSeqId)
+                ec.logger.debug("Initial condition: orderItemSeqId = orderItemSeqId")
+                if(facilityGroupId) brokeredOrders_find.condition("facilityGroupId",facilityGroupId)
+                if(productStoreIds) brokeredOrders_find.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
+                brokeredOrders_find.limit(brokeredOrdersCountPerFeed)
+                .selectField("orderId,orderStatusId,entryDate,netsuiteItemLineId,itemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,customerPartyId,itemStatusId")
+                .orderBy("entryDate")
+                // Using try-with-resources to automatically close the EntityListIterator 'brokeredOrdersItr'
+                try (brokeredOrdersItr = brokeredOrders_find.iterator()) {
+            </script>
+            <!-- If no orders in BrokeredOrderItemsSyncQueue, then don't generate the file -->
+            <if condition="!brokeredOrdersItr.hasNext()">
+                <return message="No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file."/>
+            </if>
+            <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() > 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
+            <script>
+                try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
+                def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)){
+            </script>
+
+            <iterate list="brokeredOrdersItr" entry="brokerOrderItem">
+                <!-- Load and render the FTL template -->
+                <set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/>
+<!--                <set field="writerTemplate" from="new java.io.StringWriter()"/>-->
+                <script>ec.resourceFacade.template(templateLocation, writer)</script>
+                <!-- Log the rendered Gettemplate output -->
+                <log message="Template Output: ${writer.toString()}"/>
+                <if condition="facilityGroupIds">
+                    <entity-find-count entity-name="org.apache.ofbiz.product.facility.FacilityGroupMember" count-field="facilityGroupMemberCount">
+                        <date-filter/>
+                        <econdition field-name="facilityId" from="brokeredOrderItem.facilityId"/>
+                        <econdition field-name="facilityGroupId" operator="in" from="facilityGroupIds" ignore-if-empty="true"/>
+                        <econditions combine="or">
+                            <econdition  field-name="facilityGroupId" operator="equals" value="NETSUITE_FULFILLMENT"/>
+                        </econditions>
+                    </entity-find-count>
+                    <if condition="facilityGroupMemberCount == 0"><continue/></if>
+                </if>
+                <script>
+                    if (!csvHeaders) {
+                    csvHeaders = brokerOrderItem.getFieldNames()
+                    csvPrinter.printRecord(csvHeaders)
+                    }
+                    csvPrinter.printRecord(csvHeaders.collect { brokerOrderItem.get(it) })
+                </script>
+            </iterate>
+            <script>
+                csvPrinter.close()
+                writer.close()
+                brokeredOrdersItr.close()
+                }}
+            </script>
+            <!-- Save the csv Feed File path in System Message messageText -->
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                          in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
+                    systemMessageRemoteId:systemMessageRemoteId, productStoreId:productStoreId]" out-map="brokeredSystemMessageOut"/>
+
+            <return message="Created the Brokered Order Items Feed file with orders count
+                ${brokeredFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId}
+                and remote ${systemMessageRemoteId} saved response in messages
+                ${brokeredSystemMessageOut.systemMessageId}"/>
+        </actions>
+    </service>
 </services>
