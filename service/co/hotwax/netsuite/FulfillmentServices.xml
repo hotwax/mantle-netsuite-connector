@@ -84,6 +84,8 @@
                 if(productStoreIds) fulfilledTransferOrder_find.condition("productStoreId",EntityCondition.ComparisonOperator.IN, productStoreIds)
                 if(parentFacilityTypeIds) fulfilledTransferOrder_find.condition("parentFacilityTypeId",EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
                 fulfilledTransferOrder_find.selectField("shipmentId,orderExternalId,orderName,trackingIdNumber")
+                fulfilledTransferOrder_find.distinct(true)
+
 
                 // Using try-with-resources to automatically close the EntityListIterator 'fulfilledTransferOrdersItr'
                 try (fulfilledTransferOrdersItr = fulfilledTransferOrder_find.iterator()) {
@@ -124,7 +126,7 @@
 
             <iterate list="fulfilledTransferOrdersItr" entry="fulfilledTransferOrder">
 
-                <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:trackingIdNumber,shipment_id:fulfilledTransferOrder.shipmentId]" type="NewMap"/>
+                <set field="fulfillmentDetails" from="[order_id:fulfilledTransferOrder.orderExternalId,order_name:fulfilledTransferOrder.orderName,tracking_number:fulfilledTransferOrder.trackingIdNumber,shipment_id:fulfilledTransferOrder.shipmentId]" type="NewMap"/>
 
                 <set field="items" from="[]"/>
 
