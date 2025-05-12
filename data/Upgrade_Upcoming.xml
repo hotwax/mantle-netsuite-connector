@@ -133,6 +133,6 @@
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/transferorderv2/oms-fulfillment/TransferOrderFulfilledItemsFeed-${systemMessageId}-${dateTime}.json"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-        receivePath="${contentRoot}/netsuite/transferorder/TransferOrderFulfilledItemsFeed/TransferOrderFulfilledItemsFeed-${dateTime}.json"/>
+        receivePath="${contentRoot}/netsuite/TransferOrderFulfilledItemsFeed/TransferOrderFulfilledItemsFeed-${dateTime}.json"/>
 
 </entity-facade-xml>
