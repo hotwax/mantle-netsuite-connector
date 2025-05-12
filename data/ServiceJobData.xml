@@ -54,4 +54,20 @@
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrderFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
+
+     <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
+    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed" jobTypeEnumId="GEN_BRKR_ORD_ITM_FD"
+            description="Template Service Job to generate the Brokered Order Items Feed from HotWax"
+            serviceName="co.hotwax.netsuite.OrderServices.get#BrokeredOrders"
+            cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="brokeredOrdersCountPerFeed"/>
+        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="orderItemSeqId"/>
+        <parameters parameterName="facilityGroupIds"/>
+        <parameters parameterName="parentFacilityTypeIds"/>
+        <parameters parameterName="productStoreIds"/>
+    </moqui.service.job.ServiceJob>
+
 </entity-facade-xml>

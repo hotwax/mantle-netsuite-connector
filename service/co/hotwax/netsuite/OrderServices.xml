@@ -787,13 +787,6 @@
                     For passing the Product Store Ids as list, add values like - SM_STORE,SG_STORE and for single value use - SM_STORE.
                 </description>
             </parameter>
-            <parameter name="skipOrderAdjHistoryCreation" type="Boolean" default="false">
-                <description>
-                    Parameter to skip the history creation for Order Adjustments.
-                    Defaults to False, and so always creates the history.
-                    Set it to true to skip the history creation for the order adjustments.
-                </description>
-            </parameter>
             <parameter name="facilityGroupIds" type="List">
                 <description>
                     List of facility group ids for generating Brokered Orders Items Feed.
@@ -878,7 +871,6 @@
         <parameter name="brokeredFeedOrdersCount" type="Integer">
             <description>The number of orders in the Brokered Order Items Feed.</description>
         </parameter>
-        <parameter name="brokeredOrderItemsList" type="List"/>
     </out-parameters>
         <actions>
             <!-- variable to use for counting the number of orders in the feed, no available method to
@@ -892,10 +884,14 @@
             <!-- Fetch items from the BrokeredOrderItemsSyncQueue for identifying the orders ready for preparing Feed -->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+
+            <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() > 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
+
             <!-- Prepare Brokered Order and Items Feed JSON File Path -->
             <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
-                        [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
-                         productStoreId:productStoreId], false)"/>
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                productStoreId:productStoreId], false)"/>
+
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
 
             <script>
@@ -929,7 +925,7 @@
             <if condition="!brokeredOrdersItr.hasNext()">
                 <return message="No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file."/>
             </if>
-            <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() > 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
+
             <script>
                 try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
                 def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)){
@@ -946,11 +942,16 @@
 
                 <script>
                     if (!csvHeaders) {
-                    csvHeaders =  brokerOrderItemMap.keySet().toList()
-                    csvPrinter.printRecord(csvHeaders)
+                        csvHeaders =  brokerOrderItemMap.keySet().toList()
+                        csvPrinter.printRecord(csvHeaders)
                     }
+
                     def brokerOrderItemRecord = csvHeaders.collect { key -> brokerOrderItemMap[key] != null ? brokerOrderItemMap[key] : "" }
                     csvPrinter.printRecord(brokerOrderItemRecord)
+
+                    //incrementing the brokeredFeedOrdersCount for total orders included in the feed
+                    //this field is used in get#BrokeredOrderItems service to prepare multiple feed files if applicable
+                    brokeredFeedOrdersCount++
                 </script>
             </iterate>
             <script>
