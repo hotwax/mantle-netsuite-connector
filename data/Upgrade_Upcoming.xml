@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<entity-facade-xml type="ext-upgrade">
+<entity-facade-xml type="ext-upgrade-dev">
     <moqui.service.message.SystemMessageType systemMessageTypeId="FulfilledOrderItemsFeedNetsuiteToHotwax"
         description="Fetch Fulfilled Order Items feed Netsuite to Hotwax"
         parentTypeId="LocalFeedFile"
@@ -52,6 +52,37 @@
     <moqui.basic.Enumeration description="Transfer Order Feed for OMS" enumId="OMSTransferOrderFeed" enumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Generate mapped Feed file of Transfer Order from NetSuite connector to OMS" enumId="GenerateOMSTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="CreateTransferOrder" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Transfer Order" enumId="ImportTransferOrderFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSTransferOrderFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+
+    <!-- Service Job to poll Warehouse Fulfillment Feed file from NetSuite -->
+    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Wh_TO_Fulfillment" description="Poll Warehouse Transfer Order Fulfillments Feed from SFTP location"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMENT_FD">
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportWhToFulfillmentFeed"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- System Message Types and enum to import Warehouse Transfer Order Fulfillment Feed from NetSuite to OMS -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ImportWhToFulfillmentFeed"
+            description="Import Warehouse Fulfilled Transfer Order Fulfillment Feed file from SFTP location"
+            parentTypeId="LocalFeedFile"
+            consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
+            receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh"
+            receiveResponseEnumId="MsgRrMove"
+            receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh/archive"
+            sendPath="${contentRoot}/netsuite/WhToFulfillmentFeed">
+    </moqui.service.message.SystemMessageType>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateOMSCreateTOShipmentFeed"
+            description="Generate mapped Feed file from Warehouse TO Fulfillment of NetSuite to Create TO Shipment in OMS"
+            parentTypeId="LocalFeedFile"
+            sendPath="${contentRoot}/netsuite/OMSWhToFulfillmentFeed/OMSWhToFulfillmentFeed-${dateTime}-${systemMessageId}.json"
+            consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
+            sendServiceName="co.hotwax.netsuite.TransferOrderServices.map#WhTransferOrderFulfillment">
+    </moqui.service.message.SystemMessageType>
+
+    <moqui.basic.Enumeration description="Create Transfer Order Shipment Feed for OMS" enumId="OMSCreateTOShipmentFeed" enumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Generate mapped Feed file of Warehouse TO Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSCreateTOShipmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSCreateTOShipmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Import Warehouse Fulfillment" enumId="ImportWhToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSCreateTOShipmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportStoreToFulfillmentFeed"
          description="Import Store Fulfill TO fulfillment Feed file from SFTP location"

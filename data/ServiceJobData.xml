@@ -47,11 +47,19 @@
         serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CASH_SALE"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCashSale" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer order" enumTypeId="ORDER_SYS_JOB"/>
-
-    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Order Feed from SFTP location"
+    <!-- Service Job to poll Transfer Orders Feed file from NetSuite -->
+    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Orders Feed from SFTP location"
         serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_TRANSORD_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrderFeed"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- Service Job to poll Warehouse Fulfillments Feed file from NetSuite -->
+    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Wh_TO_Fulfillment" description="Poll Warehouse Transfer Order Fulfillments Feed from SFTP location"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMENT_FD">
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportWhToFulfillmentFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 

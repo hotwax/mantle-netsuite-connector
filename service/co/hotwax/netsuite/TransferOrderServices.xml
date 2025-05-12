@@ -1,6 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
 
+    <service verb="map" noun="WhTransferOrderFulfillment" transaction-timeout="1800">
+        <description>
+            Service to map Warehouse to Store Transfer Order Fulfillment from NetSuite in OMS.
+            The Warehouse TOs are fulfilled by third party, and so shipments in OMS will be created in Shipped Status.
+        </description>
+        <in-parameters>
+            <parameter name="payload" type="Map" required="true">
+                <description>The Transfer Order Fulfillment map from NetSuite to be mapped as per Shipment in OMS.</description>
+                <parameter name="transferOrderId"/>
+                <parameter name="externalId"/>
+                <parameter name="trackingNumber"/>
+                <parameter name="items" type="List">
+                    <parameter name="itemMap" type="Map">
+                        <parameter name="externalId"/>
+                        <parameter name="productIdType"/>
+                        <parameter name="productIdValue"/>
+                        <parameter name="quantity" type="Integer"/>
+                    </parameter>
+                </parameter>
+            </parameter>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="payload" type="Map">
+                <description>The Shipment map with mapped fields for OMS.</description>
+                <parameter name="orderId"/>
+                <parameter name="externalId"/>
+                <parameter name="trackingNumber"/>
+                <parameter name="shipmentStatusId"/>
+                <parameter name="items" type="List">
+                    <parameter name="itemMap" type="Map">
+                        <parameter name="orderItemSeqId"/>
+                        <parameter name="shipGroupSeqId"/>
+                        <parameter name="externalId"/>
+                        <parameter name="productId"/>
+                        <parameter name="quantity" type="Integer"/>
+                    </parameter>
+                </parameter>
+            </parameter>
+        </out-parameters>
+        <actions>
+            <!-- By default, external fulfilled shipments for WH TOs will be created in SHIPMENT_SHIPPED status -->
+            <set field="payload.shipmentStatusId" value="SHIPMENT_SHIPPED"/>
+
+            <!-- Get HC Order ID -->
+            <entity-find entity-name="org.apache.ofbiz.order.order.OrderHeader" list="orderList">
+                <econdition field-name="externalId" from="payload.remove('transferOrderId')"/>
+            </entity-find>
+            <set field="payload.orderId" from="orderList?.first?.orderId"/>
+
+            <iterate list="payload.items" entry="item">
+                <!-- Get HC Product ID -->
+                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
+                    <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
+                    <econdition field-name="idValue" from="item.remove('productIdValue')"/>
+                    <date-filter/>
+                    <order-by field-name="-fromDate"/>
+                </entity-find>
+                <set field="item.productId" from="goodIdentifications?.first?.productId"/>
+
+                <!-- Get Order Item Seq ID and Ship Group Seq ID -->
+                <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
+                    <econdition field-name="orderId" from="payload.orderId"/>
+                    <econdition field-name="productId" from="item.productId"/>
+                </entity-find>
+                <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
+                <set field="item.shipGroupSeqId" from="orderItemList?.first?.shipGroupSeqId"/>
+            </iterate>
+        </actions>
+    </service>
+
     <service verb="map" noun="StoreTransferOrderFulfillment" transaction-timeout="1800">
         <in-parameters>
             <parameter name="payload" type="Map" required="true">
