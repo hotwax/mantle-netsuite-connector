@@ -71,7 +71,7 @@
     </moqui.service.job.ServiceJob>
 
      <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
-    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed" jobTypeEnumId="GEN_BRKR_ORD_ITM_FD"
+    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" jobTypeEnumId="GEN_BRKR_ORD_ITM_FD"
             description="Template Service Job to generate the Brokered Order Items Feed from HotWax"
             serviceName="co.hotwax.netsuite.OrderServices.get#BrokeredOrders"
             cronExpression="0 0 0 * * ?" paused="Y">
