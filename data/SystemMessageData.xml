@@ -185,8 +185,8 @@
     <moqui.basic.Enumeration description="Import Store Fulfillment" enumId="ImportStoreToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSUpdateTOShipmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
     <!-- System Message Type for Brokered Order Items Feed -->
-    <moqui.service.message.SystemMessageType systemMessageTypeId="BrokeredOrderItemsFeed"
-          description="Generate HotWax Brokered Order Items Feed"
+    <moqui.service.message.SystemMessageType systemMessageTypeId="BrokeredOrderItemsFeedForNS"
+          description="Generate HotWax Brokered Order Items Feed for Netsuite"
           parentTypeId="LocalFeedFile"
           sendPath="/home/${sftpUsername}/netsuite/salesorder/update/${productStoreId}-BrokeredOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
           sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
