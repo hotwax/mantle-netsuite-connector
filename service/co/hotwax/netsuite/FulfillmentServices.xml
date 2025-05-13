@@ -7,20 +7,20 @@
         </description>
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true">
-                <description>The System Message Remote ID for generating the Transfer Order Fulfilled Items Feed.</description>
+                <description>The System Message Remote ID for generating the Transfer Order Shipment Feed.</description>
             </parameter>
             <parameter name="systemMessageTypeId" required="true">
-                <description>The System Message Type ID for generating the Transfer Order Fulfilled Items Feed.</description>
+                <description>The System Message Type ID for generating the Transfer Order Shipment Feed.</description>
             </parameter>
             <parameter name="orderId">
-                <description>Parameter to fetch the Transfer Order Fulfilled Items details for a specific orderId.</description>
+                <description>Parameter to fetch the Transfer Order Shipment details for a specific orderId.</description>
             </parameter>
             <parameter name="orderItemSeqId">
-                <description>Parameter to fetch Transfer Order Fulfilled item details for a specific orderItemSeqId.</description>
+                <description>Parameter to fetch Transfer Order Shipment item details for a specific orderItemSeqId.</description>
             </parameter>
             <parameter name="productStoreIds" type="List">
                 <description>
-                    List of product Store Ids for generating Transfer Order Fulfilled Items feed.
+                    List of product Store Ids for generating Transfer Order Shipment feed.
                     For passing the Product Store Ids as list.
                 </description>
             </parameter>
@@ -43,9 +43,9 @@
                 import org.moqui.entity.EntityCondition
 
                 // Dynamic view to retrieve eligible transfer orders for the transfer order shipment feed
-                def fulfilledTransferOrder_find = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
-                dynamicView = fulfilledTransferOrder_find.makeEntityDynamicView()
-                dynamicView.setEntityName("FulfilledTransferOrderItem")
+                def transferOrderShipment_find = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
+                dynamicView = transferOrderShipment_find.makeEntityDynamicView()
+                dynamicView.setEntityName("FulfilledTransferOrderShipment")
 
                 dynamicView.addMemberEntity("OH", "org.apache.ofbiz.order.order.OrderHeader", null, null, null)
                 dynamicView.addMemberEntity("OI", "org.apache.ofbiz.order.order.OrderItem","OH", false,["orderId":"orderId"])
@@ -70,23 +70,23 @@
                 dynamicView.addAlias("FT", "parentFacilityTypeId", "parentTypeId", null)
                 dynamicView.addAlias("OFH", "fulfillmentLogId")
 
-                fulfilledTransferOrder_find.condition("shipmentStatusId", "SHIPMENT_SHIPPED")
-                fulfilledTransferOrder_find.condition("fulfillmentLogId", EntityCondition.IS_NULL, null)
-                fulfilledTransferOrder_find.condition("orderTypeId", "TRANSFER_ORDER")
+                transferOrderShipment_find.condition("shipmentStatusId", "SHIPMENT_SHIPPED")
+                transferOrderShipment_find.condition("fulfillmentLogId", EntityCondition.IS_NULL, null)
+                transferOrderShipment_find.condition("orderTypeId", "TRANSFER_ORDER")
 
-                if(orderId) fulfilledTransferOrder_find.condition("orderId", orderId)
-                if(orderItemSeqId) fulfilledTransferOrder_find.condition("orderItemSeqId", orderItemSeqId)
-                if(productStoreIds) fulfilledTransferOrder_find.condition("productStoreId",EntityCondition.ComparisonOperator.IN, productStoreIds)
-                if(parentFacilityTypeIds) fulfilledTransferOrder_find.condition("parentFacilityTypeId",EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
-                fulfilledTransferOrder_find.selectField("shipmentId,orderExternalId,trackingIdNumber")
-                fulfilledTransferOrder_find.distinct(true)
+                if(orderId) transferOrderShipment_find.condition("orderId", orderId)
+                if(orderItemSeqId) transferOrderShipment_find.condition("orderItemSeqId", orderItemSeqId)
+                if(productStoreIds) transferOrderShipment_find.condition("productStoreId",EntityCondition.ComparisonOperator.IN, productStoreIds)
+                if(parentFacilityTypeIds) transferOrderShipment_find.condition("parentFacilityTypeId",EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
+                transferOrderShipment_find.selectField("shipmentId,orderExternalId,trackingIdNumber")
+                transferOrderShipment_find.distinct(true)
 
-                // Using try-with-resources to automatically close the EntityListIterator 'fulfilledTransferOrdersItr'
-                try (fulfilledTransferOrdersItr = fulfilledTransferOrder_find.iterator()) {
+                // Using try-with-resources to automatically close the EntityListIterator 'transferOrderShipmentItr'
+                try (transferOrderShipmentItr = transferOrderShipment_find.iterator()) {
             </script>
 
-            <!-- If no orders in fulfilledTransferOrdersItr, then don't generate the file -->
-            <if condition="!fulfilledTransferOrdersItr.hasNext()">
+            <!-- If no orders in transferOrderShipmentItr, then don't generate the file -->
+            <if condition="!transferOrderShipmentItr.hasNext()">
                 <return message="No eligible orders for Transfer Order Shipment Feed at ${nowDate}, not generating the TO Shipment Feed File for NetSuite."/>
             </if>
 
@@ -117,9 +117,9 @@
                         jGenerator.writeStartArray()
             </script>
 
-            <iterate list="fulfilledTransferOrdersItr" entry="fulfilledTransferOrder">
+            <iterate list="transferOrderShipmentItr" entry="shippedTransferOrder">
 
-                <set field="shipmentMap" from="[orderId:fulfilledTransferOrder.orderExternalId, trackingNumber:fulfilledTransferOrder.trackingIdNumber, shipmentId:fulfilledTransferOrder.shipmentId]"/>
+                <set field="shipmentMap" from="[orderId:shippedTransferOrder.orderExternalId, trackingNumber:shippedTransferOrder.trackingIdNumber, shipmentId:shippedTransferOrder.shipmentId]"/>
                 <set field="items" from="[]"/>
 
                 <script>
@@ -137,18 +137,18 @@
                     dynamicView.addAlias("OSH", "shipmentId")
                     dynamicView.addAlias("OSH", "shippedQuantity", "quantity", null)
 
-                    entityFind.condition("shipmentId", fulfilledTransferOrder.shipmentId)
-                    try (fulfilledItems = entityFind.iterator()) {
+                    entityFind.condition("shipmentId", shippedTransferOrder.shipmentId)
+                    try (shippedItems = entityFind.iterator()) {
                 </script>
 
-                <iterate list="fulfilledItems" entry="fulfilledItem">
+                <iterate list="shippedItems" entry="shippedItem">
 
-                    <set field="itemMap" from="[lineId:fulfilledItem.orderItemExternalId, quantity:fulfilledItem.shippedQuantity, tags:"hotwax-fulfilled"]"/>
+                    <set field="itemMap" from="[lineId:shippedItem.orderItemExternalId, quantity:shippedItem.shippedQuantity, tags:"hotwax-fulfilled"]"/>
                     <script>items.add(itemMap)</script>
 
                     <!-- Create Order Fulfillment History record for each order item included in the feed -->
-                    <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledItem.orderId,
-                        orderItemSeqId:fulfilledItem.orderItemSeqId, shipmentId:fulfilledItem.shipmentId,
+                    <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:shippedItem.orderId,
+                        orderItemSeqId:shippedItem.orderItemSeqId, shipmentId:shippedItem.shipmentId,
                         comments:'Order Item sent as part of Transfer Order Shipment Feed', createdDate:nowDate,
                         externalFulfillmentId:'_NA_']"/>
 
@@ -170,7 +170,7 @@
                         }
                     }
                 catch (IOException e) {
-                    logger.info("Error preparing transfer order fulfilled items Feed file", e)
+                    logger.info("Error preparing transfer order shipment Feed file", e)
                 }
             }
             </script>

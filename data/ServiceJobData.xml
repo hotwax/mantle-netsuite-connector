@@ -70,10 +70,10 @@
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
-    <!-- Template service job to generate Fulfilled Order Items Feed for transfer orders -->
-    <moqui.basic.Enumeration enumId="GEN_TO_FULFILLMENT_FD" enumCode="GEN_TO_FULFILLMENT_FD" description="Generate Store TO Item Fulfillment Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <!-- Template service job to generate Transfer Order Shipment Feed for transfer orders -->
+    <moqui.basic.Enumeration enumId="GEN_TO_FULFILLMENT_FD" enumCode="GEN_TO_FULFILLMENT_FD" description="Generate Store Transfer Order Shipment Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentFeed" jobTypeEnumId="GEN_TO_FULFILLMENT_FD"
-        description="Template Service Job to generate the Transfer Orders Fulfilled Items Feed from HotWax"
+        description="Template Service Job to generate the Transfer Orders Shipment Items Feed from HotWax"
         serviceName="co.hotwax.netsuite.FulfillmentServices.generate#TransferOrderShipmentFeed"
         cronExpression="0 0 0 * * ?" paused="Y">
         <parameters parameterName="orderId"/>

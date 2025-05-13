@@ -186,7 +186,7 @@
 
     <!-- System Message Type for Fulfilled Order Items Feed for Transfer Order -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderShipmentFeed"
-        description="Generate HotWax Fulfilled Order Items Feed for Transfer Orders"
+        description="Generate HotWax Transfer Order Shipment Feed"
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/transferorderv2/oms-fulfillment/TransferOrderFulfilledItemsFeed-${systemMessageId}-${dateTime}.json"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
