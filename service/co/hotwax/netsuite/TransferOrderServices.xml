@@ -33,8 +33,7 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
 
-                // Dynamic view to retrieve eligible Transfer Order Shipment for the Transfer Order Shipment Receipt feed.
-
+                // Dynamic view to retrieve eligible Transfer Order Shipments for the Receipt feed
                 def shipmentReceipt_find = ec.entity.find("org.apache.ofbiz.shipment.receipt.ShipmentReceipt")
                 dynamicView = shipmentReceipt_find.makeEntityDynamicView()
                 dynamicView.setEntityName("TransferOrderShipmentReceipt")
@@ -54,7 +53,6 @@
                 dynamicView.addAlias("SRH", "shipmentReceiptHistoryId")
 
                 shipmentReceipt_find.condition("shipmentReceiptHistoryId", EntityCondition.IS_NULL, null)
-
                 shipmentReceipt_find.condition("shipmentTypeId", "OUT_TRANSFER")
 
                 if(shipmentId) shipmentReceipt_find.condition("shipmentId", shipmentId)
@@ -98,15 +96,14 @@
                     jGenerator.writeStartArray()
             </script>
 
+            <!-- Preparing Shipment Receipts -->
             <iterate list="shipmentReceiptItr" entry="shipmentReceipt">
-                <log message="Processing Shipment Receipt ${shipmentReceipt.shipmentExternalId}"/>
 
-                <set field="shipmentReceiptDetails" from="[orderId:shipmentReceipt.orderExternalId, fulfillmentId:shipmentReceipt.shipmentExternalId]"/>
+                <set field="shipmentReceiptMap" from="[orderId:shipmentReceipt.orderExternalId, fulfillmentId:shipmentReceipt.shipmentExternalId]"/>
                 <set field="items" from="[]"/>
 
                 <script>
                     // dynamicView to fetch item details for eligible shipmentId
-
                     def entity_find = ec.entity.find("org.apache.ofbiz.shipment.receipt.ShipmentReceipt")
                     dynamicView = entity_find.makeEntityDynamicView()
 
@@ -123,39 +120,40 @@
 
                     entity_find.condition("shipmentReceiptHistoryId", EntityCondition.IS_NULL, null)
                     entity_find.condition("shipmentId", shipmentReceipt.shipmentId)
+                    
                     entity_find.selectField("shipmentItemExternalId,productId,totalQuantityAccepted,receiptId")
 
                     // Using try-with-resources to automatically close the EntityListIterator 'shipmentReceiptItemItr'
                     try (shipmentReceiptItemItr = entity_find.iterator()) {
                 </script>
 
+                <!-- Preparing Shipment Receipt Item Details -->
                 <iterate list="shipmentReceiptItemItr" entry="shipmentReceiptItem">
-
+                    
+                    <!-- Get NetSuite Product ID for each item -->
                     <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList">
                         <econdition field-name="productId" from="shipmentReceiptItem.productId"/>
                         <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
                         <date-filter/>
                     </entity-find>
 
-                    <script>
-                        itemMap = [lineId:shipmentReceiptItem.shipmentItemExternalId, quantity:shipmentReceiptItem.totalQuantityAccepted, productId:goodIdentificationList?.first?.idValue]
-                        items.add(itemMap)
-                    </script>
+                    <set field="itemMap" from="[lineId:shipmentReceiptItem.shipmentItemExternalId, quantity:shipmentReceiptItem.totalQuantityAccepted, productId:goodIdentificationList?.first?.idValue]"/>
+                    <script>items.add(itemMap)</script>
 
+                    <!-- Create Shipment Receipt History for each received item included in the feed -->
                     <service-call name="create#co.hotwax.integration.shipment.ShipmentReceiptHistory" in-map="[receiptId:shipmentReceiptItem.receiptId,
-                        comments:'Order Item sent as part of Transfer Order Shipment Receipt Feed', createdDate:nowDate]" out-map="shipmentReceiptHistory"/>
-
+                        comments:'Order Item sent as part of Transfer Order Shipment Receipt Feed', createdDate:nowDate]"/>
                 </iterate>
                 <script>
                     }
                 </script>
 
-                <set field="shipmentReceiptDetails.items" from="items"/>
+                <set field="shipmentReceiptMap.items" from="items"/>
 
                 <script>
                     new ObjectMapper()
                         .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
-                        .writerWithDefaultPrettyPrinter().writeValue(jGenerator, shipmentReceiptDetails)
+                        .writerWithDefaultPrettyPrinter().writeValue(jGenerator, shipmentReceiptMap)
                 </script>
             </iterate>
             <script>
