@@ -101,7 +101,7 @@
             <iterate list="shipmentReceiptItr" entry="shipmentReceipt">
                 <log message="Processing Shipment Receipt ${shipmentReceipt.shipmentExternalId}"/>
 
-                <set field="shipmentReceiptDetails" from="[order_id:shipmentReceipt.orderExternalId,fulfillment_id:shipmentReceipt.shipmentExternalId]" type="NewMap"/>
+                <set field="shipmentReceiptDetails" from="[orderId:shipmentReceipt.orderExternalId,fulfillmentId:shipmentReceipt.shipmentExternalId]"/>
                 <set field="items" from="[]"/>
 
                 <script>
