@@ -3,7 +3,7 @@
 
     <service verb="generate" noun="TransferOrderShipmentFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>
-            Service to generate Transfer Order Fulfilled Items Feed.
+            Service to generate Transfer Order Shipment Feed.
         </description>
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true">
@@ -26,14 +26,14 @@
             </parameter>
             <parameter name="parentFacilityTypeIds" type="List">
                 <description>
-                    List of parent Facility Type Ids for generating Transfer Order Fulfilled Items Feed.
+                    List of parent Facility Type Ids for generating Transfer Order Shipment Feed.
                     For passing the parent Facility Type Ids as list, add values like - PHYSICAL_STORE,DISTRIBUTION_CENTER,VIRTUAL_FACILITY and for single value use - PHYSICAL_STORE.
                 </description>
             </parameter>
         </in-parameters>
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
-            <log message="Generating Transfer Order Fulfilled Items Feed file of HotWax for Order ${orderId}, at time ${nowDate}"/>
+            <log message="Generating Transfer Order Shipment Feed file of HotWax for Order ${orderId}, at time ${nowDate}"/>
 
             <script>
                 import com.fasterxml.jackson.core.JsonGenerator
@@ -42,8 +42,7 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
 
-                // Dynamic view to retrieve eligible transfer orders for the transfer order fulfilled items feed.
-
+                // Dynamic view to retrieve eligible transfer orders for the transfer order shipment feed
                 def fulfilledTransferOrder_find = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
                 dynamicView = fulfilledTransferOrder_find.makeEntityDynamicView()
                 dynamicView.setEntityName("FulfilledTransferOrderItem")
@@ -82,21 +81,20 @@
                 fulfilledTransferOrder_find.selectField("shipmentId,orderExternalId,trackingIdNumber")
                 fulfilledTransferOrder_find.distinct(true)
 
-
                 // Using try-with-resources to automatically close the EntityListIterator 'fulfilledTransferOrdersItr'
                 try (fulfilledTransferOrdersItr = fulfilledTransferOrder_find.iterator()) {
             </script>
 
             <!-- If no orders in fulfilledTransferOrdersItr, then don't generate the file -->
             <if condition="!fulfilledTransferOrdersItr.hasNext()">
-                <return message="No eligible orders for Fulfilled Transfer Order Items Feed at ${nowDate}, not generating the TO Shipment Feed File for NetSuite."/>
+                <return message="No eligible orders for Transfer Order Shipment Feed at ${nowDate}, not generating the TO Shipment Feed File for NetSuite."/>
             </if>
 
             <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
 
-            <!-- Prepare Transfer Order Fulfilled Items JSON File Path -->
+            <!-- Prepare Transfer Order Shipment Feed JSON File Path -->
             <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
             <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
@@ -104,30 +102,27 @@
 
             <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
 
-            <!-- Prepare the Transfer Order Fulfilled Items Feed file  -->
+            <!-- Prepare the Transfer Order Shipment Feed file  -->
             <script>
-
                 try {
                     //json file
-                    File fulfilledTransferOrderItemsFeedFile = new File(jsonFilePath)
-                    if (!fulfilledTransferOrderItemsFeedFile.parentFile.exists()) fulfilledTransferOrderItemsFeedFile.parentFile.mkdirs()
+                    File transferOrderShipmentFeedFile = new File(jsonFilePath)
+                    if (!transferOrderShipmentFeedFile.parentFile.exists()) transferOrderShipmentFeedFile.parentFile.mkdirs()
                     JsonFactory jfactory = new JsonFactory()
 
                     /* Declaring the PrintWriter and JsonGenerator resources in the try statement,
                         so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
-                    try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, fulfilledTransferOrderItemsFeedFile);
+                    try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, transferOrderShipmentFeedFile);
                          JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
                         jGenerator.writeStartArray()
             </script>
 
             <iterate list="fulfilledTransferOrdersItr" entry="fulfilledTransferOrder">
 
-                <set field="fulfillmentDetails" from="[orderId:fulfilledTransferOrder.orderExternalId, trackingNumber:fulfilledTransferOrder.trackingIdNumber, shipmentId:fulfilledTransferOrder.shipmentId]"/>
-
+                <set field="shipmentMap" from="[orderId:fulfilledTransferOrder.orderExternalId, trackingNumber:fulfilledTransferOrder.trackingIdNumber, shipmentId:fulfilledTransferOrder.shipmentId]"/>
                 <set field="items" from="[]"/>
 
                 <script>
-
                     // dynamicView to fetch item details for eligible shipmentId
                     def entityFind = ec.entity.find("org.apache.ofbiz.order.order.OrderShipment")
                     dynamicView = entityFind.makeEntityDynamicView()
@@ -148,11 +143,10 @@
 
                 <iterate list="fulfilledItems" entry="fulfilledItem">
 
-                    <script>
-                        itemMap = [lineId:fulfilledItem.orderItemExternalId, quantity:fulfilledItem.shippedQuantity, tags:"hotwax-fulfilled"]
-                        items.add(itemMap)
-                    </script>
+                    <set field="itemMap" from="[lineId:fulfilledItem.orderItemExternalId, quantity:fulfilledItem.shippedQuantity, tags:"hotwax-fulfilled"]"/>
+                    <script>items.add(itemMap)</script>
 
+                    <!-- Create Order Fulfillment History record for each order item included in the feed -->
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledItem.orderId,
                         orderItemSeqId:fulfilledItem.orderItemSeqId, shipmentId:fulfilledItem.shipmentId,
                         comments:'Order Item sent as part of Transfer Order Shipment Feed', createdDate:nowDate,
@@ -163,12 +157,12 @@
                     }
                 </script>
 
-                <set field="fulfillmentDetails.items" from="items"/>
+                <set field="shipmentMap.items" from="items"/>
 
                 <script>
                     new ObjectMapper()
                     .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
-                    .writerWithDefaultPrettyPrinter().writeValue(jGenerator, fulfillmentDetails)
+                    .writerWithDefaultPrettyPrinter().writeValue(jGenerator, shipmentMap)
                 </script>
             </iterate>
             <script>
@@ -186,7 +180,7 @@
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                 messageText:jsonFilePathRef, productStoreId:productStoreId]" out-map="fulfillmentFeedSysMsgOut"/>
 
-            <return message="Completed Transfer Order Fulfilled Items Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+            <return message="Completed Transfer Order Shipment Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${fulfillmentFeedSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
