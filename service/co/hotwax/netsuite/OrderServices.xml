@@ -817,7 +817,7 @@
                      This can result into duplicate orders as the previous files were sent to SFTP and since history was not created
                      so these orders will be eligible and will come again in the feed. -->
 
-                <service-call name="co.hotwax.ofbiz.OrderServices.generate#BrokeredOrderItemsFeed"
+                <service-call name="co.hotwax.netsuite.OrderServices.generate#BrokeredOrderItemsFeed"
                               in-map="context" out-map="brokeredFeedOut" transaction="force-new"/>
                 <set field="brokeredOrdersCount" from="brokeredFeedOut?.brokeredFeedOrdersCount"/>
 
