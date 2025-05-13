@@ -70,7 +70,7 @@
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
-    <!-- Template Service Job to generate Shipments Receipt Feed from HotWax -->
+    <!-- Template Service Job to generate Transfer Order Shipments Receipt Feed from HotWax -->
     <moqui.basic.Enumeration enumId="GEN_TO_SHPMNT_RCPT_FD" enumCode="GEN_TO_SHPMNT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMNT_RCPT_FD"
            description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax"
