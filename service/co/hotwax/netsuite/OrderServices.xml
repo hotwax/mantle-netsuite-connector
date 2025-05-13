@@ -912,7 +912,7 @@
                 if(orderId) brokeredOrders_find.condition("orderId", orderId)
                 if(orderItemSeqId) brokeredOrders_find.condition("orderItemSeqId", orderItemSeqId)
                 ec.logger.debug("Initial condition: orderItemSeqId = orderItemSeqId")
-                if(facilityGroupIds) brokeredOrders_find.condition("facilityGroupIds", EntityCondition.ComparisonOperator.IN, facilityGroupId)
+                if(facilityGroupIds) brokeredOrders_find.condition("facilityGroupId", EntityCondition.ComparisonOperator.IN, facilityGroupIdS)
                 if(productStoreIds) brokeredOrders_find.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
                 brokeredOrders_find.limit(brokeredOrdersCountPerFeed)
                 .selectField("orderId,orderStatusId,entryDate,netsuiteItemLineId,itemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,customerPartyId,itemStatusId")
@@ -937,16 +937,16 @@
                 <set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/>
                 <set field="templateWriter" from="new StringWriter()"/>
                 <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
-                <set field="brokerOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())" type="NewMap"/>
+                <set field="brokerOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
 
+                <if condition="!csvHeader">
+                    <set field="csvHeaders" from="brokerOrderItemMap.keySet().toList()"/>
+                    <script>csvPrinter.printRecord(csvHeaders)</script>
+                </if>
+
+                <set field="brokerOrderItemRecord" from="csvHeaders.collect { key -> brokerOrderItemMap[key] != null ? brokerOrderItemMap[key] : '' }"/>
 
                 <script>
-                    if (!csvHeaders) {
-                        csvHeaders =  brokerOrderItemMap.keySet().toList()
-                        csvPrinter.printRecord(csvHeaders)
-                    }
-
-                    def brokerOrderItemRecord = csvHeaders.collect { key -> brokerOrderItemMap[key] != null ? brokerOrderItemMap[key] : "" }
                     csvPrinter.printRecord(brokerOrderItemRecord)
 
                     //incrementing the brokeredFeedOrdersCount for total orders included in the feed
