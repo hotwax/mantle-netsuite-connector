@@ -290,7 +290,7 @@
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                 messageText:jsonFilePathRef, productStoreId:productStoreId]" out-map="shipmentsReceiptFeedSysMsgOut"/>
 
-            <return message="Completed the Shipments Receipt Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+            <return message="Completed the Transfer Order Shipments Receipt Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${shipmentsReceiptFeedSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
