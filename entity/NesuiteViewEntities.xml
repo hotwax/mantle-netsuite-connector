@@ -421,17 +421,19 @@
         <alias entity-alias="OIA" field="attrValue" name="netsuiteItemLineId"/>
         <alias entity-alias="OH" field="orderId" name="orderId"/>
         <alias entity-alias="OH" field="statusId" name="orderStatusId"/>
-        <alias entity-alias="OI" field="orderItemSeqId" name="itemSeqId"/>
+        <alias entity-alias="OI" field="orderItemSeqId" name="orderItemSeqId"/>
         <alias entity-alias="OI" field="quantity" name="orderItemQuantity"/>
         <alias entity-alias="OI" field="productId" name="productId"/>
         <alias entity-alias="OI" field="statusId" name="itemStatusId"/>
         <alias entity-alias="OISG" name="shipmentMethodTypeId"/>
+        <alias entity-alias="OISG" field="shipGroupSeqId" name="shipGroupSeqId"/>
         <alias entity-alias="OH" name="entryDate"/>
         <alias entity-alias="OISGINR" field="quantity" name="reservedItemQuantity" function="sum"/>
         <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
         <alias entity-alias="FGM" field="facilityGroupId" name="facilityGroupId"/>
         <alias entity-alias="OISG" field="contactMechId" name="postalContactMechId"/>
         <alias entity-alias="ODR" field="partyId" name="customerPartyId"/>
+        <alias entity-alias="EFO" name="externalFulfillmentOrderItemId"/>
         <entity-condition>
             <econditions combine="and">
                 <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>

@@ -908,14 +908,13 @@
                 def csvHeaders = null
 
                 brokeredOrders_find = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed")
-                .condition("itemStatusId", "ITEM_APPROVED")
+                brokeredOrders_find.condition("itemStatusId", "ITEM_APPROVED")
                 if(orderId) brokeredOrders_find.condition("orderId", orderId)
                 if(orderItemSeqId) brokeredOrders_find.condition("orderItemSeqId", orderItemSeqId)
-                ec.logger.debug("Initial condition: orderItemSeqId = orderItemSeqId")
-                if(facilityGroupIds) brokeredOrders_find.condition("facilityGroupId", EntityCondition.ComparisonOperator.IN, facilityGroupIdS)
+                if(facilityGroupIds) brokeredOrders_find.condition("facilityGroupId", EntityCondition.ComparisonOperator.IN, facilityGroupIds)
                 if(productStoreIds) brokeredOrders_find.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
                 brokeredOrders_find.limit(brokeredOrdersCountPerFeed)
-                .selectField("orderId,orderStatusId,entryDate,netsuiteItemLineId,itemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,customerPartyId,itemStatusId")
+                .selectField("orderId,orderStatusId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,customerPartyId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
                 .orderBy("entryDate")
 
                 // Using try-with-resources to automatically close the EntityListIterator 'brokeredOrdersItr'
@@ -932,6 +931,7 @@
             </script>
 
             <iterate list="brokeredOrdersItr" entry="brokerOrderItem">
+                <log message="Generating Brokered Order and Items Feed for order ${brokerOrderItem.orderId} at time ${nowDate}"/>
                 <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
                 <!-- Load and render the FTL template -->
                 <set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/>
@@ -939,7 +939,19 @@
                 <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
                 <set field="brokerOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
 
-                <if condition="!csvHeader">
+                <if condition="brokerOrderItem.externalFulfillmentOrderItemId"><then>
+                    <!-- Update the ExternalFulfillmentOrderItem records for the same shipGroupSeqId for an Order Item -->
+                    <service-call name="update#co.hotwax.integration.order.ExternalFulfillmentOrderItem"
+                                  in-map="[externalFulfillmentOrderItemId:brokerOrderItem.externalFulfillmentOrderItemId,
+                                fulfillmentStatus:'Sent']"/>
+                </then><else>
+                    <!-- Create record of ExternalFulfillmentOrderItem to keep logs for the Brokered Order and Items Feed -->
+                    <service-call name="create#co.hotwax.integration.order.ExternalFulfillmentOrderItem" in-map="[orderId:brokerOrderItem.orderId,
+                                orderItemSeqId:brokerOrderItem.orderItemSeqId, shipGroupSeqId:brokerOrderItem.shipGroupSeqId,
+                                fulfillmentStatus:'Sent', createdDate:nowDate, quantity:brokerOrderItem.orderItemQuantity]"/>
+                </else></if>
+
+                <if condition="!csvHeaders">
                     <set field="csvHeaders" from="brokerOrderItemMap.keySet().toList()"/>
                     <script>csvPrinter.printRecord(csvHeaders)</script>
                 </if>
@@ -961,14 +973,16 @@
                 }
             </script>
             <!-- Save the csv Feed File path in System Message messageText -->
-            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
-                systemMessageRemoteId:systemMessageRemoteId, productStoreId:productStoreId]" out-map="brokeredSystemMessageOut"/>
+            <if condition="brokeredFeedOrdersCount != 0">
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
+                    systemMessageRemoteId:systemMessageRemoteId, productStoreId:productStoreId]" out-map="brokeredSystemMessageOut"/>
+            </if>
 
             <return message="Created the Brokered Order Items Feed file with orders count
                 ${brokeredFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId}
                 and remote ${systemMessageRemoteId} saved response in messages
-                ${brokeredSystemMessageOut.systemMessageId}"/>
+                ${brokeredSystemMessageOut?.systemMessageId}"/>
         </actions>
     </service>
 </services>
