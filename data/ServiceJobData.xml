@@ -58,7 +58,7 @@
     <moqui.basic.Enumeration enumId="NS_CREATE_IF" enumCode="NS_CREATE_IF" description="NetSuite Create Sales Order Item Fulfillment Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_EXP_SO_ITEMS" enumCode="NS_EXP_SO_ITEMS" description="NetSuite Export Sales Order Items Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_EXP_SALES_ORDER" enumCode="NS_EXP_SALES_ORDER" description="NetSuite Export Sales Order Job" enumTypeId="ORDER_SYS_JOB"/>
-    <moqui.basic.Enumeration enumId="NS_EXP_SO_IF" enumCode="NS_EXP_SALES_ORDER" description="NetSuite Export Sales Order Item Fulfillment Job" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="NS_EXP_SO_IF" enumCode="NS_EXP_SO_IF" description="NetSuite Export Sales Order Item Fulfillment Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_SALES_ORDER" enumCode="NS_IMP_SALES_ORDER" description="NetSuite Import Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_UPDATE_SO" enumCode="NS_UPDATE_SO" description="NetSuite Import Update Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_GENERATE_INV" enumCode="NS_GENERATE_INV" description="NetSuite Generate Inventory Job" enumTypeId="INVENTORY_SYS_JOB"/>
