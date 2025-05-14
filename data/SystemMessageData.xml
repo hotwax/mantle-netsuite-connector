@@ -183,4 +183,13 @@
     <moqui.basic.Enumeration description="Generate mapped Feed file from Store TO Fulfillment of NetSuite to Update TO Shipment in OMS" enumId="OMSUpdateTOShipmentFeed" enumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Generate mapped Feed file of Store TO Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSUpdateTOShipmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSStoreToFulfillmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Store Fulfillment" enumId="ImportStoreToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSUpdateTOShipmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+
+ <!-- System Message Type for Fulfilled Order Items Feed -->
+ <moqui.service.message.SystemMessageType systemMessageTypeId="FulfilledOrderItemsFeed"
+                                          description="Generate HotWax Fulfilled Order Items Feed"
+                                          parentTypeId="LocalFeedFile"
+                                          sendPath="/home/${sftpUsername}/hotwax/FulfilledOrderItems/${productStoreId}-FulfilledOrderItemsFeed-${systemMessageId}-${dateTime}.json"
+                                          sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+                                          receivePath="${contentRoot}/hotwax/FulfilledOrderItemsFeed/${productStoreId}-HotWaxFulfilledOrderItemsFeed-${dateTime}.json"/>
+
 </entity-facade-xml>
