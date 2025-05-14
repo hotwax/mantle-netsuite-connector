@@ -170,9 +170,9 @@
                 dynamicView.addAlias("OH", "productStoreId")
                 dynamicView.addAlias("OH", "orderId")
                 dynamicView.addAlias("OH", "orderExternalId", "externalId", null)
-                dynamicView.addAlias("SRH", "shipmentReceiptHistoryId")
+                dynamicView.addAlias("SRH", "historyId")
 
-                shipmentReceipt_find.condition("shipmentReceiptHistoryId", EntityCondition.IS_NULL, null)
+                shipmentReceipt_find.condition("historyId", EntityCondition.IS_NULL, null)
                 shipmentReceipt_find.condition("shipmentTypeId", "OUT_TRANSFER")
 
                 if(shipmentId) shipmentReceipt_find.condition("shipmentId", shipmentId)
@@ -248,9 +248,9 @@
                     dynamicView.addAlias("SI", "shipmentItemExternalId", "externalId", null)
                     dynamicView.addAlias("SR", "totalQuantityAccepted", "quantityAccepted", null)
                     dynamicView.addAlias("SR", "receiptId")
-                    dynamicView.addAlias("SRH", "shipmentReceiptHistoryId")
+                    dynamicView.addAlias("SRH", "historyId")
 
-                    entity_find.condition("shipmentReceiptHistoryId", EntityCondition.IS_NULL, null)
+                    entity_find.condition("historyId", EntityCondition.IS_NULL, null)
                     entity_find.condition("shipmentId", shipmentReceipt.shipmentId)
 
                     entity_find.selectField("shipmentItemExternalId,productId,totalQuantityAccepted,receiptId")
