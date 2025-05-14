@@ -69,4 +69,18 @@
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillment"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
+
+    <!-- Template Service Job to generate Transfer Order Shipments Receipt Feed from HotWax -->
+    <moqui.basic.Enumeration enumId="GEN_TO_SHPMNT_RCPT_FD" enumCode="GEN_TO_SHPMNT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMNT_RCPT_FD"
+           description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax"
+           serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderShipmentReceiptFeed"
+           cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="shipmentId"/>
+        <parameters parameterName="sinceReceivedDate"/>
+        <parameters parameterName="productStoreIds"/>
+    </moqui.service.job.ServiceJob>
+
 </entity-facade-xml>
