@@ -168,6 +168,7 @@
                 dynamicView.addAlias("SH", "shipmentId")
                 dynamicView.addAlias("SH", "shipmentTypeId")
                 dynamicView.addAlias("OH", "productStoreId")
+                dynamicView.addAlias("OH", "orderId")
                 dynamicView.addAlias("OH", "orderExternalId", "externalId", null)
                 dynamicView.addAlias("SRH", "shipmentReceiptHistoryId")
 
@@ -177,7 +178,7 @@
                 if(shipmentId) shipmentReceipt_find.condition("shipmentId", shipmentId)
                 if(productStoreIds) shipmentReceipt_find.condition("productStoreId",EntityCondition.ComparisonOperator.IN, productStoreIds)
                 if(sinceReceivedDate) shipmentReceipt_find.havingCondition(ec.entity.conditionFactory.makeCondition("receivedDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceReceivedDate))
-                shipmentReceipt_find.selectField("shipmentId,orderExternalId,shipmentExternalId")
+                shipmentReceipt_find.selectField("shipmentId,orderExternalId,shipmentExternalId,orderId")
                 shipmentReceipt_find.distinct(true)
 
                 // Using try-with-resources to automatically close the EntityListIterator 'shipmentReceiptItr'
@@ -217,8 +218,20 @@
 
             <!-- Preparing Shipment Receipts -->
             <iterate list="shipmentReceiptItr" entry="shipmentReceipt">
+                <!--
+                    For some clients, we have the Netsuite Order ID in the identification.
+                    Therefore, we first check if the Netsuite Order ID is present in the identification;
+                    if so, we use that. Otherwise, we use the external ID from the OrderHeader.
+                -->
+                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
+                    <econdition field-name="orderId" from="shipmentReceipt.orderId"/>
+                    <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                </entity-find>
 
-                <set field="shipmentReceiptMap" from="[orderId:shipmentReceipt.orderExternalId, fulfillmentId:shipmentReceipt.shipmentExternalId]"/>
+                <set field="netsuiteOrderId" from="orderIdentificationList?.first?.idValue"/>
+                <set field="orderId" from=" netsuiteOrderId ? netsuiteOrderId : shipmentReceipt.orderExternalId"/>
+
+                <set field="shipmentReceiptMap" from="[orderId:orderId, fulfillmentId:shipmentReceipt.shipmentExternalId]"/>
                 <set field="items" from="[]"/>
 
                 <script>
