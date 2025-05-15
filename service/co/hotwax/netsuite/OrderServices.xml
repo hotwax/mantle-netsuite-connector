@@ -853,7 +853,7 @@
     <parameter name="parentFacilityTypeIds" type="List">
         <description>
             List of parent Facility Type Ids for generating Brokered Orders Items Feed.
-            For passing the parent Facility Type Ids as list, add values like - DISTRIBUTION_CENTER,PHYSICAL_STORE,VIRTUAL_FACILITY and for single value use - DISTRIBUTION_CENTER.
+            For passing the parent Facility Type Ids as list, add values like - DISTRIBUTION_CENTER,PHYSICAL_STORE and for single value use - DISTRIBUTION_CENTER.
         </description>
     </parameter>
     <parameter name="facilityGroupIds" type="List">
@@ -887,7 +887,7 @@
 
             <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() > 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
 
-            <!-- Prepare Brokered Order and Items Feed JSON File Path -->
+            <!-- Prepare Brokered Order and Items Feed CSV File Path -->
             <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
                 productStoreId:productStoreId], false)"/>
