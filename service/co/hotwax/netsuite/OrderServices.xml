@@ -907,7 +907,7 @@
                 def isFileEmpty = true
                 def csvHeaders = null
 
-                brokeredOrders_find = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed")
+                brokeredOrders_find = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed").distinct(true)
                 brokeredOrders_find.condition("itemStatusId", "ITEM_APPROVED")
                 if(orderId) brokeredOrders_find.condition("orderId", orderId)
                 if(orderItemSeqId) brokeredOrders_find.condition("orderItemSeqId", orderItemSeqId)
