@@ -1,47 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-seed">
-    <!-- ServiceJob data for create order from HC to netsuite -->
-    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite"
-        serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
-        <parameters parameterName="orderId" parameterValue=""/>
-        <parameters parameterName="fromOrderDate" parameterValue=""/>
-        <parameters parameterName="thruOrderDate" parameterValue=""/>
-        <parameters parameterName="includeShipmentMethod" parameterValue=""/>
-        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
-        <parameters parameterName="isMixCartOrder" parameterValue=""/>
-    </moqui.service.job.ServiceJob>
-
-    <!-- ServiceJob data for create order from HC to netsuite -->
-    <moqui.service.job.ServiceJob jobName="generate_CustomerDepositFeed" description="Generate HotWax Create Order Feed for Netsuite"
-        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerDepositFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
-        <parameters parameterName="fromDate" parameterValue=""/>
-        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
-        <parameters parameterName="jobName" parameterValue=""/>
-        <parameters parameterName="skipLastRunTimeUpdate" parameterValue=""/>
-        <parameters parameterName="lastRunTime"/>
-        <parameters parameterName="includePaymentMethod"/>
-        <parameters parameterName="excludePaymentMethod"/>
-    </moqui.service.job.ServiceJob>
-    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" description="Generate HotWax Create Customer Feed for Netsuite"
-        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
-        <parameters parameterName="partyId" parameterValue=""/>
-    </moqui.service.job.ServiceJob>
-
-    <!-- ServiceJob data for polling csv file from sftp location -->
-    <moqui.service.job.ServiceJob jobName="poll_fulfilledItemsNetsuiteToHotwax"
-            description="Poll Csv file from sftp location of fulfilled order items feed netsuite to hotwax"
-            serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue="FulfilledOrderItemsFeedNetsuiteToHotwax"/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
-    </moqui.service.job.ServiceJob>
-
-    <!-- NetSuite SuiteScripts Job data-->
+   
+    <!-- NetSuite Job Enum Data -->
     <moqui.basic.Enumeration enumId="NS_IMP_CASH_SALE" enumCode="NS_IMP_CASH_SALE" description="NetSuite Import Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_EXP_CASH_SALE" enumCode="NS_EXP_CASH_SALE" description="NetSuite Export Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_CUSTOMER" enumCode="NS_IMP_CUSTOMER" description="NetSuite Import Customer Job" enumTypeId="ORDER_SYS_JOB"/>
@@ -68,7 +28,57 @@
     <moqui.basic.Enumeration enumId="NS_EXP_WH_TO_IF" enumCode="NS_EXP_WH_TO_IF" description="NetSuite Export Warehouse Transfer Order Item Fulfillment Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_TO_IR" enumCode="NS_IMP_TO_IR" description="NetSuite Import Transfer Order Item Receipt Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_TO_IF" enumCode="NS_IMP_TO_IF" description="NetSuite Import Transfer Order Item Fulfillment Job" enumTypeId="INVENTORY_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_TO_SHPMNT_RCPT_FD" enumCode="GEN_TO_SHPMNT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_TO_FULFILLMENT_FD" enumCode="POL_TO_FULFILLMENT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
+    
+    <!-- NetSuite Job Product Data -->
 
+
+    <!-- ServiceJob data for create order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite"
+        serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="orderId" parameterValue=""/>
+        <parameters parameterName="fromOrderDate" parameterValue=""/>
+        <parameters parameterName="thruOrderDate" parameterValue=""/>
+        <parameters parameterName="includeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="isMixCartOrder" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- ServiceJob data for create order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CustomerDepositFeed" description="Generate HotWax Create Order Feed for Netsuite"
+        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerDepositFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="fromDate" parameterValue=""/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="jobName" parameterValue=""/>
+        <parameters parameterName="skipLastRunTimeUpdate" parameterValue=""/>
+        <parameters parameterName="lastRunTime"/>
+        <parameters parameterName="includePaymentMethod"/>
+        <parameters parameterName="excludePaymentMethod"/>
+    </moqui.service.job.ServiceJob>
+
+    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" description="Generate HotWax Create Customer Feed for Netsuite"
+        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="partyId" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- ServiceJob data for polling csv file from sftp location -->
+    <moqui.service.job.ServiceJob jobName="poll_fulfilledItemsNetsuiteToHotwax"
+            description="Poll Csv file from sftp location of fulfilled order items feed netsuite to hotwax"
+            serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="FulfilledOrderItemsFeedNetsuiteToHotwax"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- NetSuite SuiteScripts Job data-->
     <moqui.service.job.ServiceJob jobName="HC_SC_ImportCashSale" description="Import Cash Sale Orders CSV in NetSuite"
         serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CASH_SALE"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCashSale" parameterName="scriptType" parameterValue="SCHEDULED"/>
@@ -174,7 +184,6 @@
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOItemFulfillment" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
     <!-- Service Job to poll Transfer Orders Feed file from NetSuite -->
-    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Orders Feed from SFTP location"
         serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_TRANSORD_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrderFeed"/>
@@ -182,14 +191,12 @@
     </moqui.service.job.ServiceJob>
 
     <!-- Service Job to poll Warehouse Fulfillments Feed file from NetSuite -->
-    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Wh_TO_Fulfillment" description="Poll Warehouse Transfer Order Fulfillments Feed from SFTP location"
         serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMENT_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportWhToFulfillmentFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
-    <moqui.basic.Enumeration enumId="POL_TO_FULFILLMENT_FD" enumCode="POL_TO_FULFILLMENT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMENT_FD"
         serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillment"/>
@@ -197,7 +204,7 @@
     </moqui.service.job.ServiceJob>
 
     <!-- Template Service Job to generate Transfer Order Shipments Receipt Feed from HotWax -->
-    <moqui.basic.Enumeration enumId="GEN_TO_SHPMNT_RCPT_FD" enumCode="GEN_TO_SHPMNT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    
     <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMNT_RCPT_FD"
            description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax"
            serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderShipmentReceiptFeed"
