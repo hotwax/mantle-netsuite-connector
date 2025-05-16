@@ -34,7 +34,114 @@
     <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
     
     <!-- NetSuite Job Product Data -->
+    <Product productId="NS_CREATE_CD" productTypeId="SERVICE" internalName="NS_CREATE_CD"
+             productName="NetSuite Create Customer Deposit Job" description="NetSuite Create Customer Deposit Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_CREATE_IF" productTypeId="SERVICE" internalName="NS_CREATE_IF"
+             productName="NetSuite Create Sales Order Item Fulfillment Job" description="NetSuite Create Sales Order Item Fulfillment Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_CREATE_INVOICE" productTypeId="SERVICE" internalName="NS_CREATE_INVOICE"
+             productName="NetSuite Create Sales Order Invoice Job" description="NetSuite Create Sales Order Invoice Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_CASH_SALE" productTypeId="SERVICE" internalName="NS_EXP_CASH_SALE"
+             productName="NetSuite Export Cash Sale Order Job" description="NetSuite Export Cash Sale Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_CUSTOMER" productTypeId="SERVICE" internalName="NS_EXP_CUSTOMER"
+             productName="NetSuite Export Customer Job" description="NetSuite Export Customer Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_INV_TRANS" productTypeId="SERVICE" internalName="NS_EXP_INV_TRANS"
+             productName="NetSuite Export Inventory Transfer Job" description="NetSuite Export Inventory Transfer Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_EXP_SALES_ORDER" productTypeId="SERVICE" internalName="NS_EXP_SALES_ORDER"
+             productName="NetSuite Export Sales Order Job" description="NetSuite Export Sales Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_SO_IF" productTypeId="SERVICE" internalName="NS_EXP_SO_IF"
+             productName="NetSuite Export Sales Order Item Fulfillment Job" description="NetSuite Export Sales Order Item Fulfillment Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_SO_ITEMS" productTypeId="SERVICE" internalName="NS_EXP_SO_ITEMS"
+             productName="NetSuite Export Sales Order Items Job" description="NetSuite Export Sales Order Items Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_WH_TO_IF" productTypeId="SERVICE" internalName="NS_EXP_WH_TO_IF"
+             productName="NetSuite Export Warehouse Transfer Order Item Fulfillment Job" description="NetSuite Export Warehouse Transfer Order Item Fulfillment Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_GENERATE_INV" productTypeId="SERVICE" internalName="NS_GENERATE_INV"
+             productName="NetSuite Generate Inventory Job" description="NetSuite Generate Inventory Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_GENERATE_PROD" productTypeId="SERVICE" internalName="NS_GENERATE_PROD"
+             productName="NetSuite Generate Product Job" description="NetSuite Generate Product Job"
+             primaryProductCategoryId="PRODUCT_SYS_JOB"/>
+    <Product productId="NS_IMP_CASH_SALE" productTypeId="SERVICE" internalName="NS_IMP_CASH_SALE"
+             productName="NetSuite Import Cash Sale Order Job" description="NetSuite Import Cash Sale Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_IMP_CUSTOMER" productTypeId="SERVICE" internalName="NS_IMP_CUSTOMER"
+             productName="NetSuite Import Customer Job" description="NetSuite Import Customer Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_IMP_INV_ADJ" productTypeId="SERVICE" internalName="NS_IMP_INV_ADJ"
+             productName="NetSuite Import Inventory Adjustment Job" description="NetSuite Import Inventory Adjustment Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_IMP_INV_TRANS" productTypeId="SERVICE" internalName="NS_IMP_INV_TRANS"
+             productName="NetSuite Import Inventory Transfer Job" description="NetSuite Import Inventory Transfer Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_IMP_SALES_ORDER" productTypeId="SERVICE" internalName="NS_IMP_SALES_ORDER"
+             productName="NetSuite Import Sale Order Job" description="NetSuite Import Sale Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_IMP_TO_IR" productTypeId="SERVICE" internalName="NS_IMP_TO_IR"
+             productName="NetSuite Import Transfer Order Item Receipt Job" description="NetSuite Import Transfer Order Item Receipt Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_UPDATE_SO" productTypeId="SERVICE" internalName="NS_UPDATE_SO"
+             productName="NetSuite Import Update Sale Order Job" description="NetSuite Import Update Sale Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_UPLOAD_INV" productTypeId="SERVICE" internalName="NS_UPLOAD_INV"
+             productName="NetSuite Upload Inventory Job" description="NetSuite Upload Inventory Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_UPLOAD_PROD" productTypeId="SERVICE" internalName="NS_UPLOAD_PROD"
+             productName="NetSuite Upload Product Job" description="NetSuite Upload Product Job"
+             primaryProductCategoryId="PRODUCT_SYS_JOB"/>
 
+    <!-- Job Product Category Members -->
+
+    <ProductCategoryMember productId="NS_CREATE_CD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_CREATE_IF" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_CREATE_INVOICE" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_CASH_SALE" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_CUSTOMER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_INV_TRANS" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SALES_ORDER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SO_IF" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SO_ITEMS" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_WH_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_GENERATE_INV" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_GENERATE_PROD" productCategoryId="PRODUCT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_INV_ADJ" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_INV_TRANS" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_SALES_ORDER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_TO_IR" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPDATE_SO" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPLOAD_INV" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPLOAD_PROD" productCategoryId="PRODUCT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    
+    <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_INV_ADJ" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_INV_TRANS" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_SALES_ORDER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_TO_IR" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPDATE_SO" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    
+    <ProductCategoryMember productId="NS_EXP_CASH_SALE" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_CUSTOMER" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_INV_TRANS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SALES_ORDER" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SO_ITEMS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_WH_TO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_GENERATE_INV" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_GENERATE_PROD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPLOAD_INV" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPLOAD_PROD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    
 
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite"
