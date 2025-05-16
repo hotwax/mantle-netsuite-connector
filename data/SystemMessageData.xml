@@ -192,4 +192,12 @@
             sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
             receivePath="${contentRoot}/netsuite/TransferOrdersReceiptFeed/TransferOrdersReceiptFeed-${dateTime}.json"/>
 
+
+    <!-- System Message Type for Brokered Order Items Feed -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="BrokeredOrderItemsFeedForNS"
+          description="Generate HotWax Brokered Order Items Feed for Netsuite"
+          parentTypeId="LocalFeedFile"
+          sendPath="/home/${sftpUsername}/netsuite/salesorder/update/${productStoreId}-BrokeredOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
+          sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+          receivePath="${contentRoot}/hotwax/BrokeredOrderItemsFeed/${productStoreId}-HotWaxBrokeredOrderItemsFeed-${dateTime}.csv"/>
 </entity-facade-xml>
