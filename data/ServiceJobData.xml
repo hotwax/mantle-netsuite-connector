@@ -209,4 +209,17 @@
         <parameters parameterName="productStoreIds"/>
     </moqui.service.job.ServiceJob>
 
+     <!-- Template Service Job to generate Transfer Order Items Feed from HotWax to Netsuite -->
+    <moqui.basic.Enumeration enumId="GEN_TO_ITEM_FD" enumCode="GEN_TO_ITEM_FD" description="Generate Transfer Order Items Feed Job" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderItemsFeed" jobTypeEnumId="GEN_TO_ITEM_FD"
+           description="Template Service Job to generate the Transfer Order Items Feed from HotWax"
+           serviceName="co.hotwax.netsuite.TransferOrderServices.generate#CreateTransferOrderItemsFeed"
+           cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="fromOrderDate"/>
+        <parameters parameterName="thruOrderDate"/>
+    </moqui.service.job.ServiceJob>
+
 </entity-facade-xml>
