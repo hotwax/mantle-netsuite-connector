@@ -5,7 +5,7 @@
     .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)/>
 
 <#assign facilityIdentification = ec.entity.find("co.hotwax.facility.FacilityIdentification")
-    .condition("facilityId", "${transferOrderItem.originFacilityId}")
+    .condition("facilityId", "${transferOrderItem.originFacilityId!}")
     .condition("facilityIdenTypeId", "ORDR_ORGN_DPT")
     .list()
     .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)/>
@@ -15,7 +15,7 @@
     .list()/>
 
 <#assign originFacilityExternalId = ec.entity.find("org.apache.ofbiz.product.facility.Facility")
-    .condition("facilityId", "${transferOrderItem.originFacilityId}")
+    .condition("facilityId", "${transferOrderItem.originFacilityId!}")
     .list()/>
 
 {
@@ -23,7 +23,7 @@
     "salesChannel": "WEB_SALES_CHANNEL",
     "HCShopifySalesOrderId": "${transferOrderItem.externalId}",
     "externalId":"${transferOrderItem.externalId}",
-    "formLocation": "${originFacilityExternalId[0].externalId}",
+    "formLocation": "${originFacilityExternalId[0].externalId!}",
     "orderNote": "",
     "shippingMethod": "",
     "subsidiary": "${transferOrderItem.productStoreExternalId}",
