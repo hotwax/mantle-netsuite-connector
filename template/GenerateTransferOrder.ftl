@@ -5,7 +5,7 @@
     .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)/>
 
 <#assign facilityIdentification = ec.entity.find("co.hotwax.facility.FacilityIdentification")
-    .condition("facilityId", "${transferOrderItem.orderFacilityId}")
+    .condition("facilityId", "${transferOrderItem.originFacilityId}")
     .condition("facilityIdenTypeId", "ORDR_ORGN_DPT")
     .list()
     .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)/>
