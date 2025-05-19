@@ -196,7 +196,7 @@
         description="Generate HotWax Create Order Feed for Netsuite"
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/transferorder/export/CreatedTransferOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
-        sendServiceName="co.hotwax.ofbiz.SystemMessageServices. send#SystemMessageFileSftp"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/netsuite/CreateTransferOrderFeed/createTransferOrderFeed-${dateTime}.csv">
     </moqui.service.message.SystemMessageType>
 
