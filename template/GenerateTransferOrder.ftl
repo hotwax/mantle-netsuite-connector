@@ -6,21 +6,29 @@
 
 <#assign facilityIdentification = ec.entity.find("co.hotwax.facility.FacilityIdentification")
     .condition("facilityId", "${transferOrderItem.orderFacilityId}")
+    .condition("facilityIdenTypeId", "ORDR_ORGN_DPT")
     .list()
     .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)/>
 
+<#assign orderFacilityExternalId = ec.entity.find("org.apache.ofbiz.product.facility.Facility")
+    .condition("facilityId", "${transferOrderItem.orderFacilityId}")
+    .list()/>
+
+<#assign originFacilityExternalId = ec.entity.find("org.apache.ofbiz.product.facility.Facility")
+    .condition("facilityId", "${transferOrderItem.originFacilityId}")
+    .list()/>
 
 {
     "HCOrderId": "${transferOrderItem.orderId}",
     "salesChannel": "WEB_SALES_CHANNEL",
     "HCShopifySalesOrderId": "${transferOrderItem.externalId}",
     "externalId":"${transferOrderItem.externalId}",
-    "formLocation": "${transferOrderItem?.originFacilityId}",
+    "formLocation": "${originFacilityExternalId[0].externalId}",
     "orderNote": "",
     "shippingMethod": "",
     "subsidiary": "${transferOrderItem.productStoreExternalId}",
     "date": "${transferOrderItem.orderDate}",
-    "toLocation": "${transferOrderItem.orderFacilityId}",
+    "toLocation": "${orderFacilityExternalId[0].externalId}",
     <#if facilityIdentification?has_content>"department": "${facilityIdentification[0].idValue}",</#if>
     "amount": "",
     "orderLineId": "${transferOrderItem.orderItemSeqId}",
