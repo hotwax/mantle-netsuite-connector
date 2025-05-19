@@ -32,6 +32,10 @@
     <moqui.basic.Enumeration enumId="POL_TO_FULFILLMENT_FD" enumCode="POL_TO_FULFILLMENT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_CRT_ORD_FD" enumCode="GEN_CRT_ORD_FD" description="Generate create orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_CUST_DEP_FD" enumCode="GEN_CUST_DEP_FD" description="Generate Customer Deposit Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_CRT_CUST_FD" enumCode="GEN_CRT_CUST_FD" description="Generate HotWax Create Customer Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_FLFLD_ITM_FRM_NS" enumCode="POL_FLFLD_ITM_FRM_NS" description="Poll Fufilled Order Items From NetSuite Job" enumTypeId="ORDER_SYS_JOB"/>
     
     <!-- NetSuite Job Product Data -->
     <Product productId="NS_CREATE_CD" productTypeId="SERVICE" internalName="NS_CREATE_CD"
@@ -97,6 +101,18 @@
     <Product productId="NS_UPLOAD_PROD" productTypeId="SERVICE" internalName="NS_UPLOAD_PROD"
              productName="NetSuite Upload Product Job" description="NetSuite Upload Product Job"
              primaryProductCategoryId="PRODUCT_SYS_JOB"/>
+    <Product productId="GEN_CRT_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_ORD_FD" 
+             productName="Generate Create Orders Feed For NetSuite Job" description="Generate Create Orders Feed For NetSuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_CUST_DEP_FD" productTypeId="SERVICE" internalName="GEN_CUST_DEP_FD" 
+             productName="Generate Customer Deposit Feed for Netsuite Job" description="Generate Customer Deposit Feed for Netsuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_CRT_CUST_FD" productTypeId="SERVICE" internalName="GEN_CRT_CUST_FD" 
+             productName="Generate HotWax Create Customer Feed for Netsuite Job" description="Generate HotWax Create Customer Feed for Netsuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="POL_FLFLD_ITM_FRM_NS" productTypeId="SERVICE" internalName="POL_FLFLD_ITM_FRM_NS" 
+             productName="Poll Fufilled Order Items From NetSuite Job" description="Poll Fufilled Order Items From NetSuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
 
     <!-- Job Product Category Members -->
 
@@ -109,6 +125,9 @@
     <ProductCategoryMember productId="NS_EXP_SALES_ORDER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_SO_IF" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_SO_ITEMS" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_ORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CUST_DEP_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_CUST_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_WH_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_GENERATE_INV" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_GENERATE_PROD" productCategoryId="PRODUCT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -121,6 +140,7 @@
     <ProductCategoryMember productId="NS_UPDATE_SO" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPLOAD_INV" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPLOAD_PROD" productCategoryId="PRODUCT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_FLFLD_ITM_FRM_NS" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     
     <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -129,6 +149,7 @@
     <ProductCategoryMember productId="NS_IMP_SALES_ORDER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_TO_IR" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPDATE_SO" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_FLFLD_ITM_FRM_NS" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     
     <ProductCategoryMember productId="NS_EXP_CASH_SALE" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_CUSTOMER" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -141,10 +162,13 @@
     <ProductCategoryMember productId="NS_GENERATE_PROD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPLOAD_INV" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPLOAD_PROD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_ORD_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CUST_DEP_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_CUST_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     
 
     <!-- ServiceJob data for create order from HC to netsuite -->
-    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite"
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" jobTypeEnumId="GEN_CRT_ORD_FD"
         serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
@@ -156,8 +180,8 @@
         <parameters parameterName="isMixCartOrder" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
-    <!-- ServiceJob data for create order from HC to netsuite -->
-    <moqui.service.job.ServiceJob jobName="generate_CustomerDepositFeed" description="Generate HotWax Create Order Feed for Netsuite"
+    <!-- ServiceJob data for create customer deposit from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CustomerDepositFeed" description="Generate Customer Deposit Feed for Netsuite" jobTypeEnumId="GEN_CUST_DEP_FD"
         serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerDepositFeed" cronExpression="0 0/15 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
@@ -170,7 +194,7 @@
         <parameters parameterName="excludePaymentMethod"/>
     </moqui.service.job.ServiceJob>
 
-    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" description="Generate HotWax Create Customer Feed for Netsuite"
+    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" description="Generate HotWax Create Customer Feed for Netsuite" jobTypeEnumId="GEN_CRT_CUST_FD"
         serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
@@ -179,7 +203,7 @@
 
     <!-- ServiceJob data for polling csv file from sftp location -->
     <moqui.service.job.ServiceJob jobName="poll_fulfilledItemsNetsuiteToHotwax"
-            description="Poll Csv file from sftp location of fulfilled order items feed netsuite to hotwax"
+            description="Poll Csv file from sftp location of fulfilled order items feed netsuite to hotwax" jobTypeEnumId="POL_FLFLD_ITM_FRM_NS"
             serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId" parameterValue="FulfilledOrderItemsFeedNetsuiteToHotwax"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
