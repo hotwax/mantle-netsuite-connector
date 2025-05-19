@@ -393,6 +393,17 @@
             <key-map field-name="orderId"/>
             <key-map field-name="shipGroupSeqId"/>
         </member-entity>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH" join-optional="true">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrdersForNetsuite" sub-select="true" join-from-alias="OH" join-optional="true">
+            <key-map field-name="orderId"/>
+        </member-entity>
+
         <alias-all entity-alias="OISG">
             <exclude field="orderId"/>
             <exclude field="shipGroupSeqId"/>
@@ -415,7 +426,8 @@
 
         <entity-condition>
             <econdition field-name="orderTypeId" entity-alias="OH" operator="equals" value="TRANSFER_ORDER"/>
-            <econdition field-name="orderId" entity-alias="TOEH" operator="equals" value=""/>
+            <econdition entity-alias="OID" field-name="orderId" operator="equals" value=""/>
+            <econdition entity-alias="INVORD" field-name="orderId" operator="equals" value=""/>
         </entity-condition>
     </view-entity>
 </entities>

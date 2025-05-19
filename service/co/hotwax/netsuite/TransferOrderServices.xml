@@ -373,7 +373,6 @@
             </script>
 
             <iterate list="transferOrderItr" entry="transferOrder">
-
                 <entity-find entity-name="co.hotwax.integration.order.TransferOrderItemSyncView" list="transferOrderItemList">
                     <econdition field-name="orderId" from="transferOrder.orderId"/>
                 </entity-find>
@@ -395,10 +394,6 @@
                         csvPrinter.printRecord(orderedRecord)
                     </script>
                 </iterate>
-
-                <!-- Creating the history for the transfer order -->
-                <service-call name="create#co.hotwax.integration.order.TransferOrderExportHistory" in-map="[orderId:transferOrder.orderId,
-                    comments:'Order sent as part of Transfer Order Feed', createdDate:nowDate]"/>
             </iterate>
             <script>
                 } catch (Exception e) {
@@ -413,7 +408,6 @@
                     in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                     messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
             </if>
-
             <return message="Generating Transfer Order Items Feed file with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut?.systemMessageId}"/>
         </actions>

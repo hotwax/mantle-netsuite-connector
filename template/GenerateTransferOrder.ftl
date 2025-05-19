@@ -12,7 +12,7 @@
 
 {
     "HCOrderId": "${transferOrderItem.orderId}",
-    "salesChannel": "${transferOrderItem.salesChannel}",
+    "salesChannel": "WEB_SALES_CHANNEL",
     "HCShopifySalesOrderId": "${transferOrderItem.externalId}",
     "externalId":"${transferOrderItem.externalId}",
     "formLocation": "${transferOrderItem?.originFacilityId}",
