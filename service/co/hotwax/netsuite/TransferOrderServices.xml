@@ -51,7 +51,7 @@
                 <date-filter/>
             </entity-find>
             <set field="payload.orderId" from="orderIdentificationList?.first?.orderId"/>
-            
+
             <iterate list="payload.items" entry="item">
                 <!-- Get HC Product ID -->
                 <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
