@@ -6,7 +6,6 @@
 <#-- Default to the internal orderId -->
 <#assign externalOrderId = fulfilledOrderItem.orderId>
 
-<#-- If at least one external ID (SHOPIFY_ORD_ID) is found, use that -->
 <#if orderIdentifications?has_content>
 <#assign externalOrderId = orderIdentifications[0].get("idValue")!fulfilledOrderItem.orderId>
 </#if>
