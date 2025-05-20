@@ -148,11 +148,12 @@
     </moqui.service.job.ServiceJob>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuiteTransferOrderItemsFeed"
-        description="Generate HotWax Create Order Feed for Netsuite"
+        description="Generate HotWax Create Transfer Order Items Feed for Netsuite"
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/transferorder/export/CreatedTransferOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-        receivePath="${contentRoot}/netsuite/CreateTransferOrderFeed/createTransferOrderFeed-${dateTime}.csv">
+        receivePath="${contentRoot}/netsuite/CreateTransferOrderItemFeed/createTransferOrderItemFeed-${dateTime}.csv">
     </moqui.service.message.SystemMessageType>
+
 
 </entity-facade-xml>
