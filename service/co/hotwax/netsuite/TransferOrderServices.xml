@@ -338,7 +338,7 @@
         </in-parameters>
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
-            <log message="Generating Transfer Order Feed file for Order ${orderId} at time ${nowDate}"/>
+            <log message="Generating Transfer Order Items Feed file for Order ${orderId} at time ${nowDate}"/>
 
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null">
@@ -349,6 +349,7 @@
             <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
                  productStoreId:productStoreId], false)"/>
+
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
 
             <script>
@@ -373,9 +374,11 @@
                 // Using try-with-resources to automatically close the EntityListIterator 'transferOrderItr'
                 try (transferOrderItr = transferOrder_find.iterator()) {
             </script>
+
             <if condition="!transferOrderItr.hasNext()">
                 <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
             </if>
+
             <script>
                 try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
                 def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
@@ -386,7 +389,9 @@
                     <econdition field-name="orderId" from="transferOrder.orderId"/>
                 </entity-find>
                 <iterate list="transferOrderItemList" entry="transferOrderItem">
+
                     <script>transferOrderItem.orderDate = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(transferOrderItem.orderDate.toString()))</script>
+
                     <set field="templateLoc" value="component://mantle-netsuite-connector/template/GenerateTransferOrder.ftl"/>
                     <set field="templateWriter" from="new StringWriter()"/>
                     <script>ec.resourceFacade.template(templateLoc, templateWriter)</script>
@@ -395,8 +400,8 @@
                     <script>
                         // Dynamically determine headers in the first iteration
                         if (!csvHeaders) {
-                        csvHeaders = jsonOut.keySet().collect { it as String }
-                        csvPrinter.printRecord(csvHeaders)
+                            csvHeaders = jsonOut.keySet().collect { it as String }
+                            csvPrinter.printRecord(csvHeaders)
                         }
 
                         def orderedRecord = csvHeaders.collect { key -> jsonOut[key] != null ? jsonOut[key] : "" }

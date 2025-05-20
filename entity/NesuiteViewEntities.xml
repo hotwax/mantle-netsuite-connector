@@ -260,7 +260,6 @@
         <alias name="productId" entity-alias="OI" field="productId"/>
         <entity-condition>
             <econdition field-name="goodIdentificationTypeId" entity-alias="GID" operator="equals" value="null"/>
-            <econdition field-name="orderTypeId" entity-alias="OH" operator="equals" value="SALES_ORDER"/>
         </entity-condition>
     </view-entity>
     <view-entity entity-name="CustomerDepositSyncView"  package="co.hotwax.financial">
