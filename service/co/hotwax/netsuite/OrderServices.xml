@@ -748,53 +748,16 @@
         </actions>
     </service>
     <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
-    <description>
-        Service to generate Fulfilled Order Items Feed JSON order wise, each order containing Item details, shipment method type, quantity and location.
-    </description>
     <in-parameters>
-        <parameter name="systemMessageRemoteId" required="true">
-            <description>The System Message Remote ID for generating the Fulfilled Order Items Feed.</description>
-        </parameter>
-        <parameter name="systemMessageTypeId" required="true">
-            <description>The System Message Type ID for generating the Fulfilled Order Items Feed.</description>
-        </parameter>
-        <parameter name="orderId">
-            <description>Parameter to fetch fulfilled order item details for a specific orderId.</description>
-        </parameter>
-        <parameter name="orderItemSeqId">
-            <description>Parameter to fetch fulfilled order item details for a specific orderItemSeqId.</description>
-        </parameter>
-        <parameter name="orderStatusId">
-            <description>
-                Parameter to fetch fulfilled order item details for a specific Order Status ID like ORDER_APPROVED, ORDER_COMPLETED etc.
-            </description>
-        </parameter>
-        <parameter name="orderTypeId" default-value="SALES_ORDER">
-            <description>
-                The parameter fetches fulfilled order item details for a specific Order Type ID (e.g., SALES_ORDER, TRANSFER_ORDER).
-                If no value is passed, the default feed for SALES_ORDER will be generated.
-            </description>
-        </parameter>
-        <parameter name="parentFacilityTypeIds" type="List">
-            <description>
-                List of parent Facility Type Ids for generating Fulfilled Order Items Feed.
-                For passing the parent Facility Type Ids as list, add values like - PHYSICAL_STORE,DISTRIBUTION_CENTER,VIRTUAL_FACILITY and for single value use - PHYSICAL_STORE.
-            </description>
-        </parameter>
-        <parameter name="productTypeIds" type="List">
-            <description>
-                List of product Type Ids for generating Fulfilled Order Items Feed.
-                For passing the Product Type Ids as list, add values like -
-                FINISHED_GOOD,DIGITAL_GOOD,DONATION and for single value use - FINISHED_GOOD.
-            </description>
-        </parameter>
-        <parameter name="productStoreIds" type="List">
-            <description>
-                List of product Store Ids for generating Fulfilled orders item feed.
-                For passing the Product Store Ids as list, add values like - SM_STORE,SG_STORE
-                and for single value use - SM_STORE.
-            </description>
-        </parameter>
+        <parameter name="systemMessageRemoteId" required="true"/>
+        <parameter name="systemMessageTypeId" required="true"/>
+        <parameter name="orderId"/>
+        <parameter name="orderItemSeqId"/>
+        <parameter name="orderStatusId"/>
+        <parameter name="orderTypeId" default-value="SALES_ORDER"/>
+        <parameter name="parentFacilityTypeIds" type="List"/>
+        <parameter name="productTypeIds" type="List"/>
+        <parameter name="productStoreIds" type="List"/>
     </in-parameters>
     <actions>
     <set field="nowDate" from="ec.user.nowTimestamp"/>
@@ -807,48 +770,36 @@
         import org.moqui.entity.EntityCondition
         import java.io.PrintWriter
 
+        fulfilledOrdersItems = ec.entity.find("co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue") .condition("itemStatusId", "ITEM_COMPLETED") .condition("orderTypeId", orderTypeId)
 
-        fulfilledOrders_find = ec.entity.find("co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue")
-        .condition("itemStatusId", "ITEM_COMPLETED")
-        .condition("orderTypeId", orderTypeId)
-
-        if(orderId) fulfilledOrders_find.condition("orderId", orderId)
-        if(orderItemSeqId) fulfilledOrders_find.condition("orderItemSeqId", orderItemSeqId)
-        if(orderStatusId) fulfilledOrders_find.condition("orderStatusId", orderStatusId)
-        if(parentFacilityTypeIds) fulfilledOrders_find.condition("parentFacilityTypeId", EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
-        if(productStoreIds) fulfilledOrders_find.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
-        if(productTypeIds) fulfilledOrders_find.condition("productTypeId", EntityCondition.ComparisonOperator.IN, productTypeIds)
+        if(orderId) fulfilledOrdersItems.condition("orderId", orderId)
+        if(orderItemSeqId) fulfilledOrdersItems.condition("orderItemSeqId", orderItemSeqId)
+        if(orderStatusId) fulfilledOrdersItems.condition("orderStatusId", orderStatusId)
+        if(parentFacilityTypeIds) fulfilledOrdersItems.condition("parentFacilityTypeId", EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
+        if(productStoreIds) fulfilledOrdersItems.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
+        if(productTypeIds) fulfilledOrdersItems.condition("productTypeId", EntityCondition.ComparisonOperator.IN, productTypeIds)
 
         <!-- Select-fields to first identify eligible orders for the feed  -->
-        fulfilledOrders_find.selectField("orderId,productStoreId,shopId,orderItemSeqId,netsuiteItemLineId,slaShipmentMethodTypeId,quantity,facilityExternalId,maySplit")
+        fulfilledOrdersItems.selectField("orderId,productStoreId,shopId,orderItemSeqId,netsuiteItemLineId,slaShipmentMethodTypeId,quantity,facilityExternalId,maySplit")
         .orderBy("statusDatetime")
 
         // Using try-with-resources to automatically close the EntityListIterator 'fulfilledOrdersItr'
-        try (fulfilledOrdersItr = fulfilledOrders_find.iterator()) {
+        try (fulfilledOrdersItr = fulfilledOrdersItems.iterator()) {
     </script>
-
-    <!-- If no orders in FulfilledOrderItemsSyncQueue, then don't generate the file -->
-    <if condition="!fulfilledOrdersItr.hasNext()">
+        <if condition="!fulfilledOrdersItr.hasNext()">
         <return message="No eligible orders for Fulfilled Order Items Feed at ${nowDate}, not generating the HotWax Feed file."/>
     </if>
-
-    <!-- Check if nothing is passed in productStoreIds or more than one productStoreIds are passed in the list,
-      then set the productStoreId to a default value as the feed being generated contains the Fulfilled order items for more than one product store ids. -->
-    <!-- If productStoreIds list contains one value then set the productStoreId from the list. -->
     <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() > 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
 
     <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
     <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
     <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
 
-    <!-- Prepare fulfilled order items JSON File Path -->
-    <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
     <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                         [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
                          productStoreId:productStoreId,shopId:customParametersMap?.shopId], false)"/>
     <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
 
-    <!-- Prepare the Fulfilled Order Items Feed file  -->
     <script>
         try {
         //json file
@@ -856,8 +807,6 @@
         if (!fulfilledOrderItemsFeedFile.parentFile.exists()) fulfilledOrderItemsFeedFile.parentFile.mkdirs()
         JsonFactory jfactory = new JsonFactory()
 
-        /* Declaring the PrintWriter and JsonGenerator resources in the try statement,
-        so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
         try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, fulfilledOrderItemsFeedFile);
         JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
         jGenerator.writeStartArray()
@@ -866,7 +815,6 @@
     <iterate list="fulfilledOrdersItr" entry="fulfilledOrderItem">
     <log message="Generating feed for the order ${fulfilledOrderItem.orderId}"/>
         <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
-        <!-- Load and render the FTL template -->
         <set field="templateLocation" value="component://mantle-netsuite-connector/template/FulfilledOrderItemsFeedDetail.ftl"/>
         <set field="templateWriter" from="new StringWriter()"/>
         <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
@@ -875,13 +823,12 @@
         <script>
             jGenerator.writeRaw(groovy.json.JsonOutput.toJson(fulfilledOrderItemMap))
         </script>
-<!--        <if condition="fulfilledOrderItem.fulfillmentLogId">-->
-<!--            &lt;!&ndash; Create record of ExternalFulfillmentOrderItem to keep logs for the Brokered Order and Items Feed &ndash;&gt;-->
-<!--            <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledOrderItem.orderId,-->
-<!--                orderItemSeqId:fulfilledOrderItem.orderItemSeqId, shipmentId:fulfilledOrderItem.shipmentId,-->
-<!--                comments:'Order Item sent as part of Fulfilled Items Feed', createdDate:nowDate,-->
-<!--                externalFulfillmentId:'_NA_']"/>-->
-<!--        </if>-->
+        <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
+                      in-map="[orderId:fulfilledOrderItem.orderId,
+            orderItemSeqId:fulfilledOrderItem.orderItemSeqId,
+            comments:'Order Item sent as part of Fulfilled Items Feed',
+            createdDate:nowDate,
+            externalFulfillmentId:'_NA_']"/>
     </iterate>
         <script>
             jGenerator.writeEndArray()
