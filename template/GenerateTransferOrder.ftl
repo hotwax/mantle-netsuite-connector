@@ -10,25 +10,29 @@
     .list()
     .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)/>
 
-<#assign orderFacilityExternalId = ec.entity.find("org.apache.ofbiz.product.facility.Facility")
-    .condition("facilityId", "${transferOrderItem.orderFacilityId}")
-    .list()/>
+<#assign facilityIds = [transferOrderItem.originFacilityId!, transferOrderItem.orderFacilityId!]>
 
-<#assign originFacilityExternalId = ec.entity.find("org.apache.ofbiz.product.facility.Facility")
-    .condition("facilityId", "${transferOrderItem.originFacilityId!}")
-    .list()/>
+<#assign facilityList = ec.entity.find("org.apache.ofbiz.product.facility.Facility")
+    .condition("facilityId", "in", facilityIds)
+    .list()!/>
 
 {
     "HCOrderId": "${transferOrderItem.orderId}",
     "salesChannel": "WEB_SALES_CHANNEL",
-    "HCShopifySalesOrderId": "${transferOrderItem.externalId}",
-    "externalId":"${transferOrderItem.externalId}",
-    "formLocation": "${originFacilityExternalId[0].externalId!}",
+    "HCShopifySalesOrderId": "${transferOrderItem.externalId!}",
+    "externalId":"${transferOrderItem.externalId!}",
+
+    <#if facilityList?has_content>
+        <#assign fromLocation = facilityList?filter(f -> f.facilityId == transferOrderItem.originFacilityId!)?first!/>
+        <#if fromLocation?has_content>"formLocation": "${fromLocation.externalId!}",</#if>
+        <#assign toLocation = facilityList?filter(f -> f.facilityId == transferOrderItem.orderFacilityId!)?first!/>
+        <#if toLocation?has_content>"toLocation": "${toLocation.externalId!}",</#if>
+    </#if>
+
     "orderNote": "",
     "shippingMethod": "",
     "subsidiary": "${transferOrderItem.productStoreExternalId}",
     "date": "${transferOrderItem.orderDate}",
-    "toLocation": "${orderFacilityExternalId[0].externalId}",
     <#if facilityIdentification?has_content>"department": "${facilityIdentification[0].idValue}",</#if>
     "amount": "",
     "orderLineId": "${transferOrderItem.orderItemSeqId}",
