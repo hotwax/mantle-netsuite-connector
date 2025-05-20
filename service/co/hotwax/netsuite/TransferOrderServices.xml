@@ -44,22 +44,13 @@
             <!-- By default, external fulfilled shipments for WH TOs will be created in SHIPMENT_SHIPPED status -->
             <set field="payload.shipmentStatusId" value="SHIPMENT_SHIPPED"/>
 
-            <set field="netsuiteTransferOrderId" from="payload.remove('transferOrderId')"/>
-
             <!-- Get HC Order ID -->
             <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
-                <econdition field-name="idValue" from="netsuiteTransferOrderId"/>
+                <econdition field-name="idValue" from="payload.remove('transferOrderId')"/>
                 <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
             </entity-find>
-
             <set field="payload.orderId" from="orderIdentificationList?.first?.orderId"/>
-
-            <if condition="payload.orderId == null">
-                <entity-find entity-name="org.apache.ofbiz.order.order.OrderHeader" list="orderList">
-                    <econdition field-name="externalId" from="netsuiteTransferOrderId"/>
-                </entity-find>
-                <set field="payload.orderId" from="orderList?.first?.orderId"/>
-            </if>
+            
             <iterate list="payload.items" entry="item">
                 <!-- Get HC Product ID -->
                 <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
