@@ -361,7 +361,6 @@
 
                 File csvFile = new File(csvFilePath)
                 if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
-                def isFileEmpty = true
                 def csvHeaders = null
 
                 transferOrder_find = ec.entity.find("co.hotwax.integration.order.TransferOrderItemSyncView")
@@ -412,14 +411,13 @@
             }
             </script>
 
-            <if condition="!isFileEmpty">
                 <!-- Save the Json Feed File path in System Message messageText -->
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                     in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                     messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
-            </if>
-            <return message="Generating Transfer Order Items Feed file with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut?.systemMessageId}"/>
+
+                <return message="Generating Transfer Order Items Feed file with type ${systemMessageTypeId} and
+                    remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
 </services>
