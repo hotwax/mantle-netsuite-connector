@@ -28,9 +28,9 @@
     <moqui.basic.Enumeration enumId="NS_EXP_WH_TO_IF" enumCode="NS_EXP_WH_TO_IF" description="NetSuite Export Warehouse Transfer Order Item Fulfillment Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_TO_IR" enumCode="NS_IMP_TO_IR" description="NetSuite Import Transfer Order Item Receipt Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_TO_IF" enumCode="NS_IMP_TO_IF" description="NetSuite Import Transfer Order Item Fulfillment Job" enumTypeId="INVENTORY_SYS_JOB"/>
-    <moqui.basic.Enumeration enumId="GEN_TO_SHPMNT_RCPT_FD" enumCode="GEN_TO_SHPMNT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
-    <moqui.basic.Enumeration enumId="POL_TO_FULFILLMENT_FD" enumCode="POL_TO_FULFILLMENT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
-    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_TO_SHPMT_RCPT_FD" enumCode="GEN_TO_SHPMT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_TO_FULFILLMNT_FD" enumCode="POL_TO_FULFILLMNT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMNT_FD" enumCode="POL_WH_FULFILLMNT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CRT_ORD_FD" enumCode="GEN_CRT_ORD_FD" description="Generate create orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CUST_DEP_FD" enumCode="GEN_CUST_DEP_FD" description="Generate Customer Deposit Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
@@ -129,13 +129,13 @@
     <Product productId="NS_IMP_TO_IF" productTypeId="SERVICE" internalName="NS_IMP_TO_IF"
              productName="NetSuite Import Transfer Order Item Fulfillment Job" description="NetSuite Import Transfer Order Item Fulfillment Job"
              primaryProductCategoryId="INVENTORY_SYS_JOB"/>
-    <Product productId="GEN_TO_SHPMNT_RCPT_FD" productTypeId="SERVICE" internalName="GEN_TO_SHPMNT_RCPT_FD"
+    <Product productId="GEN_TO_SHPMT_RCPT_FD" productTypeId="SERVICE" internalName="GEN_TO_SHPMT_RCPT_FD"
              productName="Generate Transfer Order Shipment Receipt Feed Job" description="Generate Transfer Order Shipment Receipt Feed Job"
              primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
-    <Product productId="POL_TO_FULFILLMENT_FD" productTypeId="SERVICE" internalName="POL_TO_FULFILLMENT_FD"
+    <Product productId="POL_TO_FULFILLMNT_FD" productTypeId="SERVICE" internalName="POL_TO_FULFILLMNT_FD"
              productName="NetSuite Import Store TO Item Fulfillment Job" description="NetSuite Import Store TO Item Fulfillment Job"
              primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
-    <Product productId="POL_WH_FULFILLMENT_FD" productTypeId="SERVICE" internalName="POL_WH_FULFILLMENT_FD"
+    <Product productId="POL_WH_FULFILLMNT_FD" productTypeId="SERVICE" internalName="POL_WH_FULFILLMNT_FD"
              productName="NetSuite Import Warehouse Fulfillment Feed" description="NetSuite Import Warehouse Fulfillment Feed"
              primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
     <Product productId="POL_TRANSORD_FD" productTypeId="SERVICE" internalName="POL_TRANSORD_FD"
@@ -174,9 +174,9 @@
     <ProductCategoryMember productId="NS_EXP_STORE_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_STORE_TO" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="GEN_TO_SHPMNT_RCPT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="POL_TO_FULFILLMENT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="POL_WH_FULFILLMENT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_SHPMT_RCPT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_TRANSORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     
     <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -190,8 +190,8 @@
     <ProductCategoryMember productId="NS_EXP_INV_ADJ" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_CRT_CD_CR" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_TO_IF" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="POL_TO_FULFILLMENT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="POL_WH_FULFILLMENT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     
     <ProductCategoryMember productId="NS_EXP_CASH_SALE" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_CUSTOMER" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -209,7 +209,7 @@
     <ProductCategoryMember productId="GEN_CRT_CUST_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_STORE_TO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_STORE_TO" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="GEN_TO_SHPMNT_RCPT_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_SHPMT_RCPT_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" productId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"
@@ -366,22 +366,22 @@
     </moqui.service.job.ServiceJob>
 
     <!-- Service Job to poll Warehouse Fulfillments Feed file from NetSuite -->
-    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Wh_TO_Fulfillment" description="Poll Warehouse Transfer Order Fulfillments Feed from SFTP location" productId="POL_WH_FULFILLMENT_FD"
-        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMENT_FD">
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Wh_TO_Fulfillment" description="Poll Warehouse Transfer Order Fulfillments Feed from SFTP location" productId="POL_WH_FULFILLMNT_FD"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMNT_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportWhToFulfillmentFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
-    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMENT_FD"
-        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" productId="POL_TO_FULFILLMENT_FD">
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMNT_FD"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" productId="POL_TO_FULFILLMNT_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillment"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- Template Service Job to generate Transfer Order Shipments Receipt Feed from HotWax -->
     
-    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMNT_RCPT_FD"
-           description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax" productId="GEN_TO_SHPMNT_RCPT_FD"
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMT_RCPT_FD"
+           description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax" productId="GEN_TO_SHPMT_RCPT_FD"
            serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderShipmentReceiptFeed"
            cronExpression="0 0 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId"/>
