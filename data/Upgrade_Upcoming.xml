@@ -46,7 +46,7 @@
         parentTypeId="LocalFeedFile"
         sendPath="${contentRoot}/netsuite/OMSTransferOrderFeed/OMSTransferOrderFeed-${dateTime}-${systemMessageId}.json"
         consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
-        sendServiceName="co.hotwax.netsuite.OrderServices.map#TransferOrder">
+        sendServiceName="co.hotwax.netsuite.TransferOrderServices.map#TransferOrder">
     </moqui.service.message.SystemMessageType>
 
     <moqui.basic.Enumeration description="Transfer Order Feed for OMS" enumId="OMSTransferOrderFeed" enumTypeId="OMSMessageTypeEnum"/>
