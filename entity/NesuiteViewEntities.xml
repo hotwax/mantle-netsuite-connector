@@ -444,16 +444,16 @@
         <alias entity-alias="OISG" field="contactMechId" name="postalContactMechId"/>
         <alias entity-alias="F" name="facilityId"/>
         <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
+        <alias entity-alias="FGM" name="facilityGroupId"/>
         <alias entity-alias="OS" name="statusDatetime" function="max"/>
         <alias entity-alias="P" name="productId"/>
         <alias entity-alias="PT" name="productTypeId"/>
         <alias entity-alias="PT" name="isPhysical"/>
         <alias entity-alias="PT" name="isDigital"/>
-
         <entity-condition>
-            <!-- Using the below conditions we are fetching the eligible orders that are not sent to the external system -->
             <econditions combine="and">
                 <econdition entity-alias="OFH" field-name="orderId" operator="equals" value=""/>
+                <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="OMS_FULFILLMENT"/>
                 <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
                 <econdition entity-alias="OA" field-name="attrValue" operator="not-equals" value=""/>
                 <econdition entity-alias="OISG" field-name="shipmentMethodTypeId" operator="not-equals" value="POS_COMPLETED"/>
