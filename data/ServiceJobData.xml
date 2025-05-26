@@ -1,47 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-seed">
-    <!-- ServiceJob data for create order from HC to netsuite -->
-    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite"
-        serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
-        <parameters parameterName="orderId" parameterValue=""/>
-        <parameters parameterName="fromOrderDate" parameterValue=""/>
-        <parameters parameterName="thruOrderDate" parameterValue=""/>
-        <parameters parameterName="includeShipmentMethod" parameterValue=""/>
-        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
-        <parameters parameterName="isMixCartOrder" parameterValue=""/>
-    </moqui.service.job.ServiceJob>
-
-    <!-- ServiceJob data for create order from HC to netsuite -->
-    <moqui.service.job.ServiceJob jobName="generate_CustomerDepositFeed" description="Generate HotWax Create Order Feed for Netsuite"
-        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerDepositFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
-        <parameters parameterName="fromDate" parameterValue=""/>
-        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
-        <parameters parameterName="jobName" parameterValue=""/>
-        <parameters parameterName="skipLastRunTimeUpdate" parameterValue=""/>
-        <parameters parameterName="lastRunTime"/>
-        <parameters parameterName="includePaymentMethod"/>
-        <parameters parameterName="excludePaymentMethod"/>
-    </moqui.service.job.ServiceJob>
-    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" description="Generate HotWax Create Customer Feed for Netsuite"
-        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
-        <parameters parameterName="partyId" parameterValue=""/>
-    </moqui.service.job.ServiceJob>
-
-    <!-- ServiceJob data for polling csv file from sftp location -->
-    <moqui.service.job.ServiceJob jobName="poll_fulfilledItemsNetsuiteToHotwax"
-            description="Poll Csv file from sftp location of fulfilled order items feed netsuite to hotwax"
-            serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue="FulfilledOrderItemsFeedNetsuiteToHotwax"/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
-    </moqui.service.job.ServiceJob>
-
-    <!-- NetSuite SuiteScripts Job data-->
+   
+    <!-- NetSuite Job Enum Data -->
     <moqui.basic.Enumeration enumId="NS_IMP_CASH_SALE" enumCode="NS_IMP_CASH_SALE" description="NetSuite Import Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_EXP_CASH_SALE" enumCode="NS_EXP_CASH_SALE" description="NetSuite Export Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_CUSTOMER" enumCode="NS_IMP_CUSTOMER" description="NetSuite Import Customer Job" enumTypeId="ORDER_SYS_JOB"/>
@@ -68,138 +28,360 @@
     <moqui.basic.Enumeration enumId="NS_EXP_WH_TO_IF" enumCode="NS_EXP_WH_TO_IF" description="NetSuite Export Warehouse Transfer Order Item Fulfillment Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_TO_IR" enumCode="NS_IMP_TO_IR" description="NetSuite Import Transfer Order Item Receipt Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_TO_IF" enumCode="NS_IMP_TO_IF" description="NetSuite Import Transfer Order Item Fulfillment Job" enumTypeId="INVENTORY_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_TO_SHPMT_RCPT_FD" enumCode="GEN_TO_SHPMT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_TO_FULFILLMNT_FD" enumCode="POL_TO_FULFILLMNT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMNT_FD" enumCode="POL_WH_FULFILLMNT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_CRT_ORD_FD" enumCode="GEN_CRT_ORD_FD" description="Generate create orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_CUST_DEP_FD" enumCode="GEN_CUST_DEP_FD" description="Generate Customer Deposit Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_CRT_CUST_FD" enumCode="GEN_CRT_CUST_FD" description="Generate HotWax Create Customer Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="POL_FLFLD_ITM_FRM_NS" enumCode="POL_FLFLD_ITM_FRM_NS" description="Poll Fufilled Order Items From NetSuite Job" enumTypeId="ORDER_SYS_JOB"/>
+    
+    <!-- NetSuite Job Product Data -->
+    <Product productId="NS_CREATE_CD" productTypeId="SERVICE" internalName="NS_CREATE_CD"
+             productName="NetSuite Create Customer Deposit Job" description="NetSuite Create Customer Deposit Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_CREATE_IF" productTypeId="SERVICE" internalName="NS_CREATE_IF"
+             productName="NetSuite Create Sales Order Item Fulfillment Job" description="NetSuite Create Sales Order Item Fulfillment Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_CREATE_INVOICE" productTypeId="SERVICE" internalName="NS_CREATE_INVOICE"
+             productName="NetSuite Create Sales Order Invoice Job" description="NetSuite Create Sales Order Invoice Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_CASH_SALE" productTypeId="SERVICE" internalName="NS_EXP_CASH_SALE"
+             productName="NetSuite Export Cash Sale Order Job" description="NetSuite Export Cash Sale Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_CUSTOMER" productTypeId="SERVICE" internalName="NS_EXP_CUSTOMER"
+             productName="NetSuite Export Customer Job" description="NetSuite Export Customer Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_INV_TRANS" productTypeId="SERVICE" internalName="NS_EXP_INV_TRANS"
+             productName="NetSuite Export Inventory Transfer Job" description="NetSuite Export Inventory Transfer Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_EXP_SALES_ORDER" productTypeId="SERVICE" internalName="NS_EXP_SALES_ORDER"
+             productName="NetSuite Export Sales Order Job" description="NetSuite Export Sales Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_SO_IF" productTypeId="SERVICE" internalName="NS_EXP_SO_IF"
+             productName="NetSuite Export Sales Order Item Fulfillment Job" description="NetSuite Export Sales Order Item Fulfillment Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_SO_ITEMS" productTypeId="SERVICE" internalName="NS_EXP_SO_ITEMS"
+             productName="NetSuite Export Sales Order Items Job" description="NetSuite Export Sales Order Items Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_WH_TO_IF" productTypeId="SERVICE" internalName="NS_EXP_WH_TO_IF"
+             productName="NetSuite Export Warehouse Transfer Order Item Fulfillment Job" description="NetSuite Export Warehouse Transfer Order Item Fulfillment Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_GENERATE_INV" productTypeId="SERVICE" internalName="NS_GENERATE_INV"
+             productName="NetSuite Generate Inventory Job" description="NetSuite Generate Inventory Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_GENERATE_PROD" productTypeId="SERVICE" internalName="NS_GENERATE_PROD"
+             productName="NetSuite Generate Product Job" description="NetSuite Generate Product Job"
+             primaryProductCategoryId="PRODUCT_SYS_JOB"/>
+    <Product productId="NS_IMP_CASH_SALE" productTypeId="SERVICE" internalName="NS_IMP_CASH_SALE"
+             productName="NetSuite Import Cash Sale Order Job" description="NetSuite Import Cash Sale Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_IMP_CUSTOMER" productTypeId="SERVICE" internalName="NS_IMP_CUSTOMER"
+             productName="NetSuite Import Customer Job" description="NetSuite Import Customer Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_IMP_INV_ADJ" productTypeId="SERVICE" internalName="NS_IMP_INV_ADJ"
+             productName="NetSuite Import Inventory Adjustment Job" description="NetSuite Import Inventory Adjustment Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_IMP_INV_TRANS" productTypeId="SERVICE" internalName="NS_IMP_INV_TRANS"
+             productName="NetSuite Import Inventory Transfer Job" description="NetSuite Import Inventory Transfer Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_IMP_SALES_ORDER" productTypeId="SERVICE" internalName="NS_IMP_SALES_ORDER"
+             productName="NetSuite Import Sale Order Job" description="NetSuite Import Sale Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_IMP_TO_IR" productTypeId="SERVICE" internalName="NS_IMP_TO_IR"
+             productName="NetSuite Import Transfer Order Item Receipt Job" description="NetSuite Import Transfer Order Item Receipt Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_UPDATE_SO" productTypeId="SERVICE" internalName="NS_UPDATE_SO"
+             productName="NetSuite Import Update Sale Order Job" description="NetSuite Import Update Sale Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_UPLOAD_INV" productTypeId="SERVICE" internalName="NS_UPLOAD_INV"
+             productName="NetSuite Upload Inventory Job" description="NetSuite Upload Inventory Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_UPLOAD_PROD" productTypeId="SERVICE" internalName="NS_UPLOAD_PROD"
+             productName="NetSuite Upload Product Job" description="NetSuite Upload Product Job"
+             primaryProductCategoryId="PRODUCT_SYS_JOB"/>
+    <Product productId="GEN_CRT_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_ORD_FD" 
+             productName="Generate Create Orders Feed For NetSuite Job" description="Generate Create Orders Feed For NetSuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_CUST_DEP_FD" productTypeId="SERVICE" internalName="GEN_CUST_DEP_FD" 
+             productName="Generate Customer Deposit Feed for Netsuite Job" description="Generate Customer Deposit Feed for Netsuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_CRT_CUST_FD" productTypeId="SERVICE" internalName="GEN_CRT_CUST_FD" 
+             productName="Generate HotWax Create Customer Feed for Netsuite Job" description="Generate HotWax Create Customer Feed for Netsuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="POL_FLFLD_ITM_FRM_NS" productTypeId="SERVICE" internalName="POL_FLFLD_ITM_FRM_NS" 
+             productName="Poll Fufilled Order Items From NetSuite Job" description="Poll Fufilled Order Items From NetSuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    
+    <Product productId="NS_EXP_INV_ADJ" productTypeId="SERVICE" internalName="NS_EXP_INV_ADJ"
+             productName="NetSuite Export Inventory Adjustment Job" description="NetSuite Export Inventory Adjustment Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_CRT_CD_CR" productTypeId="SERVICE" internalName="NS_CRT_CD_CR"
+             productName="NetSuite Create Customer Deposit and Customer Refund Job" description="NetSuite Create Customer Deposit and Customer Refund Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="NS_EXP_STORE_TO_IF" productTypeId="SERVICE" internalName="NS_EXP_STORE_TO_IF"
+             productName="NetSuite Export Store Transfer Order Item Fulfillment Job" description="NetSuite Export Store Transfer Order Item Fulfillment Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_EXP_STORE_TO" productTypeId="SERVICE" internalName="NS_EXP_STORE_TO"
+             productName="NetSuite Export Store Transfer Order Job" description="NetSuite Export Store Transfer Order Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_IMP_TO_IF" productTypeId="SERVICE" internalName="NS_IMP_TO_IF"
+             productName="NetSuite Import Transfer Order Item Fulfillment Job" description="NetSuite Import Transfer Order Item Fulfillment Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="GEN_TO_SHPMT_RCPT_FD" productTypeId="SERVICE" internalName="GEN_TO_SHPMT_RCPT_FD"
+             productName="Generate Transfer Order Shipment Receipt Feed Job" description="Generate Transfer Order Shipment Receipt Feed Job"
+             primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
+    <Product productId="POL_TO_FULFILLMNT_FD" productTypeId="SERVICE" internalName="POL_TO_FULFILLMNT_FD"
+             productName="NetSuite Import Store TO Item Fulfillment Job" description="NetSuite Import Store TO Item Fulfillment Job"
+             primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
+    <Product productId="POL_WH_FULFILLMNT_FD" productTypeId="SERVICE" internalName="POL_WH_FULFILLMNT_FD"
+             productName="NetSuite Import Warehouse Fulfillment Feed" description="NetSuite Import Warehouse Fulfillment Feed"
+             primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
+    <Product productId="POL_TRANSORD_FD" productTypeId="SERVICE" internalName="POL_TRANSORD_FD"
+             productName="NetSuite Import Transfer Order Feed" description="NetSuite Import Transfer Order Feed"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_ImportCashSale" description="Import Cash Sale Orders CSV in NetSuite"
+    <!-- Job Product Category Members -->
+
+    <ProductCategoryMember productId="NS_CREATE_CD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_CREATE_IF" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_CREATE_INVOICE" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_CASH_SALE" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_CUSTOMER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_INV_TRANS" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SALES_ORDER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SO_IF" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SO_ITEMS" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_ORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CUST_DEP_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_CUST_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_WH_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_GENERATE_INV" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_GENERATE_PROD" productCategoryId="PRODUCT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_INV_ADJ" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_INV_TRANS" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_SALES_ORDER" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_TO_IR" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPDATE_SO" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPLOAD_INV" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPLOAD_PROD" productCategoryId="PRODUCT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_FLFLD_ITM_FRM_NS" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_INV_ADJ" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_CRT_CD_CR" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_STORE_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_STORE_TO" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_SHPMT_RCPT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_TRANSORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    
+    <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_INV_ADJ" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_INV_TRANS" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_SALES_ORDER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_TO_IR" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPDATE_SO" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_FLFLD_ITM_FRM_NS" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_INV_ADJ" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_CRT_CD_CR" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_IMP_TO_IF" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    
+    <ProductCategoryMember productId="NS_EXP_CASH_SALE" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_CUSTOMER" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_INV_TRANS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SALES_ORDER" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_SO_ITEMS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_WH_TO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_GENERATE_INV" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_GENERATE_PROD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPLOAD_INV" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPLOAD_PROD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_ORD_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CUST_DEP_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_CUST_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_STORE_TO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_STORE_TO" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_SHPMT_RCPT_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
+    <!-- ServiceJob data for create order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" productId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"
+        serviceName="co.hotwax.netsuite.OrderServices.generate#CreateOrderFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="orderId" parameterValue=""/>
+        <parameters parameterName="fromOrderDate" parameterValue=""/>
+        <parameters parameterName="thruOrderDate" parameterValue=""/>
+        <parameters parameterName="includeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="isMixCartOrder" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- ServiceJob data for create customer deposit from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CustomerDepositFeed" description="Generate Customer Deposit Feed for Netsuite" productId="GEN_CUST_DEP_FD" jobTypeEnumId="GEN_CUST_DEP_FD"
+        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerDepositFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="fromDate" parameterValue=""/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="jobName" parameterValue=""/>
+        <parameters parameterName="skipLastRunTimeUpdate" parameterValue=""/>
+        <parameters parameterName="lastRunTime"/>
+        <parameters parameterName="includePaymentMethod"/>
+        <parameters parameterName="excludePaymentMethod"/>
+    </moqui.service.job.ServiceJob>
+
+    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" description="Generate HotWax Create Customer Feed for Netsuite" productId="GEN_CRT_CUST_FD" jobTypeEnumId="GEN_CRT_CUST_FD"
+        serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="partyId" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- ServiceJob data for polling csv file from sftp location -->
+    <moqui.service.job.ServiceJob jobName="poll_fulfilledItemsNetsuiteToHotwax"
+            description="Poll Csv file from sftp location of fulfilled order items feed netsuite to hotwax" productId="POL_FLFLD_ITM_FRM_NS" jobTypeEnumId="POL_FLFLD_ITM_FRM_NS"
+            serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="FulfilledOrderItemsFeedNetsuiteToHotwax"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- NetSuite SuiteScripts Job data-->
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportCashSale" description="Import Cash Sale Orders CSV in NetSuite" productId="NS_IMP_CASH_SALE"
         serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CASH_SALE"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCashSale" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedCashSaleCSV" description="Export Cash Sale Orders CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedCashSaleCSV" description="Export Cash Sale Orders CSV from NetSuite" productId="NS_EXP_CASH_SALE"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_CASH_SALE"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedCashSaleCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_ImportCustomer" description="Import Customer CSV in NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportCustomer" description="Import Customer CSV in NetSuite" productId="NS_IMP_CUSTOMER"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CUSTOMER"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCustomer" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedCustomerCSV" description="Export Customer CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedCustomerCSV" description="Export Customer CSV from NetSuite" productId="NS_EXP_CUSTOMER"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_CUSTOMER"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedCustomerCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_ImportInventoryAdjustment" description="Import Inventory Adjustment CSV in NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportInventoryAdjustment" description="Import Inventory Adjustment CSV in NetSuite" productId="NS_IMP_INV_ADJ"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_INV_ADJ"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportInventoryAdjustment" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedInventoryAdjustmentCSV" description="Export Inventory Adjustment CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedInventoryAdjustmentCSV" description="Export Inventory Adjustment CSV from NetSuite" productId="NS_EXP_INV_ADJ"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_INV_ADJ"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedInventoryAdjustmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_ImportInventoryTransfer" description="Import Inventory Transfer CSV in NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportInventoryTransfer" description="Import Inventory Transfer CSV in NetSuite" productId="NS_IMP_INV_TRANS"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_INV_TRANS"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportInventoryTransfer" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedInventoryTransferCSV" description="Export Inventory Transfer CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedInventoryTransferCSV" description="Export Inventory Transfer CSV from NetSuite" productId="NS_EXP_INV_TRANS"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_INV_TRANS"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedInventoryTransferCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_GenerateProductCSV" description="Generate Product CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_SC_GenerateProductCSV" description="Generate Product CSV from NetSuite" productId="NS_GENERATE_PROD"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_GENERATE_PROD"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_GenerateProductCSV" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_UploadProductCSV" description="Upload Product CSV on SFTP"
+    <moqui.service.job.ServiceJob jobName="HC_SC_UploadProductCSV" description="Upload Product CSV on SFTP" productId="NS_UPLOAD_PROD"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPLOAD_PROD"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_UploadProductCSV" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_CreateCustomerDepositAndRefund" description="Create Customer Deposit and Customer Refund"
+    <moqui.service.job.ServiceJob jobName="HC_SC_CreateCustomerDepositAndRefund" description="Create Customer Deposit and Customer Refund" productId="NS_CRT_CD_CR"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CRT_CD_CR"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateCustomerDepositAndRefund" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_CreateCustomerDeposit" description="Create Customer Deposit"
+    <moqui.service.job.ServiceJob jobName="HC_SC_CreateCustomerDeposit" description="Create Customer Deposit" productId="NS_CREATE_CD"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CREATE_CD"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateCustomerDeposit" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_CreateSalesOrderInvoice" description="Create Sales Order Invoice"
+    <moqui.service.job.ServiceJob jobName="HC_SC_CreateSalesOrderInvoice" description="Create Sales Order Invoice" productId="NS_CREATE_INVOICE"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CREATE_INVOICE"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateSalesOrderInvoice" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_CreateItemFulfillment" description="Create Sales Order Item Fulfillment"
+    <moqui.service.job.ServiceJob jobName="HC_SC_CreateItemFulfillment" description="Create Sales Order Item Fulfillment" productId="NS_CREATE_IF"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CREATE_IF"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateItemFulfillment" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderItemCSV" description="Export Sales Order Items CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderItemCSV" description="Export Sales Order Items CSV from NetSuite" productId="NS_EXP_SO_ITEMS"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_SO_ITEMS"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedSalesOrderItemCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderCSV" description="Export Sales Order CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderCSV" description="Export Sales Order CSV from NetSuite" productId="NS_EXP_SALES_ORDER"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_SALES_ORDER"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedSalesOrderCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderFulfillmentCSV" description="Export Sales Order Item Fulfillment CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderFulfillmentCSV" description="Export Sales Order Item Fulfillment CSV from NetSuite" productId="NS_EXP_SO_IF"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_SO_IF"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedSalesOrderFulfillmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_importSalesOrders" description="Import Sales Order CSV"
+    <moqui.service.job.ServiceJob jobName="HC_importSalesOrders" description="Import Sales Order CSV" productId="NS_IMP_SALES_ORDER"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_SALES_ORDER"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_importSalesOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_UpdateSalesOrders" description="Import Update Sales Order CSV"
+    <moqui.service.job.ServiceJob jobName="HC_SC_UpdateSalesOrders" description="Import Update Sales Order CSV" productId="NS_UPDATE_SO"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPDATE_SO"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_UpdateSalesOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_generateCSV_InventoryItems" description="Generate Inventory CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_generateCSV_InventoryItems" description="Generate Inventory CSV from NetSuite" productId="NS_GENERATE_INV"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_GENERATE_INV"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_generateCSV_InventoryItems" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_uploadCSV_InventoryItems" description="Upload Inventory CSV on SFTP"
+    <moqui.service.job.ServiceJob jobName="HC_uploadCSV_InventoryItems" description="Upload Inventory CSV on SFTP" productId="NS_UPLOAD_INV"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPLOAD_INV"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_uploadCSV_InventoryItems" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTOFulfillmentCSV" description="Export Store Transfer Order Item Fulfillment CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTOFulfillmentCSV" description="Export Store Transfer Order Item Fulfillment CSV from NetSuite" productId="NS_EXP_STORE_TO_IF"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_STORE_TO_IF"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoreTOFulfillmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTransferOrderCSV" description="Export Store Transfer Order CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTransferOrderCSV" description="Export Store Transfer Order CSV from NetSuite" productId="NS_EXP_STORE_TO"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_STORE_TO"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoreTransferOrderCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedWHTOFulfillmentCSV" description="Export Warehouse Transfer Order Item Fulfillment CSV from NetSuite"
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedWHTOFulfillmentCSV" description="Export Warehouse Transfer Order Item Fulfillment CSV from NetSuite" productId="NS_EXP_WH_TO_IF"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_WH_TO_IF"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedWHTOFulfillmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOFulfillmentReceipts" description="Import Transfer Order Item Receipt"
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOFulfillmentReceipts" description="Import Transfer Order Item Receipt" productId="NS_IMP_TO_IR"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_TO_IR"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOFulfillmentReceipts" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOItemFulfillment" description="Import Transfer Order Item Fulfillment"
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOItemFulfillment" description="Import Transfer Order Item Fulfillment" productId="NS_IMP_TO_IF"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="Y" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_TO_IF"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOItemFulfillment" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
     <!-- Service Job to poll Transfer Orders Feed file from NetSuite -->
-    <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
-    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Orders Feed from SFTP location"
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Orders Feed from SFTP location" productId="POL_TRANSORD_FD"
         serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_TRANSORD_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportTransferOrderFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- Service Job to poll Warehouse Fulfillments Feed file from NetSuite -->
-    <moqui.basic.Enumeration enumId="POL_WH_FULFILLMENT_FD" enumCode="POL_WH_FULFILLMENT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
-    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Wh_TO_Fulfillment" description="Poll Warehouse Transfer Order Fulfillments Feed from SFTP location"
-        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMENT_FD">
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Wh_TO_Fulfillment" description="Poll Warehouse Transfer Order Fulfillments Feed from SFTP location" productId="POL_WH_FULFILLMNT_FD"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_WH_FULFILLMNT_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportWhToFulfillmentFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
-    <moqui.basic.Enumeration enumId="POL_TO_FULFILLMENT_FD" enumCode="POL_TO_FULFILLMENT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
-    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMENT_FD"
-        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
+    <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMNT_FD"
+        serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" productId="POL_TO_FULFILLMNT_FD">
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillment"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- Template Service Job to generate Transfer Order Shipments Receipt Feed from HotWax -->
-    <moqui.basic.Enumeration enumId="GEN_TO_SHPMNT_RCPT_FD" enumCode="GEN_TO_SHPMNT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
-    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMNT_RCPT_FD"
-           description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax"
+    
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMT_RCPT_FD"
+           description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax" productId="GEN_TO_SHPMT_RCPT_FD"
            serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderShipmentReceiptFeed"
            cronExpression="0 0 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId"/>
