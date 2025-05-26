@@ -873,21 +873,15 @@
         </parameter>
     </out-parameters>
         <actions>
-            <!-- variable to use for counting the number of orders in the feed, no available method to
-                 directly get the count from iterator, if .size() is used, the iterator is consumed and
-                 so no data to iterate further and create the feed -->
             <set field="brokeredFeedOrdersCount" from="0"/>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
 
             <log message="Generating Brokered Orders and Items Feed Feed file of HotWax for parentFacilityTypeId ${parentFacilityTypeIds}, Order ${orderId} at time ${nowDate}"/>
-
-            <!-- Fetch items from the BrokeredOrderItemsSyncQueue for identifying the orders ready for preparing Feed -->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
 
             <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() > 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
 
-            <!-- Prepare Brokered Order and Items Feed CSV File Path -->
             <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
                 productStoreId:productStoreId], false)"/>
@@ -916,11 +910,8 @@
                 brokeredOrders_find.limit(brokeredOrdersCountPerFeed)
                 .selectField("orderId,orderStatusId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,customerPartyId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
                 .orderBy("entryDate")
-
-                // Using try-with-resources to automatically close the EntityListIterator 'brokeredOrdersItr'
                 try (brokeredOrdersItr = brokeredOrders_find.iterator()) {
             </script>
-            <!-- If no orders in BrokeredOrderItemsSyncQueue, then don't generate the file -->
             <if condition="!brokeredOrdersItr.hasNext()">
                 <return message="No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file."/>
             </if>
@@ -940,7 +931,6 @@
                 <set field="brokerOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
 
                 <if condition="brokerOrderItem.externalFulfillmentOrderItemId"><then>
-                    <!-- Update the ExternalFulfillmentOrderItem records for the same shipGroupSeqId for an Order Item -->
                     <service-call name="update#co.hotwax.integration.order.ExternalFulfillmentOrderItem"
                                   in-map="[externalFulfillmentOrderItemId:brokerOrderItem.externalFulfillmentOrderItemId,
                                 fulfillmentStatus:'Sent']"/>
@@ -960,9 +950,6 @@
 
                 <script>
                     csvPrinter.printRecord(brokerOrderItemRecord)
-
-                    //incrementing the brokeredFeedOrdersCount for total orders included in the feed
-                    //this field is used in get#BrokeredOrderItems service to prepare multiple feed files if applicable
                     brokeredFeedOrdersCount++
                 </script>
             </iterate>
@@ -972,7 +959,6 @@
                     ec.message.addError("Error preparing brokered order feed file ${e}")
                 }
             </script>
-            <!-- Save the csv Feed File path in System Message messageText -->
             <if condition="brokeredFeedOrdersCount != 0">
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                     in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
