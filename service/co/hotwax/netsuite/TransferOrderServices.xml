@@ -322,8 +322,8 @@
         <actions>
             <set field="payload.entryDate" from="ec.user.nowTimestamp"/>
             <script>payload.identifications?.each { it.put('fromDate', ec.user.nowTimestamp) }</script>
-            <set field="payload.statuses" from="[statusId:'ORDER_CREATED', statusDate:ec.user.nowTimestamp,
-                changeByUserLoginId:ec.user.getUsername()]"/>
+            <set field="payload.statuses" from="[statusId:'ORDER_CREATED', statusDatetime:ec.user.nowTimestamp,
+                statusUserLogin:ec.user.getUsername()]"/>
 
             <!-- Get HC Facility ID for both origin and destination Facility of TO  -->
             <set field="externalFacilityIdList" from="[payload.remove('originFacilityExternalId'), payload.shipGroups[0].remove('orderFacilityExternalId')]"/>
@@ -355,8 +355,8 @@
                 </entity-find>
 
                 <set field="item.productId" from="goodIdentifications?.first?.productId"/>
-                <set field="item.statuses" from="[statusId:'ITEM_CREATED', statusDate:ec.user.nowTimestamp,
-                    changeByUserLoginId:ec.user.getUsername()]"/>
+                <set field="item.statuses" from="[statusId:'ITEM_CREATED', statusDatetime:ec.user.nowTimestamp,
+                    statusUserLogin:ec.user.getUsername()]"/>
             </iterate>
         </actions>
     </service>
