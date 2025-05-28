@@ -835,48 +835,25 @@
             eligible orders for the feed.
         </description>
         <in-parameters>
-            <parameter name="brokeredOrdersCountPerFeed" type="Integer">
-                <description>The number of orders to be included in the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="orderId">
-                <description>Parameter to fetch Order details for a specific orderId.</description>
-            </parameter>
-            <parameter name="orderItemSeqId">
-                <description>Parameter to fetch Order details for a specific orderItemSeqId.</description>
-            </parameter>
-            <parameter name="systemMessageTypeId" required="true">
-                <description>The System Message Type ID for generating the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="systemMessageRemoteId" required="true">
-                <description>The System Message Remote Id for generating the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="parentFacilityTypeIds" type="List">
-                <description>
-                    List of parent Facility Type Ids for generating Brokered Orders Items Feed.
-                    For passing the parent Facility Type Ids as list, add values like - DISTRIBUTION_CENTER,PHYSICAL_STORE and for single value use - DISTRIBUTION_CENTER.
-                </description>
-            </parameter>
-            <parameter name="facilityGroupIds" type="List">
-                <description>
-                    List of facility group ids for generating Brokered Orders Items Feed.
-                </description>
-            </parameter>
-            <parameter name="productStoreIds" type="List">
-                <description>
-                    List of product store ids for generating Brokered Orders Items Feed.
-                </description>
-            </parameter>
+            <parameter name="brokeredOrdersCountPerFeed" type="Integer"/>
+            <parameter name="orderId"/>
+            <parameter name="orderItemSeqId"/>
+            <parameter name="systemMessageTypeId" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="parentFacilityTypeIds" type="List"/>
+            <parameter name="facilityGroupIds" type="List"/>
+            <parameter name="productStoreIds" type="List"/>
         </in-parameters>
         <out-parameters>
-            <parameter name="brokeredFeedOrdersCount" type="Integer">
-                <description>The number of orders in the Brokered Order Items Feed.</description>
-            </parameter>
+            <parameter name="brokeredFeedOrdersCount" type="Integer"/>
         </out-parameters>
         <actions>
+
             <set field="brokeredFeedOrdersCount" from="0"/>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
 
             <log message="Generating Brokered Orders and Items Feed Feed file of HotWax for parentFacilityTypeId ${parentFacilityTypeIds}, Order ${orderId} at time ${nowDate}"/>
+
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
 
@@ -910,6 +887,7 @@
                 brokeredOrders_find.limit(brokeredOrdersCountPerFeed)
                 .selectField("orderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
                 .orderBy("entryDate")
+
                 try (brokeredOrdersItr = brokeredOrders_find.iterator()) {
             </script>
             <if condition="!brokeredOrdersItr.hasNext()">
@@ -924,7 +902,6 @@
             <iterate list="brokeredOrdersItr" entry="brokerOrderItem">
                 <log message="Generating Brokered Order and Items Feed for order ${brokerOrderItem.orderId} at time ${nowDate}"/>
                 <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
-                <!-- Load and render the FTL template -->
                 <set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/>
                 <set field="templateWriter" from="new StringWriter()"/>
                 <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
@@ -935,7 +912,6 @@
                                   in-map="[externalFulfillmentOrderItemId:brokerOrderItem.externalFulfillmentOrderItemId,
                                 fulfillmentStatus:'Sent']"/>
                 </then><else>
-                    <!-- Create record of ExternalFulfillmentOrderItem to keep logs for the Brokered Order and Items Feed -->
                     <service-call name="create#co.hotwax.integration.order.ExternalFulfillmentOrderItem" in-map="[orderId:brokerOrderItem.orderId,
                                 orderItemSeqId:brokerOrderItem.orderItemSeqId, shipGroupSeqId:brokerOrderItem.shipGroupSeqId,
                                 fulfillmentStatus:'Sent', createdDate:nowDate, quantity:brokerOrderItem.orderItemQuantity]"/>
