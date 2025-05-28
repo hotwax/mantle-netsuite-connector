@@ -1,9 +1,7 @@
 <#assign orderIdentifications = ec.entity.find("co.hotwax.order.OrderIdentification")
 .condition("orderId", fulfilledOrderItem.orderId)
 .condition("orderIdentificationTypeId", "NETSUITE_ORDER_ID")
-.list()!>
-
-<#-- Default to the internal orderId -->
+.list()! />
 <#assign externalOrderId = fulfilledOrderItem.orderId>
 
 <#if orderIdentifications?has_content>
@@ -11,15 +9,17 @@
 </#if>
 
 {
-"order_id": "${externalOrderId?json_string}",
-"maySplit": "${fulfilledOrderItem.maySplit?default('N')?json_string}",
+"order_id": "${externalOrderId}",
+"maySplit": "${fulfilledOrderItem.maySplit!''}",
 "items": [
+<#list allOrderItems as item>
 {
-"line_id": "${fulfilledOrderItem.orderItemSeqId?json_string}",
-"shipment_method_type_id": "${fulfilledOrderItem.slaShipmentMethodTypeId?json_string}",
-"quantity": "${fulfilledOrderItem.quantity?string?json_string}",
-"location_id": "${fulfilledOrderItem.facilityExternalId?json_string}",
+"line_id": "${item.orderItemSeqId}",
+"shipment_method_type_id": "${item.slaShipmentMethodTypeId!''}",
+"quantity": "${item.quantity!1}",
+"location_id": "${item.facilityExternalId!''}",
 "tags": "hotwax-fulfilled"
-}
+}<#if item_has_next>,</#if>
+</#list>
 ]
 }
