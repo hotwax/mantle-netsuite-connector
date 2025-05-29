@@ -321,7 +321,9 @@
         </out-parameters>
         <actions>
             <set field="payload.entryDate" from="ec.user.nowTimestamp"/>
-            <script>payload.identifications?.each { it.put('fromDate', ec.user.nowTimestamp) }</script>
+            <set field="payload.identifications*.fromDate" from="ec.user.nowTimestamp"/>
+
+
             <set field="payload.statuses" from="[statusId:'ORDER_CREATED', statusDatetime:ec.user.nowTimestamp,
                 statusUserLogin:ec.user.getUsername()]"/>
 
