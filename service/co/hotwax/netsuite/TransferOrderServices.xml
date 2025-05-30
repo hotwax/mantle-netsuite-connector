@@ -465,7 +465,7 @@
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
                             in-map="[orderId:shipmentItem.orderId, orderItemSeqId:shipmentItem.orderItemSeqId,
                             shipmentId:shipmentItem.shipmentId, externalFulfillmentId:'_NA_',
-                            comments:'Transfer Order Shipment Item sent as part of TO Shipment Feed', createdDate:nowDate]"/>
+                            comments:'Shipment Item sent as part of Transfer Order Shipment Feed', createdDate:nowDate]"/>
                 </iterate>
                 <set field="shipmentMap.items" from="items"/>
 
