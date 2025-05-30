@@ -134,6 +134,8 @@
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/netsuite/TransferOrdersReceiptFeed/TransferOrdersReceiptFeed-${dateTime}.json"/>
 
+    <Enumeration description="NetSuite Order Name" enumCode="NETSUITE_ORDER_NAME" enumId="NETSUITE_ORDER_NAME" enumTypeId="ORDER_IDENTITY" sequenceId="01"/>
+
     <!-- Template service job to generate Transfer Order Shipment Feed -->
     <moqui.basic.Enumeration enumId="GEN_TO_SHIPMENT_FD" enumCode="GEN_TO_SHIPMENT_FD" description="Generate Store Transfer Order Shipment Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentFeed" jobTypeEnumId="GEN_TO_SHIPMENT_FD"

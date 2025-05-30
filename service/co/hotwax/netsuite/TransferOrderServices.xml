@@ -315,12 +315,16 @@
             </parameter>
         </in-parameters>
         <out-parameters>
-            <parameter name="payload">
+            <parameter name="payload" type="Map">
                 <description>The order map with mapped fields for OMS.</description>
             </parameter>
         </out-parameters>
         <actions>
+            <!-- Set Order Header level fields  -->
             <set field="payload.entryDate" from="ec.user.nowTimestamp"/>
+            <set field="payload.identifications*.fromDate" from="ec.user.nowTimestamp"/>
+            <set field="payload.statuses" from="[statusId:'ORDER_CREATED', statusDatetime:ec.user.nowTimestamp,
+                statusUserLogin:ec.user.getUsername()]"/>
 
             <!-- Get HC Facility ID for both origin and destination Facility of TO  -->
             <set field="externalFacilityIdList" from="[payload.remove('originFacilityExternalId'), payload.shipGroups[0].remove('orderFacilityExternalId')]"/>
@@ -337,6 +341,7 @@
                 <field-map field-name="externalId" from="externalFacilityIdList[1]"/>
             </filter-map-list>
 
+            <!-- Set HC Facility Ids  -->
             <set field="payload.shipGroups[0].facilityId" from="originFacilities[0]?.facilityId"/>
             <set field="payload.originFacilityId" from="originFacilities[0]?.facilityId"/>
             <set field="payload.shipGroups[0].orderFacilityId" from="orderFacilities[0]?.facilityId"/>
@@ -351,7 +356,10 @@
                     <order-by field-name="-fromDate"/>
                 </entity-find>
 
+                <!-- Set Order Item level fields  -->
                 <set field="item.productId" from="goodIdentifications?.first?.productId"/>
+                <set field="item.statuses" from="[statusId:'ITEM_CREATED', statusDatetime:ec.user.nowTimestamp,
+                    statusUserLogin:ec.user.getUsername()]"/>
             </iterate>
         </actions>
     </service>

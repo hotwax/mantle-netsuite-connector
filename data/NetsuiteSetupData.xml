@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed">
+    <Enumeration description="NetSuite Order Name" enumCode="NETSUITE_ORDER_NAME" enumId="NETSUITE_ORDER_NAME" enumTypeId="ORDER_IDENTITY" sequenceId="01"/>
+</entity-facade-xml>
