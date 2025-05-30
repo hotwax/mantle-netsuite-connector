@@ -355,4 +355,135 @@
             </iterate>
         </actions>
     </service>
+
+    <!-- NOTE: Removed the support of productStoreId for now, TODO need to check in future for multi store setup -->
+    <service verb="generate" noun="TransferOrderShipmentFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>
+            Service to generate Transfer Order Shipment Feed.
+            The Feed will be Shipment wise and each Shipment containing the list of Shipment Items.
+        </description>
+        <in-parameters>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote ID for generating the Transfer Order Shipment Feed.</description>
+            </parameter>
+            <parameter name="systemMessageTypeId" required="true">
+                <description>The System Message Type ID for generating the Transfer Order Shipment Feed.</description>
+            </parameter>
+            <parameter name="orderId">
+                <description>Parameter to fetch the Transfer Order Shipment details for a specific orderId.</description>
+            </parameter>
+            <parameter name="orderItemSeqId">
+                <description>Parameter to fetch Transfer Order Shipment item details for a specific orderItemSeqId.</description>
+            </parameter>
+            <parameter name="parentFacilityTypeIds" type="List">
+                <description>
+                    List of parent Facility Type Ids for generating Transfer Order Shipment Feed.
+                    For passing the parent Facility Type Ids as list, add values like - PHYSICAL_STORE,DISTRIBUTION_CENTER,VIRTUAL_FACILITY and for single value use - PHYSICAL_STORE.
+                </description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+            <log message="Generating Transfer Order Shipment Feed file of HotWax for Order ${orderId}, at time ${nowDate}"/>
+
+            <script>
+                import com.fasterxml.jackson.core.JsonGenerator
+                import com.fasterxml.jackson.core.JsonFactory
+                import com.fasterxml.jackson.databind.ObjectMapper
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                transferOrderShipment_find = ec.entity.find("co.hotwax.shipment.TransferOrderShipmentItemHistory")
+                transferOrderShipment_find.condition("statusId", "SHIPMENT_SHIPPED")
+
+                if(orderId) transferOrderShipment_find.condition("orderId", orderId)
+                if(orderItemSeqId) transferOrderShipment_find.condition("orderItemSeqId", orderItemSeqId)
+                if(parentFacilityTypeIds) transferOrderShipment_find.condition("parentFacilityTypeId",EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
+                transferOrderShipment_find.selectField("shipmentId,netSuiteOrderId,trackingIdNumber")
+                transferOrderShipment_find.distinct(true)
+
+                // Using try-with-resources to automatically close the EntityListIterator 'transferOrderShipmentItr'
+                try (transferOrderShipmentItr = transferOrderShipment_find.iterator()) {
+            </script>
+
+            <!-- If no shipments in transferOrderShipmentItr, then don't generate the file -->
+            <if condition="!transferOrderShipmentItr.hasNext()">
+                <return message="No eligible orders for Transfer Order Shipment Feed at ${nowDate}, not generating the TO Shipment Feed File for NetSuite."/>
+            </if>
+
+            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+
+            <!-- Prepare Transfer Order Shipment Feed JSON File Path -->
+            <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
+            <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
+                dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
+
+            <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
+
+            <!-- Prepare the Transfer Order Shipment Feed file  -->
+            <script>
+                    try {
+                        //json file
+                        File transferOrderShipmentFeedFile = new File(jsonFilePath)
+                        if (!transferOrderShipmentFeedFile.parentFile.exists()) transferOrderShipmentFeedFile.parentFile.mkdirs()
+                        JsonFactory jfactory = new JsonFactory()
+
+                        /* Declaring the PrintWriter and JsonGenerator resources in the try statement,
+                        so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
+                        try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, transferOrderShipmentFeedFile);
+                            JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
+                                jGenerator.writeStartArray()
+            </script>
+
+            <!-- Get Shipment Items -->
+            <iterate list="transferOrderShipmentItr" entry="transferOrderShipment">
+                <!-- Set Shipment level details -->
+                <set field="shipmentMap" from="[orderId:transferOrderShipment.netSuiteOrderId, trackingNumber:transferOrderShipment.trackingIdNumber, shipmentId:transferOrderShipment.shipmentId]"/>
+                <set field="items" from="[]"/>
+
+                <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentItemHistory" list="shipmentItems">
+                    <econdition field-name="shipmentId" from="transferOrderShipment.shipmentId"/>
+                </entity-find>
+
+                <iterate list="shipmentItems" entry="shipmentItem">
+                    <!-- Set Shipment Item level details -->
+                    <set field="shipmentItemMap" from="[lineId:shipmentItem.netSuiteItemLineId, quantity:shipmentItem.quantity, tags:'hotwax-fulfilled']"/>
+                    <script>items.add(shipmentItemMap)</script>
+
+                    <!-- Create Order Fulfillment History record for each shipment item included in the feed -->
+                    <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
+                            in-map="[orderId:shipmentItem.orderId, orderItemSeqId:shipmentItem.orderItemSeqId,
+                            shipmentId:shipmentItem.shipmentId, externalFulfillmentId:'_NA_',
+                            comments:'Transfer Order Shipment Item sent as part of TO Shipment Feed', createdDate:nowDate]"/>
+                </iterate>
+                <set field="shipmentMap.items" from="items"/>
+
+                <script>
+                    new ObjectMapper()
+                    .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
+                    .writerWithDefaultPrettyPrinter().writeValue(jGenerator, shipmentMap)
+                </script>
+            </iterate>
+            <script>
+                            jGenerator.writeEndArray()
+                        }
+                    }
+                    catch (IOException e) {
+                        logger.info("Error preparing transfer order shipment Feed file", e)
+                    }
+                }
+            </script>
+
+            <!-- Save the Json Feed File path in System Message messageText -->
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                messageText:jsonFilePathRef]" out-map="shipmentFeedSysMsgOut"/>
+
+            <return message="Completed Transfer Order Shipment Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+                remote ${systemMessageRemoteId} saved response in messages ${shipmentFeedSysMsgOut?.systemMessageId}"/>
+        </actions>
+    </service>
 </services>
