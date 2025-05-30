@@ -379,7 +379,6 @@
     </moqui.service.job.ServiceJob>
 
     <!-- Template Service Job to generate Transfer Order Shipments Receipt Feed from HotWax -->
-    
     <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMT_RCPT_FD"
            description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax" productId="GEN_TO_SHPMT_RCPT_FD"
            serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderShipmentReceiptFeed"
@@ -391,4 +390,16 @@
         <parameters parameterName="productStoreIds"/>
     </moqui.service.job.ServiceJob>
 
+    <!-- Template service job to generate Transfer Order Shipment Feed -->
+    <moqui.basic.Enumeration enumId="GEN_TO_SHIPMENT_FD" enumCode="GEN_TO_SHIPMENT_FD" description="Generate Store Transfer Order Shipment Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentFeed" jobTypeEnumId="GEN_TO_SHIPMENT_FD"
+            description="Template Service Job to generate the Transfer Orders Shipment Feed from HotWax"
+            serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderShipmentFeed"
+            cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="orderItemSeqId"/>
+        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="parentFacilityTypeIds"/>
+    </moqui.service.job.ServiceJob>
 </entity-facade-xml>
