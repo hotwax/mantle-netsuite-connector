@@ -39,7 +39,7 @@
             </entity-condition>
         </member-entity>
         <alias-all entity-alias="OSH"/>
-        <alias entity-alias="SH" name="statusId"/>
+        <alias entity-alias="SH" name="shipmentTypeId"/>
         <alias entity-alias="SH" name="statusId"/>
         <alias entity-alias="SRS" name="trackingIdNumber"/>
         <alias entity-alias="F" name="facilityId"/>
