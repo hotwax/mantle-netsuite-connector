@@ -388,7 +388,5 @@
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="shipmentId"/>
         <parameters parameterName="sinceReceivedDate"/>
-        <parameters parameterName="productStoreIds"/>
     </moqui.service.job.ServiceJob>
-
 </entity-facade-xml>

@@ -120,6 +120,8 @@
             </iterate>
         </actions>
     </service>
+
+    <!-- NOTE: Removed the support of productStoreId for now, TODO need to check in future for multi store setup -->
     <service verb="generate" noun="TransferOrderShipmentReceiptFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <in-parameters>
             <parameter name="shipmentId">
@@ -134,16 +136,10 @@
             <parameter name="sinceReceivedDate">
                 <description>Parameter to fetch Shipment Receipt details received after a specific date.</description>
             </parameter>
-            <parameter name="productStoreIds" type="List">
-                <description>
-                    List of product Store Ids for generating Shipment Receipt feed.
-                    For passing the Product Store Ids as list, add values like - SM_STORE,SG_STORE and for single value use - SM_STORE.
-                </description>
-            </parameter>
         </in-parameters>
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
-            <log message="Generating Shipments Receipt Feed file for Shipment ${shipmentId} at time ${nowDate}"/>
+            <log message="Generating Transfer Order Shipments Receipt Feed file for Shipment ${shipmentId} at time ${nowDate}"/>
 
             <script>
                 import com.fasterxml.jackson.core.JsonGenerator
@@ -152,116 +148,63 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
 
-                // Dynamic view to retrieve eligible Transfer Order Shipments for the Receipt feed
-                def shipmentReceipt_find = ec.entity.find("org.apache.ofbiz.shipment.receipt.ShipmentReceipt")
-                dynamicView = shipmentReceipt_find.makeEntityDynamicView()
-                dynamicView.setEntityName("TransferOrderShipmentReceipt")
+                toShipmentReceipt_find = ec.entity.find("co.hotwax.shipment.TransferOrderShipmentReceiptItemHistory")
 
-                dynamicView.addMemberEntity("SR", "org.apache.ofbiz.shipment.receipt.ShipmentReceipt", null, null, null)
-                dynamicView.addMemberEntity("SH", "org.apache.ofbiz.shipment.shipment.Shipment","SR", false,["shipmentId":"shipmentId"])
-                dynamicView.addMemberEntity("SI", "org.apache.ofbiz.shipment.shipment.ShipmentItem","S", false,["shipmentId":"shipmentId"])
+                if(shipmentId) toShipmentReceipt_find.condition("shipmentId", shipmentId)
+                if(sinceReceivedDate) toShipmentReceipt_find.havingCondition(ec.entity.conditionFactory.makeCondition("receivedDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceReceivedDate))
+                toShipmentReceipt_find.selectField("shipmentId,shipmentExternalId,netSuiteOrderId")
+                toShipmentReceipt_find.distinct(true)
 
-                dynamicView.addMemberEntity("OH", "org.apache.ofbiz.order.order.OrderHeader", "SH", false, ["primaryOrderId":"orderId"])
-                dynamicView.addMemberEntity("SRH", "co.hotwax.integration.shipment.ShipmentReceiptHistory", "SR", true, ["receiptId":"receiptId"])
-
-                dynamicView.addAlias("SH", "shipmentExternalId", "externalId", null)
-                dynamicView.addAlias("SH", "shipmentId")
-                dynamicView.addAlias("SH", "shipmentTypeId")
-                dynamicView.addAlias("OH", "productStoreId")
-                dynamicView.addAlias("OH", "orderId")
-                dynamicView.addAlias("OH", "orderExternalId", "externalId", null)
-                dynamicView.addAlias("SRH", "historyId")
-
-                shipmentReceipt_find.condition("historyId", EntityCondition.IS_NULL, null)
-                shipmentReceipt_find.condition("shipmentTypeId", "OUT_TRANSFER")
-
-                if(shipmentId) shipmentReceipt_find.condition("shipmentId", shipmentId)
-                if(productStoreIds) shipmentReceipt_find.condition("productStoreId",EntityCondition.ComparisonOperator.IN, productStoreIds)
-                if(sinceReceivedDate) shipmentReceipt_find.havingCondition(ec.entity.conditionFactory.makeCondition("receivedDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceReceivedDate))
-                shipmentReceipt_find.selectField("shipmentId,orderExternalId,shipmentExternalId,orderId")
-                shipmentReceipt_find.distinct(true)
-
-                // Using try-with-resources to automatically close the EntityListIterator 'shipmentReceiptItr'
-                try (shipmentReceiptItr = shipmentReceipt_find.iterator()) {
+                // Using try-with-resources to automatically close the EntityListIterator 'toShipmentReceiptItr'
+                try (toShipmentReceiptItr = toShipmentReceipt_find.iterator()) {
             </script>
 
-            <!-- If no transfer order in shipmentReceiptItr, then don't generate the file -->
-            <if condition="!shipmentReceiptItr.hasNext()">
-                <return message="No eligible Transfer Order for Shipments Receipts Feed at ${nowDate}, not generating the TO Shipment Receipt Feed File for NetSuite."/>
+            <!-- If no receipt in toShipmentReceiptItr, then don't generate the file -->
+            <if condition="!toShipmentReceiptItr.hasNext()">
+                <return message="No eligible Shipment Receipt for TO Shipment Receipt Feed at ${nowDate}, not generating the TO Shipment Receipt Feed File for NetSuite."/>
             </if>
 
             <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
 
-            <!-- Prepare Shipment Receipt JSON File Path -->
+            <!-- Prepare TO Shipment Receipt JSON File Path -->
             <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
             <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
                 dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
             <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
 
-            <!-- Prepare the Shipment Receipt Feed file -->
+            <!-- Prepare the TO Shipment Receipt Feed file -->
             <script>
                 try {
-                //json file
-                File shipmentsReceiptFeedFile = new File(jsonFilePath)
-                if (!shipmentsReceiptFeedFile.parentFile.exists()) shipmentsReceiptFeedFile.parentFile.mkdirs()
-                JsonFactory jfactory = new JsonFactory()
+                    //json file
+                    File toShipmentReceiptFeedFile = new File(jsonFilePath)
+                    if (!toShipmentReceiptFeedFile.parentFile.exists()) toShipmentReceiptFeedFile.parentFile.mkdirs()
+                    JsonFactory jfactory = new JsonFactory()
 
-                /* Declaring the PrintWriter and JsonGenerator resources in the the try statement,
-                so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
-                try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, shipmentsReceiptFeedFile);
-                JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
-                    jGenerator.writeStartArray()
+                    /* Declaring the PrintWriter and JsonGenerator resources in the the try statement,
+                    so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
+                    try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, toShipmentReceiptFeedFile);
+                    JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
+                        jGenerator.writeStartArray()
             </script>
 
             <!-- Preparing Shipment Receipts -->
-            <iterate list="shipmentReceiptItr" entry="shipmentReceipt">
-                <!--
-                    For some clients, we have the Netsuite Order ID in the identification.
-                    Therefore, we first check if the Netsuite Order ID is present in the identification;
-                    if so, we use that. Otherwise, we use the external ID from the OrderHeader.
-                -->
-                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
-                    <econdition field-name="orderId" from="shipmentReceipt.orderId"/>
-                    <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
-                </entity-find>
-
-                <set field="netsuiteOrderId" from="orderIdentificationList?.first?.idValue"/>
-                <set field="orderId" from=" netsuiteOrderId ? netsuiteOrderId : shipmentReceipt.orderExternalId"/>
-
-                <set field="shipmentReceiptMap" from="[orderId:orderId, fulfillmentId:shipmentReceipt.shipmentExternalId]"/>
+            <iterate list="toShipmentReceiptItr" entry="toShipmentReceipt">
+                <!-- Set Shipment Receipt level details -->
+                <set field="shipmentReceiptMap" from="[shipmentId:toShipmentReceipt.shipmentId,
+                    fulfillmentId:toShipmentReceipt.shipmentExternalId, orderId:toShipmentReceipt.netSuiteOrderId]"/>
                 <set field="items" from="[]"/>
 
-                <script>
-                    // dynamicView to fetch item details for eligible shipmentId
-                    def entity_find = ec.entity.find("org.apache.ofbiz.shipment.receipt.ShipmentReceipt")
-                    dynamicView = entity_find.makeEntityDynamicView()
-
-                    dynamicView.addMemberEntity("SR", "org.apache.ofbiz.shipment.receipt.ShipmentReceipt", null, null, null)
-                    dynamicView.addMemberEntity("SI", "org.apache.ofbiz.shipment.shipment.ShipmentItem","SR", false,["shipmentId":"shipmentId","shipmentItemSeqId":"shipmentItemSeqId"])
-                    dynamicView.addMemberEntity("SRH", "co.hotwax.integration.shipment.ShipmentReceiptHistory", "SR", true, ["receiptId":"receiptId"])
-
-                    dynamicView.addAlias("SI", "productId")
-                    dynamicView.addAlias("SI", "shipmentId")
-                    dynamicView.addAlias("SI", "shipmentItemExternalId", "externalId", null)
-                    dynamicView.addAlias("SR", "totalQuantityAccepted", "quantityAccepted", null)
-                    dynamicView.addAlias("SR", "receiptId")
-                    dynamicView.addAlias("SRH", "historyId")
-
-                    entity_find.condition("historyId", EntityCondition.IS_NULL, null)
-                    entity_find.condition("shipmentId", shipmentReceipt.shipmentId)
-
-                    entity_find.selectField("shipmentItemExternalId,productId,totalQuantityAccepted,receiptId")
-
-                    // Using try-with-resources to automatically close the EntityListIterator 'shipmentReceiptItemItr'
-                    try (shipmentReceiptItemItr = entity_find.iterator()) {
-                </script>
+                <!-- Get Shipment Receipt Item level details for the Shipment -->
+                <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentReceiptItemHistory" list="shipmentReceiptItems">
+                    <econdition field-name="shipmentId" from="toShipmentReceipt.shipmentId"/>
+                    <select-field field-name="shipmentItemExternalId,productId,shipmentItemSeqId,totalQuantityAccepted"/>
+                </entity-find>
 
                 <!-- Preparing Shipment Receipt Item Details -->
-                <iterate list="shipmentReceiptItemItr" entry="shipmentReceiptItem">
-
+                <iterate list="shipmentReceiptItems" entry="shipmentReceiptItem">
                     <!-- Get NetSuite Product ID for each item -->
                     <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList">
                         <econdition field-name="productId" from="shipmentReceiptItem.productId"/>
@@ -269,17 +212,31 @@
                         <date-filter/>
                     </entity-find>
 
-                    <set field="itemMap" from="[lineId:shipmentReceiptItem.shipmentItemExternalId, quantity:shipmentReceiptItem.totalQuantityAccepted, productId:goodIdentificationList?.first?.idValue]"/>
-                    <script>items.add(itemMap)</script>
+                    <!-- Set Shipment Receipt Item level details -->
+                    <set field="shipmentReceiptItemMap" from="[lineId:shipmentReceiptItem.shipmentItemExternalId,
+                        quantity:shipmentReceiptItem.totalQuantityAccepted, productId:goodIdentificationList?.first?.idValue]"/>
+                    <script>items.add(shipmentReceiptItemMap)</script>
+
+                    <!-- NOTE The quantity sent for an item received will be the totalQuantityAccepted for the item per Shipment.
+                        Eg. A TO Item is fulfilled as part of Shipment S1 with quantity 10, and receipts were created at item
+                        level with quantity 6 and 4, the ShipmentReceipt will have 2 records with the same shipment.
+                        If in NetSuite, this is sent as-is, it only records the quantity of the last record in the file for a
+                        lineId, so only 4 quantity will get received and 6 quantity will be ignored.
+                        So we are sending the totalQuantityAccepted per item per Shipment, but to create the history for the
+                        receipts, we need to fetch the receiptIds of the ShipmentItem. -->
+                    <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentReceiptItemHistory" list="shipmentReceiptItemsForHistory">
+                        <econdition field-name="shipmentId" from="toShipmentReceipt.shipmentId"/>
+                        <econdition field-name="shipmentItemSeqId" from="shipmentReceiptItem.shipmentItemSeqId"/>
+                        <select-field field-name="receiptId"/>
+                    </entity-find>
 
                     <!-- Create Shipment Receipt History for each received item included in the feed -->
-                    <service-call name="create#co.hotwax.integration.shipment.ShipmentReceiptHistory" in-map="[receiptId:shipmentReceiptItem.receiptId,
-                        comments:'Order Item sent as part of Transfer Order Shipment Receipt Feed', createdDate:nowDate]"/>
+                    <iterate list="shipmentReceiptItemsForHistory" entry="shipmentReceiptItemForHistory">
+                        <service-call name="create#co.hotwax.integration.shipment.ShipmentReceiptHistory"
+                                in-map="[receiptId:shipmentReceiptItemForHistory.receiptId, createdDate:nowDate,
+                                comments:'Shipment Receipt Item sent as part of Transfer Order Shipment Receipt Feed']"/>
+                    </iterate>
                 </iterate>
-                <script>
-                    }
-                </script>
-
                 <set field="shipmentReceiptMap.items" from="items"/>
 
                 <script>
@@ -292,7 +249,7 @@
                             jGenerator.writeEndArray()
                         }
                     } catch (IOException e) {
-                        logger.info("Error preparing Shipments Receipt Feed file", e)
+                        logger.info("Error preparing transfer order shipment receipt Feed file", e)
                     }
                 }
             </script>
@@ -301,9 +258,9 @@
             send the file to sftp using send service configured in SystemMessageType -->
             <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                messageText:jsonFilePathRef, productStoreId:productStoreId]" out-map="shipmentsReceiptFeedSysMsgOut"/>
+                messageText:jsonFilePathRef]" out-map="shipmentsReceiptFeedSysMsgOut"/>
 
-            <return message="Completed the Transfer Order Shipments Receipt Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+            <return message="Completed the Transfer Order Shipment Receipt Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${shipmentsReceiptFeedSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
