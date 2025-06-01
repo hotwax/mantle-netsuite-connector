@@ -308,7 +308,7 @@
         </actions>
     </service>
 
-    <service verb="generate" noun="CreateTransferOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <service verb="generate" noun="TransferOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <in-parameters>
             <parameter name="orderId">
                 <description>Parameter to fetch Order details for a specific orderId.</description>
@@ -354,7 +354,7 @@
                 if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
                 def csvHeaders = null
 
-                transferOrder_find = ec.entity.find("co.hotwax.integration.order.TransferOrderItemSyncView")
+                transferOrder_find = ec.entity.find("co.hotwax.netsuite.order.TransferOrderItemSyncView")
                 if(orderId) transferOrder_find.condition("orderId", orderId)
                 if(fromOrderDate) transferOrder_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
                 if(thruOrderDate) transferOrder_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
@@ -375,7 +375,7 @@
             </script>
 
             <iterate list="transferOrderItr" entry="transferOrder">
-                <entity-find entity-name="co.hotwax.integration.order.TransferOrderItemSyncView" list="transferOrderItemList">
+                <entity-find entity-name="co.hotwax.netsuite.order.TransferOrderItemSyncView" list="transferOrderItemList">
                     <econdition field-name="orderId" from="transferOrder.orderId"/>
                 </entity-find>
                 <iterate list="transferOrderItemList" entry="transferOrderItem">
