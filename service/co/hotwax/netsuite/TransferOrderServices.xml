@@ -195,7 +195,7 @@
             <!-- Preparing Shipment Receipts -->
             <iterate list="toShipmentReceiptItr" entry="toShipmentReceipt">
                 <!-- Get NetSuite Order ID -->
-                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList" cache="true">
+                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
                     <econdition field-name="orderId" from="toShipmentReceipt.orderId"/>
                     <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
                     <date-filter/>
