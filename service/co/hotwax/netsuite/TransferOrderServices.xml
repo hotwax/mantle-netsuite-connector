@@ -401,23 +401,25 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
 
-                transferOrderShipment_find = ec.entity.find("co.hotwax.shipment.TransferOrderShipmentItemHistory")
+                transferOrderShipment_find = ec.entity.find("co.hotwax.netsuite.TransferOrderShipmentItemHistory")
                 transferOrderShipment_find.condition("statusId", "SHIPMENT_SHIPPED")
 
                 if(orderId) transferOrderShipment_find.condition("orderId", orderId)
                 if(orderItemSeqId) transferOrderShipment_find.condition("orderItemSeqId", orderItemSeqId)
                 if(parentFacilityTypeIds) transferOrderShipment_find.condition("parentFacilityTypeId",EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
-                transferOrderShipment_find.selectField("shipmentId,netSuiteOrderId,trackingIdNumber")
+                transferOrderShipment_find.selectField("shipmentId,orderId,trackingIdNumber")
                 transferOrderShipment_find.distinct(true)
+
+                //If no eligible shipments, then don't generate the file
+                long shipmentCount = transferOrderShipment_find.count()
+                if (shipmentCount == 0) {
+                    ec.message.addMessage("No eligible orders for Transfer Order Shipment Feed at ${nowDate}, not generating the TO Shipment Feed File for NetSuite.")
+                    return
+                }
 
                 // Using try-with-resources to automatically close the EntityListIterator 'transferOrderShipmentItr'
                 try (transferOrderShipmentItr = transferOrderShipment_find.iterator()) {
             </script>
-
-            <!-- If no shipments in transferOrderShipmentItr, then don't generate the file -->
-            <if condition="!transferOrderShipmentItr.hasNext()">
-                <return message="No eligible orders for Transfer Order Shipment Feed at ${nowDate}, not generating the TO Shipment Feed File for NetSuite."/>
-            </if>
 
             <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
@@ -448,17 +450,32 @@
 
             <!-- Get Shipment Items -->
             <iterate list="transferOrderShipmentItr" entry="transferOrderShipment">
+                <!-- Get NetSuite Order ID -->
+                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
+                    <econdition field-name="orderId" from="transferOrderShipment.orderId"/>
+                    <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                    <date-filter/>
+                </entity-find>
+
                 <!-- Set Shipment level details -->
-                <set field="shipmentMap" from="[orderId:transferOrderShipment.netSuiteOrderId, trackingNumber:transferOrderShipment.trackingIdNumber, shipmentId:transferOrderShipment.shipmentId]"/>
+                <set field="shipmentMap" from="[orderId:orderIdentificationList?.first?.idValue,
+                    trackingNumber:transferOrderShipment.trackingIdNumber, shipmentId:transferOrderShipment.shipmentId]"/>
                 <set field="items" from="[]"/>
 
-                <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentItemHistory" list="shipmentItems">
+                <entity-find entity-name="co.hotwax.netsuite.TransferOrderShipmentItemHistory" list="shipmentItems">
                     <econdition field-name="shipmentId" from="transferOrderShipment.shipmentId"/>
                 </entity-find>
 
                 <iterate list="shipmentItems" entry="shipmentItem">
+                    <!-- Get NetSuite Item Line ID -->
+                    <entity-find entity-name="org.apache.ofbiz.order.order.OrderItemAttribute" list="orderItemAttrList">
+                        <econdition field-name="orderId" from="transferOrderShipment.orderId"/>
+                        <econdition field-name="orderItemSeqId" from="shipmentItem.orderItemSeqId"/>
+                        <econdition field-name="attrName" value="NetsuiteItemLineId"/>
+                    </entity-find>
+
                     <!-- Set Shipment Item level details -->
-                    <set field="shipmentItemMap" from="[lineId:shipmentItem.netSuiteItemLineId, quantity:shipmentItem.quantity, tags:'hotwax-fulfilled']"/>
+                    <set field="shipmentItemMap" from="[lineId:orderItemAttrList?.first?.attrValue, quantity:shipmentItem.quantity, tags:'hotwax-fulfilled']"/>
                     <script>items.add(shipmentItemMap)</script>
 
                     <!-- Create Order Fulfillment History record for each shipment item included in the feed -->

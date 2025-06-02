@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
 
-    <view-entity entity-name="TransferOrderShipmentItemHistory" package="co.hotwax.shipment">
+    <view-entity entity-name="TransferOrderShipmentItemHistory" package="co.hotwax.netsuite">
         <description>
             View to get the Transfer order Shipment Items not sent to NetSuite i.e. not part of OrderFulfillmentHistory.
             This view is used in the preparation of Transfer Order Shipment Feed for NetSuite.
@@ -24,20 +24,6 @@
         <member-entity entity-alias="FT" entity-name="org.apache.ofbiz.product.facility.FacilityType" join-from-alias="F">
             <key-map field-name="facilityTypeId"/>
         </member-entity>
-        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OSH" join-optional="true">
-            <key-map field-name="orderId"/>
-            <entity-condition>
-                <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
-                <date-filter/>
-            </entity-condition>
-        </member-entity>
-        <member-entity entity-alias="OIA" entity-name="org.apache.ofbiz.order.order.OrderItemAttribute" join-from-alias="OSH" join-optional="true">
-            <key-map field-name="orderId"/>
-            <key-map field-name="orderItemSeqId"/>
-            <entity-condition>
-                <econdition entity-alias="OIA" field-name="attrName" value="NetsuiteItemLineId"/>
-            </entity-condition>
-        </member-entity>
         <alias-all entity-alias="OSH"/>
         <alias entity-alias="SH" name="shipmentTypeId"/>
         <alias entity-alias="SH" name="statusId"/>
@@ -46,8 +32,6 @@
         <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
         <alias entity-alias="FT" name="facilityTypeId"/>
         <alias entity-alias="FT" field="parentTypeId" name="parentFacilityTypeId"/>
-        <alias entity-alias="OID" field="idValue" name="netSuiteOrderId"/>
-        <alias entity-alias="OIA" field="attrValue" name="netSuiteItemLineId"/>
         <entity-condition>
             <econdition entity-alias="OFH" field-name="orderId" value=""/>
             <econdition entity-alias="SH" field-name="shipmentTypeId" value="OUT_TRANSFER"/>
