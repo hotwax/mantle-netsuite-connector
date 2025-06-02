@@ -148,7 +148,7 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
 
-                toShipmentReceipt_find = ec.entity.find("co.hotwax.shipment.TransferOrderShipmentReceiptItemHistory")
+                toShipmentReceipt_find = ec.entity.find("co.hotwax.shipment.TransferOrderShipmentReceiptHistory")
 
                 if(shipmentId) toShipmentReceipt_find.condition("shipmentId", shipmentId)
                 if(sinceReceivedDate) toShipmentReceipt_find.havingCondition(ec.entity.conditionFactory.makeCondition("receivedDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceReceivedDate))
@@ -198,7 +198,7 @@
                 <set field="items" from="[]"/>
 
                 <!-- Get Shipment Receipt Item level details for the Shipment -->
-                <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentReceiptItemHistory" list="shipmentReceiptItems">
+                <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentReceiptHistory" list="shipmentReceiptItems">
                     <econdition field-name="shipmentId" from="toShipmentReceipt.shipmentId"/>
                     <select-field field-name="shipmentItemExternalId,productId,shipmentItemSeqId,totalQuantityAccepted"/>
                 </entity-find>
@@ -224,7 +224,7 @@
                         lineId, so only 4 quantity will get received and 6 quantity will be ignored.
                         So we are sending the totalQuantityAccepted per item per Shipment, but to create the history for the
                         receipts, we need to fetch the receiptIds of the ShipmentItem. -->
-                    <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentReceiptItemHistory" list="shipmentReceiptItemsForHistory">
+                    <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentReceiptHistory" list="shipmentReceiptItemsForHistory">
                         <econdition field-name="shipmentId" from="toShipmentReceipt.shipmentId"/>
                         <econdition field-name="shipmentItemSeqId" from="shipmentReceiptItem.shipmentItemSeqId"/>
                         <select-field field-name="receiptId"/>
