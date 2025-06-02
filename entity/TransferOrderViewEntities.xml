@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
 
-    <view-entity entity-name="TransferOrderShipmentReceiptHistory" package="co.hotwax.shipment">
+    <view-entity entity-name="TransferOrderShipmentReceiptHistory" package="co.hotwax.netsuite">
         <description>
             View to get the Transfer order Shipment Items not sent to NetSuite i.e. not part of OrderFulfillmentHistory.
             This view is used in the preparation of Transfer Order Shipment Receipt Feed for NetSuite.
@@ -17,13 +17,6 @@
         <member-entity entity-alias="SRH" entity-name="co.hotwax.integration.shipment.ShipmentReceiptHistory" join-from-alias="SR" join-optional="true">
             <key-map field-name="receiptId"/>
         </member-entity>
-        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="SH" join-optional="true">
-            <key-map field-name="primaryOrderId" related="orderId"/>
-            <entity-condition>
-                <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
-                <date-filter/>
-            </entity-condition>
-        </member-entity>
         <alias entity-alias="SR" name="receiptId"/>
         <alias entity-alias="SR" name="orderId"/>
         <alias entity-alias="SR" name="orderItemSeqId"/>
@@ -37,7 +30,6 @@
         <alias entity-alias="SH" field="externalId" name="shipmentExternalId"/>
         <alias entity-alias="SI" field="externalId" name="shipmentItemExternalId"/>
         <alias entity-alias="SI" name="productId"/>
-        <alias entity-alias="OID" field="idValue" name="netSuiteOrderId"/>
         <entity-condition>
             <econdition entity-alias="SRH" field-name="historyId" value=""/>
             <econdition entity-alias="SH" field-name="shipmentTypeId" value="OUT_TRANSFER"/>

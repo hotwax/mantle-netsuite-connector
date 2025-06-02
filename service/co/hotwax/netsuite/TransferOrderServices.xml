@@ -148,21 +148,23 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
 
-                toShipmentReceipt_find = ec.entity.find("co.hotwax.shipment.TransferOrderShipmentReceiptHistory")
+                toShipmentReceipt_find = ec.entity.find("co.hotwax.netsuite.TransferOrderShipmentReceiptHistory")
 
                 if(shipmentId) toShipmentReceipt_find.condition("shipmentId", shipmentId)
                 if(sinceReceivedDate) toShipmentReceipt_find.havingCondition(ec.entity.conditionFactory.makeCondition("receivedDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceReceivedDate))
-                toShipmentReceipt_find.selectField("shipmentId,shipmentExternalId,netSuiteOrderId")
+                toShipmentReceipt_find.selectField("shipmentId,shipmentExternalId,orderId")
                 toShipmentReceipt_find.distinct(true)
+
+                //If no eligible receipts, then don't generate the file
+                long shipmentReceiptCount = toShipmentReceipt_find.count()
+                if (shipmentReceiptCount == 0) {
+                    ec.message.addMessage("No eligible Shipment Receipt for TO Shipment Receipt Feed at ${nowDate}, not generating the TO Shipment Receipt Feed File for NetSuite.")
+                    return
+                }
 
                 // Using try-with-resources to automatically close the EntityListIterator 'toShipmentReceiptItr'
                 try (toShipmentReceiptItr = toShipmentReceipt_find.iterator()) {
             </script>
-
-            <!-- If no receipt in toShipmentReceiptItr, then don't generate the file -->
-            <if condition="!toShipmentReceiptItr.hasNext()">
-                <return message="No eligible Shipment Receipt for TO Shipment Receipt Feed at ${nowDate}, not generating the TO Shipment Receipt Feed File for NetSuite."/>
-            </if>
 
             <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
@@ -192,13 +194,20 @@
 
             <!-- Preparing Shipment Receipts -->
             <iterate list="toShipmentReceiptItr" entry="toShipmentReceipt">
+                <!-- Get NetSuite Order ID -->
+                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList" cache="true">
+                    <econdition field-name="orderId" from="toShipmentReceipt.orderId"/>
+                    <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                    <date-filter/>
+                </entity-find>
+
                 <!-- Set Shipment Receipt level details -->
                 <set field="shipmentReceiptMap" from="[shipmentId:toShipmentReceipt.shipmentId,
-                    fulfillmentId:toShipmentReceipt.shipmentExternalId, orderId:toShipmentReceipt.netSuiteOrderId]"/>
+                    fulfillmentId:toShipmentReceipt.shipmentExternalId, orderId:orderIdentificationList?.first?.idValue]"/>
                 <set field="items" from="[]"/>
 
                 <!-- Get Shipment Receipt Item level details for the Shipment -->
-                <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentReceiptHistory" list="shipmentReceiptItems">
+                <entity-find entity-name="co.hotwax.netsuite.TransferOrderShipmentReceiptHistory" list="shipmentReceiptItems">
                     <econdition field-name="shipmentId" from="toShipmentReceipt.shipmentId"/>
                     <select-field field-name="shipmentItemExternalId,productId,shipmentItemSeqId,totalQuantityAccepted"/>
                 </entity-find>
@@ -224,7 +233,7 @@
                         lineId, so only 4 quantity will get received and 6 quantity will be ignored.
                         So we are sending the totalQuantityAccepted per item per Shipment, but to create the history for the
                         receipts, we need to fetch the receiptIds of the ShipmentItem. -->
-                    <entity-find entity-name="co.hotwax.shipment.TransferOrderShipmentReceiptHistory" list="shipmentReceiptItemsForHistory">
+                    <entity-find entity-name="co.hotwax.netsuite.TransferOrderShipmentReceiptHistory" list="shipmentReceiptItemsForHistory">
                         <econdition field-name="shipmentId" from="toShipmentReceipt.shipmentId"/>
                         <econdition field-name="shipmentItemSeqId" from="shipmentReceiptItem.shipmentItemSeqId"/>
                         <select-field field-name="receiptId"/>
