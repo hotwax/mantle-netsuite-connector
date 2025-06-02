@@ -243,6 +243,7 @@
         <alias name="productId" field="productId" entity-alias="OI"/>
         <alias name="shipmentMethodTypeId" entity-alias="OISG"/>
         <alias name="location" field="facilityId" entity-alias="OISG"/>
+        <alias name="orderFacilityId" entity-alias="OISG"/>
     </view-entity>
     <view-entity entity-name="InvalidOrdersForNetsuite" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>

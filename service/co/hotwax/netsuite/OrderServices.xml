@@ -178,7 +178,6 @@
                             item.remove("orderItemSeqId")
                             item.remove("isDiscountRow")
                             item.remove("productId")
-                            item.put("item", item.remove("netSuiteProductId"))
                             def flattenedOrder = [:]
                             flattenedOrder.putAll(order)
                             item.each { key, value -> flattenedOrder["$key"] = value }
@@ -264,15 +263,13 @@
             <parameter name="orderMap"/>
         </out-parameters>
         <actions>
-            <log message="order: ${orderId}"/>
             <entity-find entity-name="co.hotwax.order.OrderDetailsForNetSuiteView" list="orderLevelDetailList">
                 <econdition field-name="orderId" from="orderId"/>
             </entity-find>
             <set field="orderDetails" from="orderLevelDetailList[0]"/>
-            <script>
-                orderDetails.date = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(orderDetails.date.toString()))
-                orderDetails.shippingCost = orderDetails.shippingCost ?: BigDecimal.ZERO
-            </script>
+            <set field="orderDetails.date" from="java.text.SimpleDateFormat('MM/dd/yyyy').format(new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss.S').parse(orderDetails.date.toString()))"/>
+            <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
+
             <!-- Set orderItemList List to add the order Item Detail map -->
             <set field="orderItemList" from="[]"/>
             <entity-find entity-name="co.hotwax.order.OrderItemsForNetSuiteView" list="orderItemsList">
@@ -285,10 +282,7 @@
             </if>
 
             <iterate list="orderItemsList" entry="orderItem">
-                <log message="orderItemSeqId: ${orderItem.orderItemSeqId}"/>
-                <script>
-                    orderItemList.add(orderItem.getMap())
-                </script>
+                <script>orderItemList.add(orderItem.getMap())</script>
             </iterate>
             <!-- Prepare the Order Detail map -->
             <set field="orderMap" from="orderDetails.getMap() + [orderItems:orderItemList]"/>
@@ -303,7 +297,6 @@
             <parameter name="orderMapDetail" type="Map"/>
         </out-parameters>
         <actions>
-
             <!-- Create a New Map for Processed Data -->
             <script><![CDATA[
                 Map<String, Object> processedOrderMap = new HashMap<>(orderMap);
@@ -313,20 +306,12 @@
                 }
 
                 // Prepare billing and shipping phone numbers
-                String billingPhone = preparePhoneNumber(orderMap.billingCountryCode, orderMap.billingAreaCode, orderMap.billingContactNumber)
-                String shippingPhone = preparePhoneNumber(orderMap.shippingCountryCode, orderMap.shippingAreaCode, orderMap.shippingContactNumber)
+                String billingPhone = preparePhoneNumber(processedOrderMap.remove("billingCountryCode"), processedOrderMap.remove("billingAreaCode"), processedOrderMap.remove("billingContactNumber"))
+                String shippingPhone = preparePhoneNumber(processedOrderMap.remove("shippingCountryCode"), processedOrderMap.remove("shippingAreaCode"), processedOrderMap.remove("shippingContactNumber"))
 
                 // Add results to the processed map, defaulting to empty string if null
                 processedOrderMap.billingPhone = billingPhone ?: null
                 processedOrderMap.phone = shippingPhone ?: null
-
-                // Remove the original phone-related fields from orderMap
-                processedOrderMap.remove("billingCountryCode")
-                processedOrderMap.remove("billingAreaCode")
-                processedOrderMap.remove("billingContactNumber")
-                processedOrderMap.remove("shippingCountryCode")
-                processedOrderMap.remove("shippingAreaCode")
-                processedOrderMap.remove("shippingContactNumber")
 
                 /*
                 Logic to use shipping address as billing address if billing details are missing
@@ -335,8 +320,7 @@
                 available to create the order in NetSuite. A country is a required field for NetSuite order creation,
                 */
 
-                if (!orderMap.billingContactMechId && orderMap.shippingContactMachId) {
-                    log.info("Billing address is missing. Using shipping address as billing address.");
+                if (!processedOrderMap.remove("billingContactMechId") && processedOrderMap.remove("shippingContactMechId")) {
                     processedOrderMap.put("billingAddress1", orderMap.shippingAddress1);
                     processedOrderMap.put("billingAddress2", orderMap.shippingAddress2);
                     processedOrderMap.put("billingCity", orderMap.shippingCity);
@@ -344,8 +328,6 @@
                     processedOrderMap.put("billingCountry", orderMap.shippingCountry);
                     processedOrderMap.put("billingPostalCode", orderMap.shippingPostalCode);
                 }
-                processedOrderMap.remove("shippingContactMechId")
-                processedOrderMap.remove("billingContactMechId")
             ]]></script>
 
             <!--
@@ -375,36 +357,24 @@
             <set field="totalNonRefundedGiftCardAmount" type="Integer"/>
 
             <!-- Logic to sum non-refunded gift card payments -->
+            <set field="refundedSet" from="[]"/>
+            <set field="manualRefSet" from="[]"/>
+            <iterate list="GiftCardPaymentList" entry="giftCardPayment">
+                <if condition="giftCardPayment.parentRefNumber">
+                    <set field="refundedSet" from="refundedSet + [giftCardPayment.parentRefNumber]"/>
+                </if>
+            </iterate>
+
+            <iterate list="GiftCardPaymentList" entry="giftCardPayment">
+                <if condition="(!refundedSet.contains(giftCardPayment.manualRefNumber) &amp;&amp; !manualRefSet.contains(giftCardPayment.manualRefNumber))">
+                    <set field="totalNonRefundedGiftCardAmount" from="totalNonRefundedGiftCardAmount + giftCardPayment.amount"/>
+                    <set field="manualRefSet" from="manualRefSet + [giftCardPayment.manualRefNumber]"/>
+                </if>
+            </iterate>
             <script><![CDATA[
-                def manualRefSet = new HashSet()
-                def refundedSet = new HashSet()
-
-                // Identify refunded gift card payments by checking the parent reference number
-                for (giftCardPayment in GiftCardPaymentList) {
-                    if (giftCardPayment.parentRefNumber) {
-                        refundedSet.add(giftCardPayment.parentRefNumber) // Mark as refunded if a parentRefNumber exists
-                    }
-                }
-
-                // Sum amounts of non-refunded gift cards, ensuring we don't double-count gift cards
-                for (giftCardPayment in GiftCardPaymentList) {
-                    if (!refundedSet.contains(giftCardPayment.manualRefNumber) && !manualRefSet.contains(giftCardPayment.manualRefNumber)) {
-                        totalNonRefundedGiftCardAmount += giftCardPayment.amount
-                        manualRefSet.add(giftCardPayment.manualRefNumber) // Avoid double-counting gift cards
-                    }
-                }
-
                 processedOrderMap.put("HCGiftCardPayment", totalNonRefundedGiftCardAmount)
-
-                // Set the tax code for the order
                 processedOrderMap.put("taxCode", "AVATAX") // TODO: Currently setting a hardcoded tax code "AVATAX"
-
-                // Set the shipping tax code based on sales channel
-                if ("POS Channel" != orderMap.salesChannel) {
-                    processedOrderMap.put("shippingTaxCode", "AVATAX")
-                } else {
-                    processedOrderMap.put("shippingTaxCode", "")
-                }
+                processedOrderMap.put("shippingTaxCode", orderMap.salesChannel != "POS Channel" ? "AVATAX" : "")
             ]]></script>
             <!--
             TODO:
@@ -418,14 +388,13 @@
 
             <!-- Process Order Items -->
             <set field="orderItemList" from="orderMap.orderItems"/>
-            <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>();
-            String selectedShippingMethod = null;
-            if (isMixCartOrder) {
-                Set<String> shippingMethods = orderItemList*.shipmentMethodTypeId
-                    .findAll { it && it != 'POS_COMPLETED' && it != 'STOREPICKUP' }.toSet();
-                selectedShippingMethod = shippingMethods ? shippingMethods.first() : null;
-            }
-            ]]></script>
+            <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>();]]></script>
+
+            <if condition="isMixCartOrder">
+                <set field="shippingMethods" from="orderItemList*.shipmentMethodTypeId
+                    .findAll { it &amp;&amp; it != 'POS_COMPLETED' &amp;&amp; it != 'STOREPICKUP' }.toSet()"/>
+                <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first() : null"/>
+            </if>
             <iterate list="orderItemList" entry="orderItem">
 
                 <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList" limit="1">
@@ -435,13 +404,12 @@
                     <order-by field-name="fromDate"/>
                 </entity-find>
 
-                <set field="orderItem.netSuiteProductId" from="goodIdentificationList[0].idValue"/>
+                <set field="orderItem.item" from="goodIdentificationList[0].idValue"/>
+                <set field="isClosed" from="'ITEM_CANCELLED'.equalsIgnoreCase(processedOrderItem.remove('itemStatus'))"/>
                 <!-- Determine if the item is closed -->
                 <script><![CDATA[
                     Map<String, Object> processedOrderItem = new HashMap<>(orderItem);
-                    boolean isClosed = "ITEM_CANCELLED".equalsIgnoreCase(orderItem.itemStatus);
                     processedOrderItem.put("closed", isClosed);
-                    processedOrderItem.remove("itemStatus");
                     processedOrderItem.put("orderLineId", processedOrderItem.orderItemSeqId)
                 ]]></script>
 
@@ -452,13 +420,10 @@
                 <!-- Map Shipping Method -->
                 <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="ShippingMethodMappingList">
                     <econdition field-name="integrationTypeId" value="NETSUITE_SHP_MTHD"/>
-                    <econdition field-name="mappingKey" from="orderItem.shipmentMethodTypeId"/>
+                    <econdition field-name="mappingKey" from="processedOrderItem.remove('shipmentMethodTypeId')"/>
                 </entity-find>
                 <if condition="!ShippingMethodMappingList.isEmpty()">
-                    <script><![CDATA[
-                        processedOrderItem.put("shippingMethod", ShippingMethodMappingList[0].mappingValue)
-                        processedOrderItem.remove("shipmentMethodTypeId")
-                    ]]></script>
+                    <script>processedOrderItem.put("shippingMethod", ShippingMethodMappingList[0].mappingValue)</script>
                     <else>
 
                         <!--Case: Digital Goods
@@ -471,10 +436,7 @@
 
                         <!--Currently setting the shipment method as empty as in case of pos_completed method we does not have itm available
                         We can handle this in custom groovy if needed.-->
-                        <script><![CDATA[
-                        processedOrderItem.put("shippingMethod", "")
-                        processedOrderItem.remove("shipmentMethodTypeId")
-                    ]]></script>
+                        <script>processedOrderItem.put("shippingMethod", "")</script>
                     </else>
                 </if>
                 <!--
@@ -507,13 +469,8 @@
 
                 <if condition="!facilityIdentificationList.isEmpty() &amp;&amp; 'POS Channel' == orderMap.salesChannel">
                     <script>processedOrderItem.put("department", facilityIdentificationList[0].idValue)</script>
-                    <else>
                         <!--TODO: currently setting the department as empty for orders other then POS orders
                          this is handled in custom groovy script. -->
-                        <script><![CDATA[
-                            processedOrderItem.put("department", "")
-                        ]]></script>
-                    </else>
                 </if>
 
                 <!-- Map Price Level -->
@@ -568,12 +525,12 @@
             </iterate>
 
             <!-- Add Processed Order Items to Processed Order Map -->
-            <script><![CDATA[
+            <script>
                 processedOrderMap.put("HCOrderId", processedOrderMap.orderId)
                 processedOrderMap.put("orderItems", processedOrderItemList);
-            ]]></script>
-            <!-- Prepare the Final Order Detail Map -->
+            </script>
 
+            <!-- Prepare the Final Order Detail Map -->
             <set field="orderMapDetail" from="processedOrderMap"/>
         </actions>
     </service>
