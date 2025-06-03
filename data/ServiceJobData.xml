@@ -75,6 +75,7 @@
                                   description="Template Service Job to generate the Fulfilled Order Items Feed from HotWax"
                                   serviceName="co.hotwax.netsuite.OrderServices.get#FulfilledOrders"
                                   cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="fulfilledOrdersCountPerFeed"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="orderItemSeqId"/>
         <parameters parameterName="systemMessageTypeId"/>
