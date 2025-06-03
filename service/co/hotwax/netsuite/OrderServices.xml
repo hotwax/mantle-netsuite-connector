@@ -749,63 +749,17 @@
     </service>
 
     <service verb="get" noun="BrokeredOrders" authenticate="anonymous-all" transaction-timeout="7200">
-        <description>
-            Service to fetch the Brokered Orders and Items to prepare the feed, which can take in a limit
-            parameter to include a fixed number of orders in the Feed File.
-            Eg. If the brokeredOrdersCountPerFeed parameter is set to 1000, so it will fetch 1000 eligible
-            orders from the BrokeredOrderItemsSyncQueue view, and prepare the feed file. If more
-            eligible orders are still available, the service will fetch the next 1000 records and
-            create a new feed file and so on till the available eligible orders for the Brokered Feed.
-            This way multiple feed files will be created instead of a single bulk file if large data
-            set, to avoid any issues.
-        </description>
         <in-parameters>
-            <parameter name="brokeredOrdersCountPerFeed" type="Integer">
-                <description>The number of orders to be included in the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="orderId">
-                <description>Parameter to fetch Order details for a specific orderId.</description>
-            </parameter>
-            <parameter name="orderItemSeqId">
-                <description>Parameter to fetch Order details for a specific orderItemSeqId.</description>
-            </parameter>
-            <parameter name="systemMessageTypeId" required="true">
-                <description>The System Message Type ID for generating the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="systemMessageRemoteId" required="true">
-                <description>The System Message Remote Id for generating the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="parentFacilityTypeIds" type="List">
-                <description>
-                    List of parent Facility Type Ids for generating Brokered Orders Items Feed.
-                    For passing the parent Facility Type Ids as list, add values like - DISTRIBUTION_CENTER,PHYSICAL_STORE,VIRTUAL_FACILITY and for single value use - DISTRIBUTION_CENTER.
-                </description>
-            </parameter>
-            <parameter name="productStoreIds" type="List">
-                <description>
-                    List of product store ids for generating Brokered Orders Items Feed.
-                    For passing the Product Store Ids as list, add values like - SM_STORE,SG_STORE and for single value use - SM_STORE.
-                </description>
-            </parameter>
-            <parameter name="facilityGroupIds" type="List">
-                <description>
-                    List of facility group ids for generating Brokered Orders Items Feed.
-                    For passing the facility group ids as list, add values like - M3_FAC, BJ_FAC_GRP and for single value use - M3_FAC.
-                </description>
-            </parameter>
+            <parameter name="brokeredOrdersCountPerFeed" type="Integer"/>
+            <parameter name="orderId"/>
+            <parameter name="orderItemSeqId"/>
+            <parameter name="systemMessageTypeId" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="parentFacilityTypeIds" type="List"/>
+            <parameter name="productStoreIds" type="List"/>
+            <parameter name="facilityGroupIds" type="List"/>
         </in-parameters>
         <actions>
-            <!-- Field to check the condition for the first run to always fetch the Brokered Order Items
-                 for the first Feed File (replicating do-while behavior), this will be set to false after
-                 first service call, and check on brokeredOrdersCount will be applicable for the next
-                 service calls to prepare the Feed Files -->
-            <!-- NOTE The generate#BrokeredOrderItemsFeed will be called if the brokeredOrdersCount is
-                 either equal to limit or != 0  i.e. some remaining records to be processed.
-                 Scenarios:
-                 1. brokeredOrdersCountPerFeed = 1000 and total eligible records > 1000 (multiple Feed Files)
-                 2. brokeredOrdersCountPerFeed = 1000 and total eligible records < 1000 (single Feed File)
-                 3. brokeredOrdersCountPerFeed = 1000 and total eligible records = 1000 (single Feed File)
-                 4. brokeredOrdersCountPerFeed = 1000 and total eligible records = 0    (No Feed File) -->
             <set field="isFirstFeed" from="true"/>
             <while condition="isFirstFeed || (brokeredOrdersCount &amp;&amp; (brokeredOrdersCount == brokeredOrdersCountPerFeed || brokeredOrdersCount != 0))">
                 <!-- Added transaction=force-new as for each call to this service should be done in a new transaction
