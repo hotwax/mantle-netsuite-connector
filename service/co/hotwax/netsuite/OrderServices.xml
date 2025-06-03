@@ -747,6 +747,40 @@
             </iterate>
         </actions>
     </service>
+
+    <service verb="get" noun="FulfilledOrders" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="fulfilledOrdersCountPerFeed" type="Integer"/>
+            <parameter name="orderId"/>
+            <parameter name="orderItemSeqId"/>
+            <parameter name="orderStatusId"/>
+            <parameter name="systemMessageTypeId" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="parentFacilityTypeIds" type="List"/>
+            <parameter name="productTypeIds" type="List"/>
+            <parameter name="productStoreIds" type="List"/>
+        </in-parameters>
+        <actions>
+            <set field="isFirstFeed" from="true"/>
+            <while condition="isFirstFeed || (fulfilledOrdersCount &amp;&amp; (fulfilledOrdersCount == fulfilledOrdersCountPerFeed || fulfilledOrdersCount != 0))">
+                <!-- Added transaction=force-new as for each call to this service should be done in a new transaction
+                     so that if there are multiple files being generated and an error occurs for an order in one file then
+                     the transaction should be rolled back only for that file and not all the files. -->
+
+                <!-- NOTE: Without a new transaction, if an error occurs for an order, then the whole transaction is rolled back
+                     that means, no history will be created for any orders in previous generated files but the previous generated files will be sent to SFTP.
+                     This can result into duplicate orders as the previous files were sent to SFTP and since history was not created
+                     so these orders will be eligible and will come again in the feed. -->
+
+                <service-call name="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"
+                              in-map="context" out-map="fulfilledFeedOut" transaction="force-new"/>
+                <set field="fulfilledOrdersCount" from="fulfilledFeedOut?.fulfilledFeedOrdersCount"/>
+
+                <!-- Negated the value for while condition for next runs -->
+                <set field="isFirstFeed" from="false"/>
+            </while>
+        </actions>
+    </service>
     <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
     <in-parameters>
         <parameter name="systemMessageRemoteId" required="true"/>
@@ -759,8 +793,12 @@
         <parameter name="productTypeIds" type="List"/>
         <parameter name="productStoreIds" type="List"/>
     </in-parameters>
-    <actions>
-    <set field="nowDate" from="ec.user.nowTimestamp"/>
+        <out-parameters>
+            <parameter name="fulfilledOrdersCount" type="Integer"/>
+        </out-parameters>
+        <actions>
+            <set field="fulfilledOrdersCount" from="0"/>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
     <script><![CDATA[
         import com.fasterxml.jackson.core.JsonGenerator
         import com.fasterxml.jackson.core.JsonFactory
@@ -858,8 +896,10 @@
    } catch (IOException e) {
        logger.error("Error preparing fulfilled order items Feed file", e)
    }
-]]></script>
-        <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+]]>
+    </script>
+            <set field="fulfilledOrdersCount" from="processedOrderIds.size()"/>
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                       in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                     messageText:jsonFilePathRef, productStoreId:productStoreId, shopId:customParametersMap?.shopId]" out-map="fulfillmentFeedSysMsgOut"/>
         <return message="Completed Fulfilled Order Items Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
