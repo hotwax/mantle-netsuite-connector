@@ -762,7 +762,7 @@
         </in-parameters>
         <actions>
             <set field="isFirstFeed" from="true"/>
-            <while condition="isFirstFeed || (fulfilledOrdersCount &amp;&amp; (fulfilledOrdersCount == fulfilledOrdersCountPerFeed || fulfilledOrdersCount != 0))">
+            <while condition="isFirstFeed || (fulfilledOrdersCount != null &amp;&amp; fulfilledOrdersCount > 0 &amp;&amp; fulfilledOrdersCount == fulfilledOrdersCountPerFeed)">
                 <!-- Added transaction=force-new as for each call to this service should be done in a new transaction
                      so that if there are multiple files being generated and an error occurs for an order in one file then
                      the transaction should be rolled back only for that file and not all the files. -->
@@ -774,6 +774,7 @@
 
                 <service-call name="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"
                               in-map="context" out-map="fulfilledFeedOut" transaction="force-new"/>
+
                 <set field="fulfilledOrdersCount" from="fulfilledFeedOut?.fulfilledFeedOrdersCount"/>
 
                 <!-- Negated the value for while condition for next runs -->
@@ -785,6 +786,7 @@
     <in-parameters>
         <parameter name="systemMessageRemoteId" required="true"/>
         <parameter name="systemMessageTypeId" required="true"/>
+        <parameter name="fulfilledOrdersCountPerFeed" type="Integer"/>
         <parameter name="orderId"/>
         <parameter name="orderItemSeqId"/>
         <parameter name="orderStatusId"/>
@@ -794,10 +796,10 @@
         <parameter name="productStoreIds" type="List"/>
     </in-parameters>
         <out-parameters>
-            <parameter name="fulfilledOrdersCount" type="Integer"/>
+            <parameter name="fulfilledFeedOrdersCount" type="Integer"/>
         </out-parameters>
         <actions>
-            <set field="fulfilledOrdersCount" from="0"/>
+            <set field="fulfilledFeedOrdersCount" from="0"/>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
     <script><![CDATA[
         import com.fasterxml.jackson.core.JsonGenerator
@@ -853,15 +855,19 @@
        JsonGenerator jGenerator = jfactory.createGenerator(pw)
        jGenerator.writeStartArray()
        Set<String> processedOrderIds = new HashSet<>()
-
-       while (fulfilledOrdersItr.hasNext()) {
+       int orderCount=0
+       while (fulfilledOrdersItr.hasNext() && (fulfilledOrdersCountPerFeed == null || orderCount < fulfilledOrdersCountPerFeed)){
            def fulfilledOrderItem = fulfilledOrdersItr.next()
-
+           if (fulfilledOrderItem == null) {
+                logger.warn("Encountered null fulfilledOrderItem from iterator, skipping.")
+                continue
+            }
            if (processedOrderIds.contains(fulfilledOrderItem.orderId)) {
                logger.info("Skipping duplicate orderId=${fulfilledOrderItem.orderId}")
                continue
            }
            processedOrderIds.add(fulfilledOrderItem.orderId)
+           orderCount++
            def allOrderItems = ec.entity.find("co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue")
                    .condition("orderId", fulfilledOrderItem.orderId)
                    .orderBy("orderItemSeqId")
@@ -887,8 +893,11 @@
            ec.context.put("allOrderItems", allOrderItems)
            ec.resourceFacade.template(templateLocation, templateWriter)
 
-           def fulfilledOrderItemMap = jsonSlurper.parseText(templateWriter.toString())
-           jGenerator.writeRaw(JsonOutput.toJson(fulfilledOrderItemMap))
+          def fulfilledOrderItemMap = jsonSlurper.parseText(templateWriter.toString())
+            ObjectMapper objectMapper = new ObjectMapper()
+            objectMapper.setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(jGenerator, fulfilledOrderItemMap)
+            fulfilledFeedOrdersCount++
        }
        jGenerator.writeEndArray()
        jGenerator.close()
@@ -898,11 +907,11 @@
    }
 ]]>
     </script>
-            <set field="fulfilledOrdersCount" from="processedOrderIds.size()"/>
             <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                       in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                    messageText:jsonFilePathRef, productStoreId:productStoreId, shopId:customParametersMap?.shopId]" out-map="fulfillmentFeedSysMsgOut"/>
-        <return message="Completed Fulfilled Order Items Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+                    messageText:jsonFilePathRef, productStoreId:productStoreId, shopId:customParametersMap?.shopId]"
+                          out-map="fulfillmentFeedSysMsgOut"/>
+        <return message="Completed Fulfilled Order Items Feed file with ${fulfilledFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${fulfillmentFeedSysMsgOut.systemMessageId}"/>
     </actions>
     </service>
