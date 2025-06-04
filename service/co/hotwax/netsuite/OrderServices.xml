@@ -763,21 +763,10 @@
         <actions>
             <set field="isFirstFeed" from="true"/>
             <while condition="isFirstFeed || (fulfilledOrdersCount != null &amp;&amp; fulfilledOrdersCount > 0 &amp;&amp; fulfilledOrdersCount == fulfilledOrdersCountPerFeed)">
-                <!-- Added transaction=force-new as for each call to this service should be done in a new transaction
-                     so that if there are multiple files being generated and an error occurs for an order in one file then
-                     the transaction should be rolled back only for that file and not all the files. -->
-
-                <!-- NOTE: Without a new transaction, if an error occurs for an order, then the whole transaction is rolled back
-                     that means, no history will be created for any orders in previous generated files but the previous generated files will be sent to SFTP.
-                     This can result into duplicate orders as the previous files were sent to SFTP and since history was not created
-                     so these orders will be eligible and will come again in the feed. -->
-
                 <service-call name="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"
                               in-map="context" out-map="fulfilledFeedOut" transaction="force-new"/>
 
                 <set field="fulfilledOrdersCount" from="fulfilledFeedOut?.fulfilledFeedOrdersCount"/>
-
-                <!-- Negated the value for while condition for next runs -->
                 <set field="isFirstFeed" from="false"/>
             </while>
         </actions>
@@ -846,7 +835,6 @@
 
     <script><![CDATA[
         try {
-        //json file
         File fulfilledOrderItemsFeedFile = new File(jsonFilePath)
         if (!fulfilledOrderItemsFeedFile.parentFile.exists()) fulfilledOrderItemsFeedFile.parentFile.mkdirs()
         JsonFactory jfactory = new JsonFactory()
