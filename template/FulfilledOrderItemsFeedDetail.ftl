@@ -13,7 +13,7 @@
 "items": [
 <#list allOrderItems as item>
 {
-"line_id": "${item.orderItemSeqId}",
+"line_id": "${item.netsuiteItemLineId}",
 "shipment_method_type_id": "${item.slaShipmentMethodTypeId!''}",
 "quantity": "${item.quantity!1}",
 "location_id": "${item.facilityExternalId!''}",
