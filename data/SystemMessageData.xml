@@ -189,7 +189,7 @@
            systemMessageTypeId="FulfilledOrderItemsFeedNS"
            description="Generate HotWax Fulfilled Order Items Feed for Netsuite"
            parentTypeId="LocalFeedFile"
-           sendPath="/home/${sftpUsername}/netsuite/fulfilledSalesOrder/${productStoreId}-FulfilledOrderItemsFeed-${systemMessageId}-${dateTime}.json"
+           sendPath="/home/${sftpUsername}/netsuite/fulfilledsalesorder/export${productStoreId}-FulfilledOrderItemsFeed-${systemMessageId}-${dateTime}.json"
            sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
            receivePath="${contentRoot}/hotwax/FulfilledOrderItemsFeed/${productStoreId}-HotWaxFulfilledOrderItemsFeed-${dateTime}.json"/>
 </entity-facade-xml>
