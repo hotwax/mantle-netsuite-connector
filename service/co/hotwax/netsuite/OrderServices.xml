@@ -283,7 +283,9 @@
             <set field="processedOrderMap.billingPhone" from="((processedOrderMap.billingCountryCode?:'') || (processedOrderMap.billingAreaCode?:'') || (processedOrderMap.billingContactNumber?:'')) ? ((processedOrderMap.remove('billingCountryCode')?:'') + ' ' + (processedOrderMap.remove('billingAreaCode')?:'') + ' ' + (processedOrderMap.remove('billingContactNumber')?:'')) : ''" />
             <set field="processedOrderMap.phone" from="((processedOrderMap.shippingCountryCode?:'') || (processedOrderMap.shippingAreaCode?:'') || (processedOrderMap.shippingContactNumber?:'')) ? ((processedOrderMap.remove('shippingCountryCode')?:'') + ' ' + (processedOrderMap.remove('shippingAreaCode')?:'') + ' ' + (processedOrderMap.remove('shippingContactNumber')?:'')) : ''" />
 
-            <if condition="(!processedOrderMap.remove('billingContactMechId') &amp;&amp; processedOrderMap.remove('shippingContactMechId'))">
+            <set field="billingContactMechId" from="processedOrderMap.remove('billingContactMechId')"/>
+            <set field="shippingContactMechId" from="processedOrderMap.remove('shippingContactMechId')"/>
+            <if condition="(!billingContactMechId &amp;&amp; shippingContactMechId)">
                 <set field="processedOrderMap.billingAddress1" from="processedOrderMap.address1"/>
                 <set field="processedOrderMap.billingAddress2" from="processedOrderMap.address2"/>
                 <set field="processedOrderMap.billingCity" from="processedOrderMap.city"/>
