@@ -45,32 +45,16 @@
                 <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
             </if>
 
-
-            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="sendSmrParam">
-                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
-                <field-map field-name="parameterName" value="sendSmrId"/>
+            <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
+                <field-map field-name="enumId" from="systemMessageTypeId"/>
             </entity-find-one>
-            <if condition="sendSmrParam">
-                <set field="sendSmrId" from="sendSmrParam.parameterValue"/>
-            </if>
 
-            <if condition="sendSmrId">
-                <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
-                    <field-map field-name="enumId" from="systemMessageTypeId"/>
+            <if condition="enumValue &amp;&amp; enumValue.relatedEnumId">
+                <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
+                    <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
                 </entity-find-one>
-
-                <if condition="enumValue &amp;&amp; enumValue.relatedEnumId">
-                    <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
-                        <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
-                    </entity-find-one>
-                    <if condition="!relatedSystemMessageType"><log level="warn" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing related system message."/></if>
-                    <else>
-                        <log level="warn" message="Related SystemMessageType to produce for ${systemMessage.systemMessageTypeId} not defined, not producing related system message."/>
-                    </else>
-                </if>
-                <else>
-                    <log level="warn" message="sendSmrId not defined for ${systemMessage.systemMessageTypeId} not defined, not producing related system message."/>
-                </else>
+                <if condition="!relatedSystemMessageType"><log level="warn" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing requiredFieldsMissing system message."/></if>
+                <else><log level="warn" message="Related SystemMessageType to produce for ${systemMessage.systemMessageTypeId} not defined, not producing requiredFieldsMissing system message."/></else>
             </if>
 
             <!-- Prepare csv File Path -->
@@ -113,26 +97,28 @@
                 netsuiteOrders_find.selectField("orderId,partyId,isMixCartOrder")
                 netsuiteOrders_find.distinct(true)
 
+                //If no eligible orders, then don't generate the file
+                long netsuiteOrdersCount = netsuiteOrders_find.count()
+                if (netsuiteOrdersCount == 0) {
+                    ec.message.addMessage("No eligible orders at ${nowDate}, not generating the HotWax Feed file for Netsuite.")
+                    return
+                }
+
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
                 try (ordersItr = netsuiteOrders_find.iterator()) {
-            </script>
-            <if condition="!ordersItr.hasNext()">
-                <return message="No eligible orders at ${nowDate}, not generating the HotWax Feed file."/>
-            </if>
-            <script>
-                try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
-                def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8);
-                def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
-                def invalidCsvPrinter = new CSVPrinter(invalidWriter, CSVFormat.DEFAULT)) {
+                    try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
+                        def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8);
+                        def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
+                        def invalidCsvPrinter = new CSVPrinter(invalidWriter, CSVFormat.DEFAULT)) {
             </script>
 
             <iterate list="ordersItr" entry="order">
                 <service-call name="co.hotwax.netsuite.OrderServices.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
-                              out-map="context"/>
+                    out-map="context"/>
                 <set field="orderMap" from="context?.orderMap"/>
                 <if condition="orderMap">
                     <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap,isMixCartOrder:order.isMixCartOrder]"
-                                  out-map="orderMapOut"/>
+                        out-map="orderMapOut"/>
                     <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
                     This will retrieve the Groovy script resource path if configured.
                     -->
@@ -141,14 +127,11 @@
                         <field-map field-name="parameterName" value="resourcePath"/>
                     </entity-find-one>
                     <!-- Check if the Groovy file resource is available. -->
-                    <if condition="groovyFileResource">
+                    <if condition="groovyFileResource &amp;&amp; groovyFileResource.parameterValue">
                         <!-- Set the scriptPath using the retrieved parameterValue from the entity find operation. -->
                         <set field="scriptPath" from="groovyFileResource.parameterValue"/>
                         <!-- Execute the Groovy script located at the scriptPath and store the result in the context. -->
-                        <script>
-                            Object result = ec.resource.script(scriptPath, null)
-                            context.result = result
-                        </script>
+                        <set field="result" from="ec.resource.script(scriptPath, null)"/>
                         <else>
                             <!-- If no Groovy file resource is found, fallback to using the default orderMapDetail. -->
                             <set field="result" from="orderMapOut.orderMapDetail"/>
@@ -160,9 +143,7 @@
                     </entity-find-one>
                     <if condition="schemaPath">
                         <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
-                        <else>
-                            <set field="schemaLocation" value="component://mantle-netsuite-connector/schemas/DefaultOrderSchema.json"/>
-                        </else>
+                        <else><set field="schemaLocation" value="component://mantle-netsuite-connector/schemas/DefaultOrderSchema.json"/></else>
                     </if>
 
                     <script>
@@ -170,7 +151,6 @@
                         def order = context.get("result")
                         def orderItems = order.remove("orderItems")
                         def orderId = order.remove("orderName")
-                        order.remove("salesChannelEnumCode")
                         def flattenedOrders = []
 
                         orderItems.each { item ->
@@ -178,6 +158,7 @@
                             item.remove("orderItemSeqId")
                             item.remove("isDiscountRow")
                             item.remove("productId")
+                            item.remove("orderFacilityId")
                             def flattenedOrder = [:]
                             flattenedOrder.putAll(order)
                             item.each { key, value -> flattenedOrder["$key"] = value }
@@ -267,8 +248,8 @@
                 <econdition field-name="orderId" from="orderId"/>
             </entity-find>
             <set field="orderDetails" from="orderLevelDetailList[0]"/>
-            <set field="orderDetails.date" from="java.text.SimpleDateFormat('MM/dd/yyyy').format(new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss.S').parse(orderDetails.date.toString()))"/>
             <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
+            <script>orderDetails.date = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(orderDetails.date.toString()))</script>
 
             <!-- Set orderItemList List to add the order Item Detail map -->
             <set field="orderItemList" from="[]"/>
@@ -298,38 +279,18 @@
         </out-parameters>
         <actions>
             <!-- Create a New Map for Processed Data -->
-            <script><![CDATA[
-                Map<String, Object> processedOrderMap = new HashMap<>(orderMap);
+            <set field="processedOrderMap" from="orderMap" type="NewMap"/>
+            <set field="processedOrderMap.billingPhone" from="((processedOrderMap.billingCountryCode?:'') || (processedOrderMap.billingAreaCode?:'') || (processedOrderMap.billingContactNumber?:'')) ? ((processedOrderMap.remove('billingCountryCode')?:'') + ' ' + (processedOrderMap.remove('billingAreaCode')?:'') + ' ' + (processedOrderMap.remove('billingContactNumber')?:'')) : ''" />
+            <set field="processedOrderMap.phone" from="((processedOrderMap.shippingCountryCode?:'') || (processedOrderMap.shippingAreaCode?:'') || (processedOrderMap.shippingContactNumber?:'')) ? ((processedOrderMap.remove('shippingCountryCode')?:'') + ' ' + (processedOrderMap.remove('shippingAreaCode')?:'') + ' ' + (processedOrderMap.remove('shippingContactNumber')?:'')) : ''" />
 
-                 String preparePhoneNumber(String... parts) {
-                    return parts.findAll { it }?.join(' ') ?: null // Filter non-null and non-empty parts, join with space
-                }
-
-                // Prepare billing and shipping phone numbers
-                String billingPhone = preparePhoneNumber(processedOrderMap.remove("billingCountryCode"), processedOrderMap.remove("billingAreaCode"), processedOrderMap.remove("billingContactNumber"))
-                String shippingPhone = preparePhoneNumber(processedOrderMap.remove("shippingCountryCode"), processedOrderMap.remove("shippingAreaCode"), processedOrderMap.remove("shippingContactNumber"))
-
-                // Add results to the processed map, defaulting to empty string if null
-                processedOrderMap.billingPhone = billingPhone ?: null
-                processedOrderMap.phone = shippingPhone ?: null
-
-                /*
-                Logic to use shipping address as billing address if billing details are missing
-                The purpose of this logic is to handle scenarios where the billing address is missing from the order data.
-                In such cases, we use the shipping address as a fallback to ensure that we still have a valid billing address
-                available to create the order in NetSuite. A country is a required field for NetSuite order creation,
-                */
-
-                if (!processedOrderMap.remove("billingContactMechId") && processedOrderMap.remove("shippingContactMechId")) {
-                    processedOrderMap.put("billingAddress1", orderMap.shippingAddress1);
-                    processedOrderMap.put("billingAddress2", orderMap.shippingAddress2);
-                    processedOrderMap.put("billingCity", orderMap.shippingCity);
-                    processedOrderMap.put("billingState", orderMap.shippingState);
-                    processedOrderMap.put("billingCountry", orderMap.shippingCountry);
-                    processedOrderMap.put("billingPostalCode", orderMap.shippingPostalCode);
-                }
-            ]]></script>
-
+            <if condition="(!processedOrderMap.remove('billingContactMechId') &amp;&amp; processedOrderMap.remove('shippingContactMechId'))">
+                <set field="processedOrderMap.billingAddress1" from="processedOrderMap.address1"/>
+                <set field="processedOrderMap.billingAddress2" from="processedOrderMap.address2"/>
+                <set field="processedOrderMap.billingCity" from="processedOrderMap.city"/>
+                <set field="processedOrderMap.billingState" from="processedOrderMap.state"/>
+                <set field="processedOrderMap.billingCountry" from="processedOrderMap.country"/>
+                <set field="processedOrderMap.billingPostalCode" from="processedOrderMap.postalCode"/>
+            </if>
             <!--
             we need to ensure that **only non-refunded gift card payments** are included
             in the total gift card payment amount for an order. This is critical to maintain the accuracy of payment
@@ -389,8 +350,7 @@
             <!-- Process Order Items -->
             <set field="orderItemList" from="orderMap.orderItems"/>
             <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>();]]></script>
-
-            <if condition="isMixCartOrder">
+            <if condition="'Y'.equals(isMixCartOrder)">
                 <set field="shippingMethods" from="orderItemList*.shipmentMethodTypeId
                     .findAll { it &amp;&amp; it != 'POS_COMPLETED' &amp;&amp; it != 'STOREPICKUP' }.toSet()"/>
                 <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first() : null"/>
@@ -405,16 +365,13 @@
                 </entity-find>
 
                 <set field="orderItem.item" from="goodIdentificationList[0].idValue"/>
-                <set field="isClosed" from="'ITEM_CANCELLED'.equalsIgnoreCase(processedOrderItem.remove('itemStatus'))"/>
-                <!-- Determine if the item is closed -->
-                <script><![CDATA[
-                    Map<String, Object> processedOrderItem = new HashMap<>(orderItem);
-                    processedOrderItem.put("closed", isClosed);
-                    processedOrderItem.put("orderLineId", processedOrderItem.orderItemSeqId)
-                ]]></script>
 
+                <set field="processedOrderItem" from="orderItem" type="NewMap"/>
+
+                <set field="processedOrderItem.closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(processedOrderItem.remove('itemStatus'))"/>
+                <set field="processedOrderItem.orderLineId" from="processedOrderItem.orderItemSeqId"/>
                 <if condition="isMixCartOrder">
-                    <script>orderItem.shipmentMethodTypeId = selectedShippingMethod;</script>
+                    <set field="processedOrderItem.shipmentMethodTypeId" from="selectedShippingMethod"/>
                 </if>
 
                 <!-- Map Shipping Method -->
