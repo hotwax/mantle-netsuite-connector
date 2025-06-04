@@ -2,20 +2,19 @@
 .condition("orderId", fulfilledOrderItem.orderId)
 .condition("orderIdentificationTypeId", "NETSUITE_ORDER_ID")
 .list()! />
-<#assign externalOrderId = fulfilledOrderItem.orderId>
 
 <#if orderIdentifications?has_content>
-<#assign externalOrderId = orderIdentifications[0].get("idValue")!fulfilledOrderItem.orderId>
+<#assign externalOrderId = orderIdentifications[0].get("idValue")>
 </#if>
 
 {
-"order_id": "${externalOrderId}",
+<#if externalOrderId??>"order_id": "${externalOrderId}",</#if>
 "maySplit": "${fulfilledOrderItem.maySplit!''}",
 "items": [
 <#list allOrderItems as item>
 {
 "line_id": "${item.orderItemSeqId}",
-"shipment_method_type_id": "${item.slaShipmentMethodTypeId!''}",
+"shipment_method_type_id": null,
 "quantity": "${item.quantity!1}",
 "location_id": "${item.facilityExternalId!''}",
 "tags": "hotwax-fulfilled"
