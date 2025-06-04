@@ -14,7 +14,7 @@
 <#list allOrderItems as item>
 {
 "line_id": "${item.orderItemSeqId}",
-"shipment_method_type_id": null,
+"shipment_method_type_id": "${item.slaShipmentMethodTypeId!''}",
 "quantity": "${item.quantity!1}",
 "location_id": "${item.facilityExternalId!''}",
 "tags": "hotwax-fulfilled"
