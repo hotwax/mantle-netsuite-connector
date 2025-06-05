@@ -185,7 +185,6 @@
         <alias name="date" field="orderDate" entity-alias="OH"/>
         <alias name="customer" field="idValue" entity-alias="PID"/>
         <alias name="salesChannel" field="description" entity-alias="SCENM"/>
-        <alias name="salesChannelEnumCode" field="enumCode" entity-alias="SCENM"/>
         <alias name="shippingContactMechId" field="contactMechId" entity-alias="PAS"/>
         <alias name="addressee" field="toName" entity-alias="PAS"/>
         <alias name="address1" field="address1" entity-alias="PAS"/>
@@ -243,6 +242,7 @@
         <alias name="productId" field="productId" entity-alias="OI"/>
         <alias name="shipmentMethodTypeId" entity-alias="OISG"/>
         <alias name="location" field="facilityId" entity-alias="OISG"/>
+        <alias name="orderFacilityId" entity-alias="OISG"/>
     </view-entity>
     <view-entity entity-name="InvalidOrdersForNetsuite" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
