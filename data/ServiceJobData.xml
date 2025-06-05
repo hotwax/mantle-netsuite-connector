@@ -387,7 +387,6 @@
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="shipmentId"/>
         <parameters parameterName="sinceReceivedDate"/>
-        <parameters parameterName="productStoreIds"/>
     </moqui.service.job.ServiceJob>
 
     <!-- Template service job to generate Transfer Order Shipment Feed -->
