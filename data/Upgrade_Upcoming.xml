@@ -60,7 +60,7 @@
         <parameters parameterName="systemMessageTypeId" parameterValue="ImportWhToFulfillmentFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
-        
+
     <!-- System Message Types and enum to import Warehouse Transfer Order Fulfillment Feed from NetSuite to OMS -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportWhToFulfillmentFeed"
             description="Import Warehouse Fulfilled Transfer Order Fulfillment Feed file from SFTP location"
@@ -135,4 +135,27 @@
             receivePath="${contentRoot}/netsuite/TransferOrderShipmentReceiptFeed/TransferOrderShipmentReceiptFeed-${dateTime}.json"/>
 
     <Enumeration description="NetSuite Order Name" enumCode="NETSUITE_ORDER_NAME" enumId="NETSUITE_ORDER_NAME" enumTypeId="ORDER_IDENTITY" sequenceId="01"/>
+     <moqui.basic.Enumeration enumId="GEN_BRKR_ORD_ITM_FD_NS" enumCode="GEN_BRKR_ORD_ITM_FD_NS" description="Generate Brokered Order Items Feed For Netsuite" enumTypeId="ORDER_SYS_JOB"/>
+    <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
+    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" jobTypeEnumId="GEN_BRKR_ORD_ITM_FD_NS"
+            description="Template Service Job to generate the Brokered Order Items Feed from HotWax"
+            serviceName="co.hotwax.netsuite.OrderServices.get#BrokeredOrders"
+            cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="brokeredOrdersCountPerFeed"/>
+        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="orderItemSeqId"/>
+        <parameters parameterName="facilityGroupIds"/>
+        <parameters parameterName="parentFacilityTypeIds"/>
+        <parameters parameterName="productStoreIds"/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- System Message Type for Brokered Order Items Feed -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="BrokeredOrderItemsFeedForNS"
+        description="Generate HotWax Brokered Order Items Feed for Netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath="/home/${sftpUsername}/netsuite/salesorder/update/${productStoreId}-BrokeredOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/hotwax/BrokeredOrderItemsFeed/${productStoreId}-HotWaxBrokeredOrderItemsFeed-${dateTime}.csv"/>
 </entity-facade-xml>
