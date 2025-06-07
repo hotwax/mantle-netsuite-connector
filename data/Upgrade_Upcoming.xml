@@ -46,7 +46,7 @@
         parentTypeId="LocalFeedFile"
         sendPath="${contentRoot}/netsuite/OMSTransferOrderFeed/OMSTransferOrderFeed-${dateTime}-${systemMessageId}.json"
         consumeServiceName="co.hotwax.system.FeedServices.generate#OMSFeed"
-        sendServiceName="co.hotwax.netsuite.OrderServices.map#TransferOrder">
+        sendServiceName="co.hotwax.netsuite.TransferOrderServices.map#TransferOrder">
     </moqui.service.message.SystemMessageType>
 
     <moqui.basic.Enumeration description="Transfer Order Feed for OMS" enumId="OMSTransferOrderFeed" enumTypeId="OMSMessageTypeEnum"/>
@@ -113,6 +113,28 @@
     <moqui.basic.Enumeration description="Generate mapped Feed file of Store TO Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSUpdateTOShipmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSStoreToFulfillmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Store Fulfillment" enumId="ImportStoreToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSUpdateTOShipmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
+    <!-- Template Service Job to generate Transfer Order Shipments Receipt Feed from HotWax -->
+    <moqui.basic.Enumeration enumId="GEN_TO_SHPMNT_RCPT_FD" enumCode="GEN_TO_SHPMNT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentReceiptFeed" jobTypeEnumId="GEN_TO_SHPMNT_RCPT_FD"
+           description="Template Service Job to generate the Transfer Order Shipment Receipt Feed from HotWax"
+           serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderShipmentReceiptFeed"
+           cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="shipmentId"/>
+        <parameters parameterName="sinceReceivedDate"/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- System Message Type for Transfer Order Shipments Receipt Feed -->
+    <!-- System Message Type for Transfer Order Shipments Receipt Feed -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderShipmentReceiptFeed"
+            description="Generate HotWax Transfer Orders Shipment Receipt Feed"
+            parentTypeId="LocalFeedFile"
+            sendPath="/home/${sftpUsername}/netsuite/transferorderv2/receipt/TransferOrderShipmentReceiptFeed-${dateTime}-${systemMessageId}.json"
+            sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+            receivePath="${contentRoot}/netsuite/TransferOrderShipmentReceiptFeed/TransferOrderShipmentReceiptFeed-${dateTime}.json"/>
+
+    <Enumeration description="NetSuite Order Name" enumCode="NETSUITE_ORDER_NAME" enumId="NETSUITE_ORDER_NAME" enumTypeId="ORDER_IDENTITY" sequenceId="01"/>
      <moqui.basic.Enumeration enumId="GEN_BRKR_ORD_ITM_FD_NS" enumCode="GEN_BRKR_ORD_ITM_FD_NS" description="Generate Brokered Order Items Feed For Netsuite" enumTypeId="ORDER_SYS_JOB"/>
     <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
     <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" jobTypeEnumId="GEN_BRKR_ORD_ITM_FD_NS"
@@ -136,5 +158,4 @@
         sendPath="/home/${sftpUsername}/netsuite/salesorder/update/${productStoreId}-BrokeredOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/hotwax/BrokeredOrderItemsFeed/${productStoreId}-HotWaxBrokeredOrderItemsFeed-${dateTime}.csv"/>
-
 </entity-facade-xml>

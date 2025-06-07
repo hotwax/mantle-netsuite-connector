@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <view-entity entity-name="TransferOrderShipmentReceiptHistory" package="co.hotwax.netsuite">
+        <description>
+            View to get the Transfer order Shipment Items not sent to NetSuite i.e. not part of OrderFulfillmentHistory.
+            This view is used in the preparation of Transfer Order Shipment Receipt Feed for NetSuite.
+        </description>
+        <member-entity entity-alias="SR" entity-name="org.apache.ofbiz.shipment.receipt.ShipmentReceipt"/>
+        <member-entity entity-alias="SH" entity-name="org.apache.ofbiz.shipment.shipment.Shipment" join-from-alias="SR">
+            <key-map field-name="shipmentId"/>
+        </member-entity>
+        <member-entity entity-alias="SI" entity-name="org.apache.ofbiz.shipment.shipment.ShipmentItem" join-from-alias="SR">
+            <key-map field-name="shipmentId"/>
+            <key-map field-name="shipmentItemSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="SRH" entity-name="co.hotwax.integration.shipment.ShipmentReceiptHistory" join-from-alias="SR" join-optional="true">
+            <key-map field-name="receiptId"/>
+        </member-entity>
+        <alias entity-alias="SR" name="receiptId"/>
+        <alias entity-alias="SR" name="orderId"/>
+        <alias entity-alias="SR" name="orderItemSeqId"/>
+        <alias entity-alias="SR" name="shipmentId"/>
+        <alias entity-alias="SR" name="shipmentItemSeqId"/>
+        <alias entity-alias="SR" name="totalQuantityAccepted" field="quantityAccepted" function="sum"/>
+        <alias entity-alias="SR" name="quantityRejected"/>
+        <alias entity-alias="SR" name="receivedDate" field="datetimeReceived" function="max"/>
+        <alias entity-alias="SH" name="shipmentTypeId"/>
+        <alias entity-alias="SH" name="statusId"/>
+        <alias entity-alias="SH" field="externalId" name="shipmentExternalId"/>
+        <alias entity-alias="SI" field="externalId" name="shipmentItemExternalId"/>
+        <alias entity-alias="SI" name="productId"/>
+        <entity-condition>
+            <econdition entity-alias="SRH" field-name="historyId" value=""/>
+            <econdition entity-alias="SH" field-name="shipmentTypeId" value="OUT_TRANSFER"/>
+        </entity-condition>
+    </view-entity>
+
+</entities>
