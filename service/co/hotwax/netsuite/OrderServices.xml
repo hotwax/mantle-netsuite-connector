@@ -618,63 +618,17 @@
     </service>
 
     <service verb="get" noun="BrokeredOrders" authenticate="anonymous-all" transaction-timeout="7200">
-        <description>
-            Service to fetch the Brokered Orders and Items to prepare the feed, which can take in a limit
-            parameter to include a fixed number of orders in the Feed File.
-            Eg. If the brokeredOrdersCountPerFeed parameter is set to 1000, so it will fetch 1000 eligible
-            orders from the BrokeredOrderItemsSyncQueue view, and prepare the feed file. If more
-            eligible orders are still available, the service will fetch the next 1000 records and
-            create a new feed file and so on till the available eligible orders for the Brokered Feed.
-            This way multiple feed files will be created instead of a single bulk file if large data
-            set, to avoid any issues.
-        </description>
         <in-parameters>
-            <parameter name="brokeredOrdersCountPerFeed" type="Integer">
-                <description>The number of orders to be included in the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="orderId">
-                <description>Parameter to fetch Order details for a specific orderId.</description>
-            </parameter>
-            <parameter name="orderItemSeqId">
-                <description>Parameter to fetch Order details for a specific orderItemSeqId.</description>
-            </parameter>
-            <parameter name="systemMessageTypeId" required="true">
-                <description>The System Message Type ID for generating the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="systemMessageRemoteId" required="true">
-                <description>The System Message Remote Id for generating the Brokered Order Items Feed.</description>
-            </parameter>
-            <parameter name="parentFacilityTypeIds" type="List">
-                <description>
-                    List of parent Facility Type Ids for generating Brokered Orders Items Feed.
-                    For passing the parent Facility Type Ids as list, add values like - DISTRIBUTION_CENTER,PHYSICAL_STORE,VIRTUAL_FACILITY and for single value use - DISTRIBUTION_CENTER.
-                </description>
-            </parameter>
-            <parameter name="productStoreIds" type="List">
-                <description>
-                    List of product store ids for generating Brokered Orders Items Feed.
-                    For passing the Product Store Ids as list, add values like - SM_STORE,SG_STORE and for single value use - SM_STORE.
-                </description>
-            </parameter>
-            <parameter name="facilityGroupIds" type="List">
-                <description>
-                    List of facility group ids for generating Brokered Orders Items Feed.
-                    For passing the facility group ids as list, add values like - M3_FAC, BJ_FAC_GRP and for single value use - M3_FAC.
-                </description>
-            </parameter>
+            <parameter name="brokeredOrdersCountPerFeed" type="Integer"/>
+            <parameter name="orderId"/>
+            <parameter name="orderItemSeqId"/>
+            <parameter name="systemMessageTypeId" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="parentFacilityTypeIds" type="List"/>
+            <parameter name="productStoreIds" type="List"/>
+            <parameter name="facilityGroupIds" type="List"/>
         </in-parameters>
         <actions>
-            <!-- Field to check the condition for the first run to always fetch the Brokered Order Items
-                 for the first Feed File (replicating do-while behavior), this will be set to false after
-                 first service call, and check on brokeredOrdersCount will be applicable for the next
-                 service calls to prepare the Feed Files -->
-            <!-- NOTE The generate#BrokeredOrderItemsFeed will be called if the brokeredOrdersCount is
-                 either equal to limit or != 0  i.e. some remaining records to be processed.
-                 Scenarios:
-                 1. brokeredOrdersCountPerFeed = 1000 and total eligible records > 1000 (multiple Feed Files)
-                 2. brokeredOrdersCountPerFeed = 1000 and total eligible records < 1000 (single Feed File)
-                 3. brokeredOrdersCountPerFeed = 1000 and total eligible records = 1000 (single Feed File)
-                 4. brokeredOrdersCountPerFeed = 1000 and total eligible records = 0    (No Feed File) -->
             <set field="isFirstFeed" from="true"/>
             <while condition="isFirstFeed || (brokeredOrdersCount &amp;&amp; (brokeredOrdersCount == brokeredOrdersCountPerFeed || brokeredOrdersCount != 0))">
                 <!-- Added transaction=force-new as for each call to this service should be done in a new transaction
@@ -697,66 +651,37 @@
     </service>
 
     <service verb="generate" noun="BrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
-    <description>
-        Service to generate Brokered Order Items Feed for the new order sync flow with added check for NetsuiteItemLineId and takes count per feed which can take in a limit parameter
-        to include a specific number of records in the Feed File.
-        If no limit is set, default-value of limit parameter will be considered to fetch the
-        eligible orders for the feed.
-    </description>
-    <in-parameters>
-    <parameter name="brokeredOrdersCountPerFeed" type="Integer">
-        <description>The number of orders to be included in the Brokered Order Items Feed.</description>
-    </parameter>
-    <parameter name="orderId">
-        <description>Parameter to fetch Order details for a specific orderId.</description>
-    </parameter>
-    <parameter name="orderItemSeqId">
-        <description>Parameter to fetch Order details for a specific orderItemSeqId.</description>
-    </parameter>
-    <parameter name="systemMessageTypeId" required="true">
-        <description>The System Message Type ID for generating the Brokered Order Items Feed.</description>
-    </parameter>
-    <parameter name="systemMessageRemoteId" required="true">
-        <description>The System Message Remote Id for generating the Brokered Order Items Feed.</description>
-    </parameter>
-    <parameter name="parentFacilityTypeIds" type="List">
         <description>
-            List of parent Facility Type Ids for generating Brokered Orders Items Feed.
-            For passing the parent Facility Type Ids as list, add values like - DISTRIBUTION_CENTER,PHYSICAL_STORE,VIRTUAL_FACILITY and for single value use - DISTRIBUTION_CENTER.
+            Service to generate Brokered Order Items Feed for the new order sync flow with added check for NetsuiteItemLineId and takes count per feed which can take in a limit parameter
+            to include a specific number of records in the Feed File.
+            If no limit is set, default-value of limit parameter will be considered to fetch the
+            eligible orders for the feed.
         </description>
-    </parameter>
-    <parameter name="facilityGroupIds" type="List">
-        <description>
-            List of facility group ids for generating Brokered Orders Items Feed.
-        </description>
-    </parameter>
-    <parameter name="productStoreIds" type="List">
-        <description>
-            List of product store ids for generating Brokered Orders Items Feed.
-        </description>
-    </parameter>
-    </in-parameters>
-    <out-parameters>
-        <parameter name="brokeredFeedOrdersCount" type="Integer">
-            <description>The number of orders in the Brokered Order Items Feed.</description>
-        </parameter>
-    </out-parameters>
+        <in-parameters>
+            <parameter name="brokeredOrdersCountPerFeed" type="Integer"/>
+            <parameter name="orderId"/>
+            <parameter name="orderItemSeqId"/>
+            <parameter name="systemMessageTypeId" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="parentFacilityTypeIds" type="List"/>
+            <parameter name="facilityGroupIds" type="List"/>
+            <parameter name="productStoreIds" type="List"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="brokeredFeedOrdersCount" type="Integer"/>
+        </out-parameters>
         <actions>
-            <!-- variable to use for counting the number of orders in the feed, no available method to
-                 directly get the count from iterator, if .size() is used, the iterator is consumed and
-                 so no data to iterate further and create the feed -->
+
             <set field="brokeredFeedOrdersCount" from="0"/>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
 
             <log message="Generating Brokered Orders and Items Feed Feed file of HotWax for parentFacilityTypeId ${parentFacilityTypeIds}, Order ${orderId} at time ${nowDate}"/>
 
-            <!-- Fetch items from the BrokeredOrderItemsSyncQueue for identifying the orders ready for preparing Feed -->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
 
             <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() > 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
 
-            <!-- Prepare Brokered Order and Items Feed JSON File Path -->
             <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
                 [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
                 productStoreId:productStoreId], false)"/>
@@ -776,20 +701,18 @@
                 def isFileEmpty = true
                 def csvHeaders = null
 
-                brokeredOrders_find = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed")
+                brokeredOrders_find = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed").distinct(true)
                 brokeredOrders_find.condition("itemStatusId", "ITEM_APPROVED")
                 if(orderId) brokeredOrders_find.condition("orderId", orderId)
                 if(orderItemSeqId) brokeredOrders_find.condition("orderItemSeqId", orderItemSeqId)
                 if(facilityGroupIds) brokeredOrders_find.condition("facilityGroupId", EntityCondition.ComparisonOperator.IN, facilityGroupIds)
                 if(productStoreIds) brokeredOrders_find.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
                 brokeredOrders_find.limit(brokeredOrdersCountPerFeed)
-                .selectField("orderId,orderStatusId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,customerPartyId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
+                .selectField("orderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
                 .orderBy("entryDate")
 
-                // Using try-with-resources to automatically close the EntityListIterator 'brokeredOrdersItr'
                 try (brokeredOrdersItr = brokeredOrders_find.iterator()) {
             </script>
-            <!-- If no orders in BrokeredOrderItemsSyncQueue, then don't generate the file -->
             <if condition="!brokeredOrdersItr.hasNext()">
                 <return message="No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file."/>
             </if>
@@ -802,19 +725,16 @@
             <iterate list="brokeredOrdersItr" entry="brokerOrderItem">
                 <log message="Generating Brokered Order and Items Feed for order ${brokerOrderItem.orderId} at time ${nowDate}"/>
                 <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
-                <!-- Load and render the FTL template -->
                 <set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/>
                 <set field="templateWriter" from="new StringWriter()"/>
                 <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
                 <set field="brokerOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
 
                 <if condition="brokerOrderItem.externalFulfillmentOrderItemId"><then>
-                    <!-- Update the ExternalFulfillmentOrderItem records for the same shipGroupSeqId for an Order Item -->
                     <service-call name="update#co.hotwax.integration.order.ExternalFulfillmentOrderItem"
                                   in-map="[externalFulfillmentOrderItemId:brokerOrderItem.externalFulfillmentOrderItemId,
                                 fulfillmentStatus:'Sent']"/>
                 </then><else>
-                    <!-- Create record of ExternalFulfillmentOrderItem to keep logs for the Brokered Order and Items Feed -->
                     <service-call name="create#co.hotwax.integration.order.ExternalFulfillmentOrderItem" in-map="[orderId:brokerOrderItem.orderId,
                                 orderItemSeqId:brokerOrderItem.orderItemSeqId, shipGroupSeqId:brokerOrderItem.shipGroupSeqId,
                                 fulfillmentStatus:'Sent', createdDate:nowDate, quantity:brokerOrderItem.orderItemQuantity]"/>
@@ -829,22 +749,18 @@
 
                 <script>
                     csvPrinter.printRecord(brokerOrderItemRecord)
-
-                    //incrementing the brokeredFeedOrdersCount for total orders included in the feed
-                    //this field is used in get#BrokeredOrderItems service to prepare multiple feed files if applicable
                     brokeredFeedOrdersCount++
                 </script>
             </iterate>
             <script>
-                    }
+                }
                 } catch (Exception e) {
-                    ec.message.addError("Error preparing brokered order feed file ${e}")
+                ec.message.addError("Error preparing brokered order feed file ${e}")
                 }
             </script>
-            <!-- Save the csv Feed File path in System Message messageText -->
             <if condition="brokeredFeedOrdersCount != 0">
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                    in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
+                              in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
                     systemMessageRemoteId:systemMessageRemoteId, productStoreId:productStoreId]" out-map="brokeredSystemMessageOut"/>
             </if>
 
