@@ -616,7 +616,6 @@
                 and remote ${sendSmrId} saved response in messages ${queueSystemMessageOut?.systemMessageId}"/>
         </actions>
     </service>
-
     <service verb="get" noun="BrokeredOrders" authenticate="anonymous-all" transaction-timeout="7200">
         <in-parameters>
             <parameter name="brokeredOrdersCountPerFeed" type="Integer"/>
@@ -649,7 +648,6 @@
             </while>
         </actions>
     </service>
-
     <service verb="generate" noun="BrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>
             Service to generate Brokered Order Items Feed for the new order sync flow with added check for NetsuiteItemLineId and takes count per feed which can take in a limit parameter
@@ -711,42 +709,49 @@
                 .selectField("orderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
                 .orderBy("entryDate")
 
-                try (brokeredOrdersItr = brokeredOrders_find.iterator()) {
-            </script>
-            <if condition="!brokeredOrdersItr.hasNext()">
-                <return message="No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file."/>
-            </if>
+                //If no eligible brokered orders, then don't generate the file
+                long brokeredOrdersCount = brokeredOrders_find.count()
+                if (netsuiteOrdersCount == 0) {
+                    ec.message.addMessage("No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file.")
+                    return
+                }
 
-            <script>
-                try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
-                def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)){
+                try (brokeredOrdersItr = brokeredOrders_find.iterator()) {
+                    try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
+                    def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)){
             </script>
 
             <iterate list="brokeredOrdersItr" entry="brokerOrderItem">
-                <log message="Generating Brokered Order and Items Feed for order ${brokerOrderItem.orderId} at time ${nowDate}"/>
                 <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
-                <set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/>
+
+                <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="ftlFileResource">
+                    <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                    <field-map field-name="parameterName" value="resourcePath"/>
+                </entity-find-one>
+                <!-- Check if the custom ftl file resource is available. -->
+                <if condition="ftlFileResource &amp;&amp; ftlFileResource.parameterValue">
+                    <set field="templateLocation" from="groovyFileResource.parameterValue"/>
+                    <else><set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/></else>
+                </if>
                 <set field="templateWriter" from="new StringWriter()"/>
                 <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
                 <set field="brokerOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
 
                 <if condition="brokerOrderItem.externalFulfillmentOrderItemId"><then>
                     <service-call name="update#co.hotwax.integration.order.ExternalFulfillmentOrderItem"
-                                  in-map="[externalFulfillmentOrderItemId:brokerOrderItem.externalFulfillmentOrderItemId,
-                                fulfillmentStatus:'Sent']"/>
+                        in-map="[externalFulfillmentOrderItemId:brokerOrderItem.externalFulfillmentOrderItemId,
+                        fulfillmentStatus:'Sent']"/>
                 </then><else>
                     <service-call name="create#co.hotwax.integration.order.ExternalFulfillmentOrderItem" in-map="[orderId:brokerOrderItem.orderId,
-                                orderItemSeqId:brokerOrderItem.orderItemSeqId, shipGroupSeqId:brokerOrderItem.shipGroupSeqId,
-                                fulfillmentStatus:'Sent', createdDate:nowDate, quantity:brokerOrderItem.orderItemQuantity]"/>
+                        orderItemSeqId:brokerOrderItem.orderItemSeqId, shipGroupSeqId:brokerOrderItem.shipGroupSeqId,
+                        fulfillmentStatus:'Sent', createdDate:nowDate, quantity:brokerOrderItem.orderItemQuantity]"/>
                 </else></if>
 
                 <if condition="!csvHeaders">
                     <set field="csvHeaders" from="brokerOrderItemMap.keySet().toList()"/>
                     <script>csvPrinter.printRecord(csvHeaders)</script>
                 </if>
-
                 <set field="brokerOrderItemRecord" from="csvHeaders.collect { key -> brokerOrderItemMap[key] != null ? brokerOrderItemMap[key] : '' }"/>
-
                 <script>
                     csvPrinter.printRecord(brokerOrderItemRecord)
                     brokeredFeedOrdersCount++
@@ -754,13 +759,13 @@
             </iterate>
             <script>
                 }
-                } catch (Exception e) {
-                ec.message.addError("Error preparing brokered order feed file ${e}")
+                    } catch (Exception e) {
+                        ec.message.addError("Error preparing brokered order feed file ${e}")
                 }
             </script>
             <if condition="brokeredFeedOrdersCount != 0">
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                              in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
+                    in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
                     systemMessageRemoteId:systemMessageRemoteId, productStoreId:productStoreId]" out-map="brokeredSystemMessageOut"/>
             </if>
 
