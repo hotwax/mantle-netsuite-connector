@@ -140,8 +140,12 @@
             </parameter>
         </in-parameters>
         <actions>
-            <set field="nowDate" from="ec.user.nowTimestamp"/>
-            <log message="Generating Transfer Order Shipments Receipt Feed file for Shipment ${shipmentId} at time ${nowDate}"/>
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <log message="Generating Transfer Order Shipments Receipt Feed file for Shipment ${shipmentId} at time ${nowTimestamp}"/>
+
+            <!-- Fetch the SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
 
             <script>
                 import com.fasterxml.jackson.core.JsonGenerator
@@ -160,7 +164,7 @@
                 //If no eligible receipts, then don't generate the file
                 long shipmentReceiptCount = toShipmentReceipt_find.count()
                 if (shipmentReceiptCount == 0) {
-                    ec.message.addMessage("No eligible Shipment Receipt for TO Shipment Receipt Feed at ${nowDate}, not generating the TO Shipment Receipt Feed File for NetSuite.")
+                    ec.message.addMessage("No eligible Shipment Receipt for TO Shipment Receipt Feed at ${nowTimestamp}, not generating the TO Shipment Receipt Feed File for NetSuite.")
                     return
                 }
 
@@ -168,15 +172,11 @@
                 try (toShipmentReceiptItr = toShipmentReceipt_find.iterator()) {
             </script>
 
-            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
-            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
-            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
-
             <!-- Prepare TO Shipment Receipt JSON File Path -->
             <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
             <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
-                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
-                dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd'),
+                dateTime:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
             <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
 
             <!-- Prepare the TO Shipment Receipt Feed file -->
@@ -244,7 +244,7 @@
                     <!-- Create Shipment Receipt History for each received item included in the feed -->
                     <iterate list="shipmentReceiptItemsForHistory" entry="shipmentReceiptItemForHistory">
                         <service-call name="create#co.hotwax.integration.shipment.ShipmentReceiptHistory"
-                                in-map="[receiptId:shipmentReceiptItemForHistory.receiptId, createdDate:nowDate,
+                                in-map="[receiptId:shipmentReceiptItemForHistory.receiptId, createdDate:nowTimestamp,
                                 comments:'Shipment Receipt Item sent as part of Transfer Order Shipment Receipt Feed']"/>
                     </iterate>
                 </iterate>
@@ -359,8 +359,12 @@
             </parameter>
         </in-parameters>
         <actions>
-            <set field="nowDate" from="ec.user.nowTimestamp"/>
-            <log message="Generating Transfer Order Shipment Feed file of HotWax for Order ${orderId}, at time ${nowDate}"/>
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <log message="Generating Transfer Order Shipment Feed file of HotWax for Order ${orderId}, at time ${nowTimestamp}"/>
+
+            <!-- Fetch the SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
 
             <script>
                 import com.fasterxml.jackson.core.JsonGenerator
@@ -381,7 +385,7 @@
                 //If no eligible shipments, then don't generate the file
                 long shipmentCount = transferOrderShipment_find.count()
                 if (shipmentCount == 0) {
-                    ec.message.addMessage("No eligible orders for Transfer Order Shipment Feed at ${nowDate}, not generating the TO Shipment Feed File for NetSuite.")
+                    ec.message.addMessage("No eligible orders for Transfer Order Shipment Feed at ${nowTimestamp}, not generating the TO Shipment Feed File for NetSuite.")
                     return
                 }
 
@@ -389,15 +393,11 @@
                 try (transferOrderShipmentItr = transferOrderShipment_find.iterator()) {
             </script>
 
-            <!-- Fetch the receivePath from SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
-            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
-            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
-
             <!-- Prepare Transfer Order Shipment Feed JSON File Path -->
             <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
             <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
-                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'),
-                dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd'),
+                dateTime:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
 
             <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
 
@@ -450,7 +450,7 @@
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
                             in-map="[orderId:shipmentItem.orderId, orderItemSeqId:shipmentItem.orderItemSeqId,
                             shipmentId:shipmentItem.shipmentId, externalFulfillmentId:'_NA_',
-                            comments:'Shipment Item sent as part of Transfer Order Shipment Feed', createdDate:nowDate]"/>
+                            comments:'Shipment Item sent as part of Transfer Order Shipment Feed', createdDate:nowTimestamp]"/>
                 </iterate>
                 <set field="shipmentMap.items" from="items"/>
 
