@@ -121,9 +121,9 @@
         description="Import Transfer Orders Feed file from SFTP location"
         parentTypeId="LocalFeedFile"
         consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
-        receivePath="/home/${sftpUsername}/netsuite/transferorderv2/export"
+        receivePath="/home/${sftpUsername}/netsuite/transferorderv2/import/transfer-order"
         receiveResponseEnumId="MsgRrMove"
-        receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/export/archive"
+        receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/import/transfer-order/archive"
         sendPath="${contentRoot}/netsuite/TransferOrderFeed">
     </moqui.service.message.SystemMessageType>
 
@@ -144,9 +144,9 @@
             description="Import Warehouse Fulfilled Transfer Order Fulfillment Feed file from SFTP location"
             parentTypeId="LocalFeedFile"
             consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
-            receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh"
+            receivePath="/home/${sftpUsername}/netsuite/transferorderv2/import/fulfillment-wh"
             receiveResponseEnumId="MsgRrMove"
-            receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-wh/archive"
+            receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/import/fulfillment-wh/archive"
             sendPath="${contentRoot}/netsuite/WhToFulfillmentFeed">
     </moqui.service.message.SystemMessageType>
 
@@ -166,9 +166,9 @@
          description="Import Store Fulfill TO fulfillment Feed file from SFTP location"
          parentTypeId="LocalFeedFile"
          consumeServiceName="co.hotwax.system.FeedServices.consume#NetSuiteFeed"
-         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-store"
+         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/import/fulfillment-store"
          receiveResponseEnumId="MsgRrMove"
-         receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/fulfillment-store/archive"
+         receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/import/fulfillment-store/archive"
          sendPath="${contentRoot}/netsuite/StoreToFulfillmentFeed">
     </moqui.service.message.SystemMessageType>
 
@@ -188,7 +188,7 @@
     <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderShipmentReceiptFeed"
             description="Generate HotWax Transfer Orders Shipment Receipt Feed"
             parentTypeId="LocalFeedFile"
-            sendPath="/home/${sftpUsername}/netsuite/transferorderv2/receipt/TransferOrderShipmentReceiptFeed-${dateTime}-${systemMessageId}.json"
+            sendPath="/home/${sftpUsername}/netsuite/transferorderv2/export/receipt/TransferOrderShipmentReceiptFeed-${dateTime}-${systemMessageId}.json"
             sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
             receivePath="${contentRoot}/netsuite/TransferOrderShipmentReceiptFeed/TransferOrderShipmentReceiptFeed-${dateTime}.json"/>
 
@@ -196,7 +196,7 @@
     <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderShipmentFeed"
             description="Generate HotWax Transfer Orders Shipment Feed"
             parentTypeId="LocalFeedFile"
-            sendPath="/home/${sftpUsername}/netsuite/transferorderv2/oms-fulfillment/TransferOrderShipmentFeed-${dateTime}-${systemMessageId}.json"
+            sendPath="/home/${sftpUsername}/netsuite/transferorderv2/export/oms-fulfillment/TransferOrderShipmentFeed-${dateTime}-${systemMessageId}.json"
             sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
             receivePath="${contentRoot}/netsuite/TransferOrderShipmentFeed/TransferOrderShipmentFeed-${dateTime}.json"/>
 </entity-facade-xml>
