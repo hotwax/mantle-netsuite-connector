@@ -683,11 +683,16 @@
             fulfilledOrdersItems.selectField("orderId,productStoreId,shopId")
                 .orderBy("statusDatetime")
 
+            //If no eligible fulfilled orders, then don't generate the file
+            long fulfilledOrdersCount = fulfilledOrdersItems.count()
+            if (fulfilledOrdersCount == 0) {
+                ec.message.addMessage("No eligible orders for Fulfilled Order and Items Feed at ${nowDate}, not generating the HotWax Feed file.")
+                return
+            }
+
             try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
             </script>
-            <if condition="!fulfilledOrdersItemsItr.hasNext()">
-                <return message="No eligible orders for Fulfilled Order and Items Feed at ${nowDate}, not generating the HotWax Feed file."/>
-            </if>
+
             <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() != 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
 
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType">
@@ -697,17 +702,15 @@
                 <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
             </if>
             <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
-                        [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager',
-                         date: ec.l10n.format(nowDate, 'yyyy-MM-dd'),
-                         dateTime: ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
-                         productStoreId: productStoreId,
-                         shopId: customParametersMap?.shopId], false)"/>
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager',
+                 date: ec.l10n.format(nowDate, 'yyyy-MM-dd'),
+                 dateTime: ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                 productStoreId: productStoreId,
+                 shopId: customParametersMap?.shopId], false)"/>
 
             <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
 
             <script><![CDATA[
-
-
                 File fulfilledOrderItemsFeedFile = new File(jsonFilePath)
                 if (!fulfilledOrderItemsFeedFile.parentFile.exists()) fulfilledOrderItemsFeedFile.parentFile.mkdirs()
 
@@ -716,47 +719,53 @@
                 objectMapper.setDateFormat(new SimpleDateFormat(System.getProperty('default_date_time_format')))
 
                 def path = Paths.get(jsonFilePath)
-
                 try(def writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
-                JsonGenerator jGenerator = jfactory.createGenerator(writer))
-                {
-                jGenerator.writeStartArray()
+                JsonGenerator jGenerator = jfactory.createGenerator(writer)){
+                    jGenerator.writeStartArray()
             ]]></script>
+            <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
             <iterate list="fulfilledOrdersItemsItr" entry="fulfilledOrderItem">
                 <entity-find entity-name="co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue" list="allOrderItems">
                     <econdition field-name="orderId" from="fulfilledOrderItem.orderId"/>
                     <order-by field-name="orderItemSeqId"/>
                 </entity-find>
 
+                <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="ftlFileResource">
+                    <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                    <field-map field-name="parameterName" value="resourcePath"/>
+                </entity-find-one>
+                <!-- Check if the custom ftl file resource is available. -->
+                <if condition="ftlFileResource &amp;&amp; ftlFileResource.parameterValue">
+                    <set field="templateLocation" from="ftlFileResource.parameterValue"/>
+                    <else><set field="templateLocation" value="component://mantle-netsuite-connector/template/FulfilledOrderItemsFeedDetail.ftl"/></else>
+                </if>
+                <set field="templateWriter" from="new StringWriter()"/>
+                <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
+                <set field="fulfilledOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
+
                 <iterate list="allOrderItems" entry="item">
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
                         in-map="[orderId:item.orderId, orderItemSeqId:item.orderItemSeqId, comments:'Order Item sent as part of Fulfilled Items Feed', createdDate:nowDate, externalFulfillmentId:'_NA_']"/>
                 </iterate>
-
-                <set field="templateWriter" from="new java.io.StringWriter()"/>
-                <script>ec.resourceFacade.template("component://mantle-netsuite-connector/template/FulfilledOrderItemsFeedDetail.ftl", templateWriter)</script>
-
-                <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
-                <set field="fulfilledOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
 
                 <script>
                     objectMapper.writerWithDefaultPrettyPrinter().writeValue(jGenerator, fulfilledOrderItemMap)
                     fulfilledFeedOrdersCount = (fulfilledFeedOrdersCount ?: 0) + 1
                 </script>
             </iterate>
-            <script><![CDATA[
-            jGenerator.writeEndArray()
+            <script>
+                    jGenerator.writeEndArray()
+                }
             }
-            }
-            ]]></script>
+            </script>
             <if condition="fulfilledFeedOrdersCount != 0">
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                     in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                        messageText:jsonFilePathRef, productStoreId:productStoreId, shopId:customParametersMap?.shopId]"
-                        out-map="fulfillmentFeedSysMsgOut"/>
+                    messageText:jsonFilePathRef, productStoreId:productStoreId, shopId:customParametersMap?.shopId]"
+                    out-map="fulfillmentFeedSysMsgOut"/>
             </if>
             <return message="Completed Fulfilled Order Items Feed file with ${fulfilledFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
-                             remote ${systemMessageRemoteId} saved response in messages ${fulfillmentFeedSysMsgOut?.systemMessageId}"/>
+                remote ${systemMessageRemoteId} saved response in messages ${fulfillmentFeedSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
 </services>
