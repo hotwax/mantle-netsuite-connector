@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-seed">
-
+   
     <!-- NetSuite Job Enum Data -->
     <moqui.basic.Enumeration enumId="NS_IMP_CASH_SALE" enumCode="NS_IMP_CASH_SALE" description="NetSuite Import Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_EXP_CASH_SALE" enumCode="NS_EXP_CASH_SALE" description="NetSuite Export Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
@@ -36,7 +36,7 @@
     <moqui.basic.Enumeration enumId="GEN_CUST_DEP_FD" enumCode="GEN_CUST_DEP_FD" description="Generate Customer Deposit Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CRT_CUST_FD" enumCode="GEN_CRT_CUST_FD" description="Generate HotWax Create Customer Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_FLFLD_ITM_FRM_NS" enumCode="POL_FLFLD_ITM_FRM_NS" description="Poll Fufilled Order Items From NetSuite Job" enumTypeId="ORDER_SYS_JOB"/>
-
+    
     <!-- NetSuite Job Product Data -->
     <Product productId="NS_CREATE_CD" productTypeId="SERVICE" internalName="NS_CREATE_CD"
              productName="NetSuite Create Customer Deposit Job" description="NetSuite Create Customer Deposit Job"
@@ -101,19 +101,19 @@
     <Product productId="NS_UPLOAD_PROD" productTypeId="SERVICE" internalName="NS_UPLOAD_PROD"
              productName="NetSuite Upload Product Job" description="NetSuite Upload Product Job"
              primaryProductCategoryId="PRODUCT_SYS_JOB"/>
-    <Product productId="GEN_CRT_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_ORD_FD"
+    <Product productId="GEN_CRT_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_ORD_FD" 
              productName="Generate Create Orders Feed For NetSuite Job" description="Generate Create Orders Feed For NetSuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-    <Product productId="GEN_CUST_DEP_FD" productTypeId="SERVICE" internalName="GEN_CUST_DEP_FD"
+    <Product productId="GEN_CUST_DEP_FD" productTypeId="SERVICE" internalName="GEN_CUST_DEP_FD" 
              productName="Generate Customer Deposit Feed for Netsuite Job" description="Generate Customer Deposit Feed for Netsuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-    <Product productId="GEN_CRT_CUST_FD" productTypeId="SERVICE" internalName="GEN_CRT_CUST_FD"
+    <Product productId="GEN_CRT_CUST_FD" productTypeId="SERVICE" internalName="GEN_CRT_CUST_FD" 
              productName="Generate HotWax Create Customer Feed for Netsuite Job" description="Generate HotWax Create Customer Feed for Netsuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-    <Product productId="POL_FLFLD_ITM_FRM_NS" productTypeId="SERVICE" internalName="POL_FLFLD_ITM_FRM_NS"
+    <Product productId="POL_FLFLD_ITM_FRM_NS" productTypeId="SERVICE" internalName="POL_FLFLD_ITM_FRM_NS" 
              productName="Poll Fufilled Order Items From NetSuite Job" description="Poll Fufilled Order Items From NetSuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-
+    
     <Product productId="NS_EXP_INV_ADJ" productTypeId="SERVICE" internalName="NS_EXP_INV_ADJ"
              productName="NetSuite Export Inventory Adjustment Job" description="NetSuite Export Inventory Adjustment Job"
              primaryProductCategoryId="INVENTORY_SYS_JOB"/>
@@ -178,7 +178,7 @@
     <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_TRANSORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-
+    
     <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_INV_ADJ" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -192,7 +192,7 @@
     <ProductCategoryMember productId="NS_IMP_TO_IF" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-
+    
     <ProductCategoryMember productId="NS_EXP_CASH_SALE" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_CUSTOMER" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_INV_TRANS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
