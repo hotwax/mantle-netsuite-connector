@@ -711,7 +711,7 @@
 
                 //If no eligible brokered orders, then don't generate the file
                 long brokeredOrdersCount = brokeredOrders_find.count()
-                if (netsuiteOrdersCount == 0) {
+                if (brokeredOrdersCount == 0) {
                     ec.message.addMessage("No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file.")
                     return
                 }
@@ -730,7 +730,7 @@
                 </entity-find-one>
                 <!-- Check if the custom ftl file resource is available. -->
                 <if condition="ftlFileResource &amp;&amp; ftlFileResource.parameterValue">
-                    <set field="templateLocation" from="groovyFileResource.parameterValue"/>
+                    <set field="templateLocation" from="ftlFileResource.parameterValue"/>
                     <else><set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/></else>
                 </if>
                 <set field="templateWriter" from="new StringWriter()"/>

@@ -157,5 +157,7 @@
         parentTypeId="LocalFeedFile"
         sendPath="/home/${sftpUsername}/netsuite/salesorder/update/${productStoreId}-BrokeredOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-        receivePath="${contentRoot}/hotwax/BrokeredOrderItemsFeed/${productStoreId}-HotWaxBrokeredOrderItemsFeed-${dateTime}.csv"/>
+        receivePath="${contentRoot}/hotwax/BrokeredOrderItemsFeed/${productStoreId}-HotWaxBrokeredOrderItemsFeed-${dateTime}.csv">
+            <parameters parameterName="resourcePath" parameterValue="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl" systemMessageRemoteId=""/>
+    </moqui.service.message.SystemMessageType>
 </entity-facade-xml>
