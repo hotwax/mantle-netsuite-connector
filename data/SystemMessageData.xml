@@ -184,12 +184,14 @@
     <moqui.basic.Enumeration description="Generate mapped Feed file of Store TO Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSUpdateTOShipmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSStoreToFulfillmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Store Fulfillment" enumId="ImportStoreToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSUpdateTOShipmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
- <!-- System Message Type for Fulfilled Order Items Feed -->
+    <!-- System Message Type for Fulfilled Order Items Feed -->
     <moqui.service.message.SystemMessageType
            systemMessageTypeId="FulfilledOrderItemsFeedNS"
            description="Generate HotWax Fulfilled Order Items Feed for Netsuite"
            parentTypeId="LocalFeedFile"
            sendPath="/home/${sftpUsername}/netsuite/fulfilledsalesorder/export${productStoreId}-FulfilledOrderItemsFeed-${systemMessageId}-${dateTime}.json"
            sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-           receivePath="${contentRoot}/hotwax/FulfilledOrderItemsFeed/${productStoreId}-HotWaxFulfilledOrderItemsFeed-${dateTime}.json"/>
+           receivePath="${contentRoot}/hotwax/FulfilledOrderItemsFeed/${productStoreId}-HotWaxFulfilledOrderItemsFeed-${dateTime}.json">
+           <parameters parameterName="resourcePath" parameterValue="component://mantle-netsuite-connector/template/FulfilledOrderItemsFeedDetail.ftl" systemMessageRemoteId=""/>
+    </moqui.service.message.SystemMessageType>
 </entity-facade-xml>

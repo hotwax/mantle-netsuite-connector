@@ -72,9 +72,9 @@
 
     <!-- Template Service Job to generate the Fulfilled Order Items Feed from HotWax -->
     <moqui.service.job.ServiceJob jobName="generate_FulfilledOrderItemsFeed_Netsuite" jobTypeEnumId="GEN_FLFLD_ORD_ITM_FD"
-                                  description="Template Service Job to generate the Fulfilled Order Items Feed from HotWax"
-                                  serviceName="co.hotwax.netsuite.OrderServices.get#FulfilledOrders"
-                                  cronExpression="0 0 0 * * ?" paused="Y">
+        description="Template Service Job to generate the Fulfilled Order Items Feed from HotWax"
+        serviceName="co.hotwax.netsuite.OrderServices.get#FulfilledOrders"
+        cronExpression="0 0 0 * * ?" paused="Y">
         <parameters parameterName="fulfilledOrdersCountPerFeed"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="orderItemSeqId"/>
