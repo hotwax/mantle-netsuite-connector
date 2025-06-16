@@ -8,10 +8,10 @@
 </#if>
 
 {
-    <#if externalOrderId??>"order_id": "${externalOrderId}",</#if>
-    "maySplit": "${allOrderItems[0].maySplit!''}",
+    <#if externalOrderId?has_content>"order_id": "${externalOrderId}",</#if>
+    "maySplit": "${fulfilledOrderItem[0].maySplit!''}",
     "items": [
-        <#list allOrderItems as item>
+        <#list fulfilledOrderItem as item>
             {
                 "line_id": "${item.netsuiteItemLineId}",
                 "shipment_method_type_id": "${item.slaShipmentMethodTypeId!''}",

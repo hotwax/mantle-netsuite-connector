@@ -725,7 +725,7 @@
             ]]></script>
             <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
             <iterate list="fulfilledOrdersItemsItr" entry="fulfilledOrderItem">
-                <entity-find entity-name="co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue" list="allOrderItems">
+                <entity-find entity-name="co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue" list="fulfilledOrderItem">
                     <econdition field-name="orderId" from="fulfilledOrderItem.orderId"/>
                     <order-by field-name="orderItemSeqId"/>
                 </entity-find>
@@ -743,7 +743,7 @@
                 <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
                 <set field="fulfilledOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
 
-                <iterate list="allOrderItems" entry="item">
+                <iterate list="fulfilledOrderItem" entry="item">
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
                         in-map="[orderId:item.orderId, orderItemSeqId:item.orderItemSeqId, comments:'Order Item sent as part of Fulfilled Items Feed', createdDate:nowDate, externalFulfillmentId:'_NA_']"/>
                 </iterate>
