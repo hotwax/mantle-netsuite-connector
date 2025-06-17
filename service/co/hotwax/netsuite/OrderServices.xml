@@ -372,7 +372,7 @@
 
                 <set field="processedOrderItem.closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(processedOrderItem.remove('itemStatus'))"/>
                 <set field="processedOrderItem.orderLineId" from="processedOrderItem.orderItemSeqId"/>
-                <if condition="isMixCartOrder">
+                <if condition="'Y'.equals(isMixCartOrder)">
                     <set field="processedOrderItem.shipmentMethodTypeId" from="selectedShippingMethod"/>
                 </if>
 
