@@ -31,10 +31,10 @@
                 <econdition entity-alias="PID" field-name="partyIdentificationTypeId" value="NETSUITE_CUSTOMER_ID"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemsForNetSuiteView" sub-select="true" join-from-alias="OH">
+        <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemsForNetSuiteView" sub-select="non-lateral" join-from-alias="OH">
             <key-map field-name="orderId"/>
         </member-entity>
-        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrdersForNetsuite" sub-select="true" join-from-alias="OH" join-optional="true">
+        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrdersForNetsuite" sub-select="non-lateral" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
         </member-entity>
         <entity-condition>
