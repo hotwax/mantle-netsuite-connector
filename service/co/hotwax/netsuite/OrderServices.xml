@@ -768,4 +768,163 @@
                 remote ${systemMessageRemoteId} saved response in messages ${fulfillmentFeedSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
+    <service verb="get" noun="BrokeredOrders" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="brokeredOrdersCountPerFeed" type="Integer"/>
+            <parameter name="orderId"/>
+            <parameter name="orderItemSeqId"/>
+            <parameter name="systemMessageTypeId" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="parentFacilityTypeIds" type="List"/>
+            <parameter name="productStoreIds" type="List"/>
+            <parameter name="facilityGroupIds" type="List"/>
+        </in-parameters>
+        <actions>
+            <set field="isFirstFeed" from="true"/>
+            <while condition="isFirstFeed || (brokeredOrdersCount &amp;&amp; (brokeredOrdersCount == brokeredOrdersCountPerFeed || brokeredOrdersCount != 0))">
+                <!-- Added transaction=force-new as for each call to this service should be done in a new transaction
+                     so that if there are multiple files being generated and an error occurs for an order in one file then
+                     the transaction should be rolled back only for that file and not all the files. -->
+
+                <!-- NOTE: Without a new transaction, if an error occurs for an order, then the whole transaction is rolled back
+                     that means, no history will be created for any orders in previous generated files but the previous generated files will be sent to SFTP.
+                     This can result into duplicate orders as the previous files were sent to SFTP and since history was not created
+                     so these orders will be eligible and will come again in the feed. -->
+
+                <service-call name="co.hotwax.netsuite.OrderServices.generate#BrokeredOrderItemsFeed"
+                              in-map="context" out-map="brokeredFeedOut" transaction="force-new"/>
+                <set field="brokeredOrdersCount" from="brokeredFeedOut?.brokeredFeedOrdersCount"/>
+
+                <!-- Negated the value for while condition for next runs -->
+                <set field="isFirstFeed" from="false"/>
+            </while>
+        </actions>
+    </service>
+    <service verb="generate" noun="BrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>
+            Service to generate Brokered Order Items Feed for the new order sync flow with added check for NetsuiteItemLineId and takes count per feed which can take in a limit parameter
+            to include a specific number of records in the Feed File.
+            If no limit is set, default-value of limit parameter will be considered to fetch the
+            eligible orders for the feed.
+        </description>
+        <in-parameters>
+            <parameter name="brokeredOrdersCountPerFeed" type="Integer"/>
+            <parameter name="orderId"/>
+            <parameter name="orderItemSeqId"/>
+            <parameter name="systemMessageTypeId" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="parentFacilityTypeIds" type="List"/>
+            <parameter name="facilityGroupIds" type="List"/>
+            <parameter name="productStoreIds" type="List"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="brokeredFeedOrdersCount" type="Integer"/>
+        </out-parameters>
+        <actions>
+
+            <set field="brokeredFeedOrdersCount" from="0"/>
+            <set field="nowDate" from="ec.user.nowTimestamp"/>
+
+            <log message="Generating Brokered Orders and Items Feed Feed file of HotWax for parentFacilityTypeId ${parentFacilityTypeIds}, Order ${orderId} at time ${nowDate}"/>
+
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+
+            <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() > 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
+
+            <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                productStoreId:productStoreId], false)"/>
+
+            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+
+            <script>
+                import org.apache.commons.csv.CSVFormat
+                import org.apache.commons.csv.CSVPrinter
+                import java.nio.file.Files
+                import java.nio.file.Paths
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                File csvFile = new File(csvFilePath)
+                if(!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
+                def isFileEmpty = true
+                def csvHeaders = null
+
+                brokeredOrders_find = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed").distinct(true)
+                brokeredOrders_find.condition("itemStatusId", "ITEM_APPROVED")
+                if(orderId) brokeredOrders_find.condition("orderId", orderId)
+                if(orderItemSeqId) brokeredOrders_find.condition("orderItemSeqId", orderItemSeqId)
+                if(facilityGroupIds) brokeredOrders_find.condition("facilityGroupId", EntityCondition.ComparisonOperator.IN, facilityGroupIds)
+                if(productStoreIds) brokeredOrders_find.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
+                brokeredOrders_find.limit(brokeredOrdersCountPerFeed)
+                .selectField("orderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
+                .orderBy("entryDate")
+
+                //If no eligible brokered orders, then don't generate the file
+                long brokeredOrdersCount = brokeredOrders_find.count()
+                if (brokeredOrdersCount == 0) {
+                    ec.message.addMessage("No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file.")
+                    return
+                }
+
+                try (brokeredOrdersItr = brokeredOrders_find.iterator()) {
+                    try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
+                    def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)){
+            </script>
+
+            <iterate list="brokeredOrdersItr" entry="brokerOrderItem">
+                <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
+
+                <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="ftlFileResource">
+                    <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                    <field-map field-name="parameterName" value="resourcePath"/>
+                </entity-find-one>
+                <!-- Check if the custom ftl file resource is available. -->
+                <if condition="ftlFileResource &amp;&amp; ftlFileResource.parameterValue">
+                    <set field="templateLocation" from="ftlFileResource.parameterValue"/>
+                    <else><set field="templateLocation" value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl"/></else>
+                </if>
+                <set field="templateWriter" from="new StringWriter()"/>
+                <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
+                <set field="brokerOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
+
+                <if condition="brokerOrderItem.externalFulfillmentOrderItemId"><then>
+                    <service-call name="update#co.hotwax.integration.order.ExternalFulfillmentOrderItem"
+                        in-map="[externalFulfillmentOrderItemId:brokerOrderItem.externalFulfillmentOrderItemId,
+                        fulfillmentStatus:'Sent']"/>
+                </then><else>
+                    <service-call name="create#co.hotwax.integration.order.ExternalFulfillmentOrderItem" in-map="[orderId:brokerOrderItem.orderId,
+                        orderItemSeqId:brokerOrderItem.orderItemSeqId, shipGroupSeqId:brokerOrderItem.shipGroupSeqId,
+                        fulfillmentStatus:'Sent', createdDate:nowDate, quantity:brokerOrderItem.orderItemQuantity]"/>
+                </else></if>
+
+                <if condition="!csvHeaders">
+                    <set field="csvHeaders" from="brokerOrderItemMap.keySet().toList()"/>
+                    <script>csvPrinter.printRecord(csvHeaders)</script>
+                </if>
+                <set field="brokerOrderItemRecord" from="csvHeaders.collect { key -> brokerOrderItemMap[key] != null ? brokerOrderItemMap[key] : '' }"/>
+                <script>
+                    csvPrinter.printRecord(brokerOrderItemRecord)
+                    brokeredFeedOrdersCount++
+                </script>
+            </iterate>
+            <script>
+                }
+                    } catch (Exception e) {
+                        ec.message.addError("Error preparing brokered order feed file ${e}")
+                }
+            </script>
+            <if condition="brokeredFeedOrdersCount != 0">
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[messageText:csvFilePathRef, systemMessageTypeId:systemMessageTypeId,
+                    systemMessageRemoteId:systemMessageRemoteId, productStoreId:productStoreId]" out-map="brokeredSystemMessageOut"/>
+            </if>
+
+            <return message="Created the Brokered Order Items Feed file with orders count
+                ${brokeredFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId}
+                and remote ${systemMessageRemoteId} saved response in messages
+                ${brokeredSystemMessageOut?.systemMessageId}"/>
+        </actions>
+    </service>
 </services>

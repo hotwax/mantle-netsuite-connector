@@ -184,4 +184,29 @@
        <parameters parameterName="resourcePath" parameterValue="component://mantle-netsuite-connector/template/FulfilledOrderItemsFeedDetail.ftl" systemMessageRemoteId=""/>
     </moqui.service.message.SystemMessageType>
 
+     <moqui.basic.Enumeration enumId="GEN_BRKR_ORD_ITM_FD_NS" enumCode="GEN_BRKR_ORD_ITM_FD_NS" description="Generate Brokered Order Items Feed For Netsuite" enumTypeId="ORDER_SYS_JOB"/>
+    <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
+    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" jobTypeEnumId="GEN_BRKR_ORD_ITM_FD_NS"
+            description="Template Service Job to generate the Brokered Order Items Feed from HotWax"
+            serviceName="co.hotwax.netsuite.OrderServices.get#BrokeredOrders"
+            cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="brokeredOrdersCountPerFeed"/>
+        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="orderItemSeqId"/>
+        <parameters parameterName="facilityGroupIds"/>
+        <parameters parameterName="parentFacilityTypeIds"/>
+        <parameters parameterName="productStoreIds"/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- System Message Type for Brokered Order Items Feed -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="BrokeredOrderItemsFeedForNS"
+        description="Generate HotWax Brokered Order Items Feed for Netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath="/home/${sftpUsername}/netsuite/salesorder/update/${productStoreId}-BrokeredOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/hotwax/BrokeredOrderItemsFeed/${productStoreId}-HotWaxBrokeredOrderItemsFeed-${dateTime}.csv">
+            <parameters parameterName="resourcePath" parameterValue="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl" systemMessageRemoteId=""/>
+    </moqui.service.message.SystemMessageType>
 </entity-facade-xml>
