@@ -25,7 +25,7 @@ under the License.
         </in-parameters>
     </service>
 
-    <service verb="run" noun="DummySuiteScript">
+    <service verb="run" noun="DummySuiteScript" authenticate="anonymous-all" transaction-timeout="1800">
         <description>This is a dummy service without any business logic</description>
         <in-parameters>
             <parameter name="jobName"/>
