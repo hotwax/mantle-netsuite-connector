@@ -36,8 +36,8 @@
     <moqui.basic.Enumeration enumId="GEN_CUST_DEP_FD" enumCode="GEN_CUST_DEP_FD" description="Generate Customer Deposit Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CRT_CUST_FD" enumCode="GEN_CRT_CUST_FD" description="Generate HotWax Create Customer Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_FLFLD_ITM_FRM_NS" enumCode="POL_FLFLD_ITM_FRM_NS" description="Poll Fufilled Order Items From NetSuite Job" enumTypeId="ORDER_SYS_JOB"/>
-    <moqui.basic.Enumeration enumId="GEN_BRKR_ORD_ITM_FD_NS" enumCode="GEN_BRKR_ORD_ITM_FD_NS" description="Generate Brokerd Order Items feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
-    <moqui.basic.Enumeration enumId="GEN_FLFLD_ORD_ITM_FD_NS" enumCode="GEN_FLFLD_ORD_ITM_FD_NS" description="Generate Fulfilled Order Items feed for NetSuite" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_BRKR_ORD_FD_NS" enumCode="GEN_BRKR_ORD_FD_NS" description="Generate Brokerd Order Items feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_FLFLD_ORD_FD_NS" enumCode="GEN_FLFLD_ORD_FD_NS" description="Generate Fulfilled Order Items feed for NetSuite" enumTypeId="FULFILLMENT_SYS_JOB"/>
     
     <!-- NetSuite Job Product Data -->
     <Product productId="NS_CREATE_CD" productTypeId="SERVICE" internalName="NS_CREATE_CD"
@@ -143,11 +143,11 @@
     <Product productId="POL_TRANSORD_FD" productTypeId="SERVICE" internalName="POL_TRANSORD_FD"
              productName="NetSuite Import Transfer Order Feed" description="NetSuite Import Transfer Order Feed"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-    <Product productId="GEN_BRKR_ORD_ITM_FD_NS" productTypeId="SERVICE" internalName="GEN_BRKR_ORD_ITM_FD_NS" 
+    <Product productId="GEN_BRKR_ORD_FD_NS" productTypeId="SERVICE" internalName="GEN_BRKR_ORD_FD_NS" 
              productName="Generate Brokered Order Items Feed For NetSuite Job" description="Generate Brokered Order Items Feed For NetSuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
 
-    <Product productId="GEN_FLFLD_ORD_ITM_FD_NS" productTypeId="SERVICE" internalName="GEN_FLFLD_ORD_ITM_FD_NS" 
+    <Product productId="GEN_FLFLD_ORD_FD_NS" productTypeId="SERVICE" internalName="GEN_FLFLD_ORD_FD_NS" 
              productName="Generate Fulfillment Order Items Feed For NetSuite Job" description="Generate Fulfillment Order Items Feed For NetSuite Job"
              primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
 
@@ -188,8 +188,8 @@
     <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_TRANSORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="GEN_BRKR_ORD_ITM_FD_NS" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="GEN_FLFLD_ORD_ITM_FD_NS" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_BRKR_ORD_FD_NS" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_FLFLD_ORD_FD_NS" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     
     <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -222,8 +222,8 @@
     <ProductCategoryMember productId="NS_EXP_STORE_TO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_STORE_TO" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_SHPMT_RCPT_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="GEN_BRKR_ORD_ITM_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="GEN_FLFLD_ORD_ITM_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_BRKR_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_FLFLD_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
 
     <!-- ServiceJob data for create order from HC to netsuite -->
@@ -418,7 +418,7 @@
     </moqui.service.job.ServiceJob>
 
     <!-- Template Service Job to generate the Fulfilled Order Items Feed from HotWax -->
-    <moqui.service.job.ServiceJob jobName="generate_FulfilledOrderItemsFeed_Netsuite" instanceOfProductId="GEN_FLFLD_ORD_ITM_FD_NS" jobTypeEnumId="GEN_FLFLD_ORD_ITM_FD_NS"
+    <moqui.service.job.ServiceJob jobName="generate_FulfilledOrderItemsFeed_Netsuite" instanceOfProductId="GEN_FLFLD_ORD_FD_NS" jobTypeEnumId="GEN_FLFLD_ORD_FD_NS"
         description="Template Service Job to generate the Fulfilled Order Items Feed from HotWax"
         serviceName="co.hotwax.netsuite.OrderServices.get#FulfilledOrders"
         cronExpression="0 0 0 * * ?" paused="Y">
@@ -435,7 +435,7 @@
     </moqui.service.job.ServiceJob>
 
      <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
-    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" instanceOfProductId="GEN_BRKR_ORD_ITM_FD_NS" jobTypeEnumId="GEN_BRKR_ORD_ITM_FD_NS"
+    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" instanceOfProductId="GEN_BRKR_ORD_FD_NS" jobTypeEnumId="GEN_BRKR_ORD_FD_NS"
             description="Template Service Job to generate the Brokered Order Items Feed from HotWax"
             serviceName="co.hotwax.netsuite.OrderServices.get#BrokeredOrders"
             cronExpression="0 0 0 * * ?" paused="Y">
