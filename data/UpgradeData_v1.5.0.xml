@@ -434,4 +434,115 @@
         receivePath="${contentRoot}/hotwax/BrokeredOrderItemsFeed/${productStoreId}-HotWaxBrokeredOrderItemsFeed-${dateTime}.csv">
             <parameters parameterName="resourcePath" parameterValue="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl" systemMessageRemoteId=""/>
     </moqui.service.message.SystemMessageType>
+
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" instanceOfProductId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"/>
+    <moqui.service.job.ServiceJob jobName="generate_CustomerDepositFeed" description="Generate Customer Deposit Feed for Netsuite" instanceOfProductId="GEN_CUST_DEP_FD" jobTypeEnumId="GEN_CUST_DEP_FD"/>
+    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed" instanceOfProductId="GEN_CRT_CUST_FD" jobTypeEnumId="GEN_CRT_CUST_FD"/>
+    <moqui.service.job.ServiceJob jobName="poll_fulfilledItemsNetsuiteToHotwax" instanceOfProductId="POL_FLFLD_ITM_FRM_NS" jobTypeEnumId="POL_FLFLD_ITM_FRM_NS"/>
+
+    <!-- NetSuite SuiteScripts Job data-->
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportCashSale" description="Import Cash Sale Orders CSV in NetSuite" instanceOfProductId="NS_IMP_CASH_SALE"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CASH_SALE"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCashSale" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedCashSaleCSV" description="Export Cash Sale Orders CSV from NetSuite" instanceOfProductId="NS_EXP_CASH_SALE"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_CASH_SALE"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedCashSaleCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportCustomer" description="Import Customer CSV in NetSuite" instanceOfProductId="NS_IMP_CUSTOMER"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_CUSTOMER"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportCustomer" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedCustomerCSV" description="Export Customer CSV from NetSuite" instanceOfProductId="NS_EXP_CUSTOMER"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_CUSTOMER"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedCustomerCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportInventoryAdjustment" description="Import Inventory Adjustment CSV in NetSuite" instanceOfProductId="NS_IMP_INV_ADJ"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_INV_ADJ"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportInventoryAdjustment" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedInventoryAdjustmentCSV" description="Export Inventory Adjustment CSV from NetSuite" instanceOfProductId="NS_EXP_INV_ADJ"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_INV_ADJ"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedInventoryAdjustmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportInventoryTransfer" description="Import Inventory Transfer CSV in NetSuite" instanceOfProductId="NS_IMP_INV_TRANS"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_INV_TRANS"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportInventoryTransfer" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedInventoryTransferCSV" description="Export Inventory Transfer CSV from NetSuite" instanceOfProductId="NS_EXP_INV_TRANS"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_INV_TRANS"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedInventoryTransferCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_GenerateProductCSV" description="Generate Product CSV from NetSuite" instanceOfProductId="NS_GENERATE_PROD"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_GENERATE_PROD"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_GenerateProductCSV" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_UploadProductCSV" description="Upload Product CSV on SFTP" instanceOfProductId="NS_UPLOAD_PROD"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPLOAD_PROD"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_UploadProductCSV" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_CreateCustomerDepositAndRefund" description="Create Customer Deposit and Customer Refund" instanceOfProductId="NS_CRT_CD_CR"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CRT_CD_CR"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateCustomerDepositAndRefund" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_CreateCustomerDeposit" description="Create Customer Deposit" instanceOfProductId="NS_CREATE_CD"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CREATE_CD"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateCustomerDeposit" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_CreateSalesOrderInvoice" description="Create Sales Order Invoice" instanceOfProductId="NS_CREATE_INVOICE"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CREATE_INVOICE"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateSalesOrderInvoice" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_CreateItemFulfillment" description="Create Sales Order Item Fulfillment" instanceOfProductId="NS_CREATE_IF"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CREATE_IF"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateItemFulfillment" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderItemCSV" description="Export Sales Order Items CSV from NetSuite" instanceOfProductId="NS_EXP_SO_ITEMS"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_SO_ITEMS"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedSalesOrderItemCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderCSV" description="Export Sales Order CSV from NetSuite" instanceOfProductId="NS_EXP_SALES_ORDER"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_SALES_ORDER"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedSalesOrderCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedSalesOrderFulfillmentCSV" description="Export Sales Order Item Fulfillment CSV from NetSuite" instanceOfProductId="NS_EXP_SO_IF"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_SO_IF"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedSalesOrderFulfillmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_importSalesOrders" description="Import Sales Order CSV" instanceOfProductId="NS_IMP_SALES_ORDER"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_SALES_ORDER"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_importSalesOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_UpdateSalesOrders" description="Import Update Sales Order CSV" instanceOfProductId="NS_UPDATE_SO"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPDATE_SO"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_UpdateSalesOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_generateCSV_InventoryItems" description="Generate Inventory CSV from NetSuite" instanceOfProductId="NS_GENERATE_INV"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_GENERATE_INV"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_generateCSV_InventoryItems" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_uploadCSV_InventoryItems" description="Upload Inventory CSV on SFTP" instanceOfProductId="NS_UPLOAD_INV"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPLOAD_INV"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_uploadCSV_InventoryItems" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTOFulfillmentCSV" description="Export Store Transfer Order Item Fulfillment CSV from NetSuite" instanceOfProductId="NS_EXP_STORE_TO_IF"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_STORE_TO_IF"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoreTOFulfillmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTransferOrderCSV" description="Export Store Transfer Order CSV from NetSuite" instanceOfProductId="NS_EXP_STORE_TO"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_STORE_TO"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoreTransferOrderCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedWHTOFulfillmentCSV" description="Export Warehouse Transfer Order Item Fulfillment CSV from NetSuite" instanceOfProductId="NS_EXP_WH_TO_IF"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_WH_TO_IF"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedWHTOFulfillmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOFulfillmentReceipts" description="Import Transfer Order Item Receipt" instanceOfProductId="NS_IMP_TO_IR"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_TO_IR"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOFulfillmentReceipts" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOItemFulfillment" description="Import Transfer Order Item Fulfillment" instanceOfProductId="NS_IMP_TO_IF"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_TO_IF"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOItemFulfillment" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
 </entity-facade-xml>
