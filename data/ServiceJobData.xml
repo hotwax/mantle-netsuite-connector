@@ -38,6 +38,10 @@
     <moqui.basic.Enumeration enumId="POL_FLFLD_ITM_FRM_NS" enumCode="POL_FLFLD_ITM_FRM_NS" description="Poll Fufilled Order Items From NetSuite Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_BRKR_ORD_FD_NS" enumCode="GEN_BRKR_ORD_FD_NS" description="Generate Brokerd Order Items feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_FLFLD_ORD_FD_NS" enumCode="GEN_FLFLD_ORD_FD_NS" description="Generate Fulfilled Order Items feed for NetSuite" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <!-- NetSuite Transfer Order v2 Job Enum Data -->
+    <moqui.basic.Enumeration enumId="NS_EXP_TO_S2S" enumCode="NS_EXP_TO_S2S" description="NetSuite Export Store to Store Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="NS_EXP_TO_S2W" enumCode="NS_EXP_TO_S2W" description="NetSuite Export Store to Warehouse Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="NS_EXP_TO_W2S" enumCode="NS_EXP_TO_W2S" description="NetSuite Export Warehouse to Store Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
     
     <!-- NetSuite Job Product Data -->
     <Product productId="NS_CREATE_CD" productTypeId="SERVICE" internalName="NS_CREATE_CD"
@@ -151,6 +155,17 @@
              productName="Generate Fulfillment Order Items Feed For NetSuite Job" description="Generate Fulfillment Order Items Feed For NetSuite Job"
              primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
 
+    <!-- NetSuite Transfer Order v2 Job Product Data -->
+    <Product productId="NS_EXP_TO_S2S" productTypeId="SERVICE" internalName="NS_EXP_TO_S2S"
+             productName="NetSuite Export Store to Store Transfer Order Job" description="NetSuite Export Store to Store Transfer Order Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_EXP_TO_S2W" productTypeId="SERVICE" internalName="NS_EXP_TO_S2W"
+             productName="NetSuite Export Store to Warehouse Transfer Order Job" description="NetSuite Export Store to Warehouse Transfer Order Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_EXP_TO_W2S" productTypeId="SERVICE" internalName="NS_EXP_TO_W2S"
+             productName="NetSuite Export Warehouse to Store Transfer Order Job" description="NetSuite Export Warehouse to Store Transfer Order Job"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+
 
     <!-- Job Product Category Members -->
 
@@ -225,6 +240,14 @@
     <ProductCategoryMember productId="GEN_BRKR_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_FLFLD_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
+    <!-- NetSuite Transfer Order v2 Job Product Category Members -->
+    <ProductCategoryMember productId="NS_EXP_TO_S2S" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_TO_S2W" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_TO_W2S" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
+    <ProductCategoryMember productId="NS_EXP_TO_S2S" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_TO_S2W" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_EXP_TO_W2S" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"
@@ -448,4 +471,33 @@
         <parameters parameterName="parentFacilityTypeIds"/>
         <parameters parameterName="productStoreIds"/>
     </moqui.service.job.ServiceJob>
+
+    <!-- NetSuite Transfer Order v2 SuiteScripts Job data-->
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoretoStoreTOJson_v2" description="Export Store to Store Transfer Order JSON from NetSuite" instanceOfProductId="NS_EXP_TO_S2S"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_TO_S2S"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoretoStoreTOJson_v2" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoretoWhTOJson_v2" description="Export Store to Warehouse Transfer Order JSON from NetSuite" instanceOfProductId="NS_EXP_TO_S2W"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_TO_S2W"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoretoWhTOJson_v2" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedWhtoStoreTOJson_v2" description="Export Warehouse to Store Transfer Order JSON from NetSuite" instanceOfProductId="NS_EXP_TO_W2S"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_TO_W2S"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedWhtoStoreTOJson_v2" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOItemFulfillment_v2" description="Import Store Transfer Order Item Fulfillment" instanceOfProductId="NS_IMP_TO_IF"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_TO_IF"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOItemFulfillment_v2" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTOFulfillmentJson_v2" description="Export Store Transfer Order Item Fulfillment JSON from NetSuite" instanceOfProductId="NS_EXP_STORE_TO_IF"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_STORE_TO_IF"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoreTOFulfillmentJson_v2" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedWHTOFulfillmentJson_v2" description="Export Warehouse Transfer Order Item Fulfillment JSON from NetSuite" instanceOfProductId="NS_EXP_WH_TO_IF"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_WH_TO_IF"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedWHTOFulfillmentJson_v2" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOFulfillmentReceipts_v2" description="Import Transfer Order Item Receipt" instanceOfProductId="NS_IMP_TO_IR"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_TO_IR"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOFulfillmentReceipts_v2" parameterName="scriptType" parameterValue="SCHEDULED"/>
 </entity-facade-xml>
