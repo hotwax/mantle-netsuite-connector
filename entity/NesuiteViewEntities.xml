@@ -6,7 +6,7 @@
 
         Criteria for fetching eligible records:
         1. The order must be of type `SALES_ORDER`
-        2. The order should not already sync with Netsuite
+        2. The order should not already synced with Netsuite
         3. The customer should be synced with Netsuite
         4. A date filter can be applied in `OrderIdentification` to fetch the eligible identification.
     -->
@@ -31,13 +31,13 @@
                 <econdition entity-alias="PID" field-name="partyIdentificationTypeId" value="NETSUITE_CUSTOMER_ID"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="OIASG" entity-name="co.hotwax.order.OrderItemAndShipGroup" sub-select="non-lateral" join-optional="true" join-from-alias="OH">
+        <member-entity entity-alias="OIASG" entity-name="co.hotwax.order.OrderItemAndShipGroup" sub-select="true" join-optional="true" join-from-alias="OH">
             <key-map field-name="orderId"/>
             <entity-condition>
                 <econdition entity-alias="OIASG" field-name="shipmentMethodTypeId" operator="not-equals" value="POS_COMPLETED"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrdersForNetsuite" sub-select="non-lateral" join-from-alias="OH" join-optional="true">
+        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrdersForNetsuite" sub-select="true" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
         </member-entity>
         <member-entity entity-alias="SCENM" entity-name="moqui.basic.Enumeration" join-from-alias="OH" join-optional="true">
