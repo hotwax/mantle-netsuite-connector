@@ -184,4 +184,155 @@
         <alias name="areaCode" field="areaCode" function="max" entity-alias="TELECOM"/>
         <alias name="contactNumber" field="contactNumber" function="max" entity-alias="TELECOM"/>
     </view-entity>
+    <!-- This view is used for fetching the Fulfilled Order Item details.-->
+    <view-entity entity-name="FulfilledOrderItemsSyncQueue" package="co.hotwax.netsuite.warehouse">
+        <description>View to get details for the Order Item.</description>
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="OIA" entity-name="org.apache.ofbiz.order.order.OrderItemAttribute" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <entity-condition>
+                <econdition entity-alias="OIA" field-name="attrName" value="NetsuiteItemLineId"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OA" entity-name="org.apache.ofbiz.order.order.OrderAttribute" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="OA" field-name="attrName" value="NETSUITE_ORDER_EXPORTED"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="shipGroupSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="OFH" entity-name="co.hotwax.integration.order.OrderFulfillmentHistory" join-from-alias="OI" join-optional="true">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="OS" entity-name="org.apache.ofbiz.order.order.OrderStatus" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <key-map field-name="statusId"/>
+        </member-entity>
+        <member-entity entity-alias="F" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG">
+            <key-map field-name="facilityId"/>
+        </member-entity>
+        <member-entity entity-alias="FT" entity-name="org.apache.ofbiz.product.facility.FacilityType" join-from-alias="F">
+            <key-map field-name="facilityTypeId"/>
+        </member-entity>
+        <member-entity entity-alias="FGM" entity-name="org.apache.ofbiz.product.facility.FacilityGroupMember" join-from-alias="F" join-optional="true">
+            <key-map field-name="facilityId"/>
+            <entity-condition>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI" join-optional="true">
+            <key-map field-name="productId"/>
+        </member-entity>
+        <member-entity entity-alias="PT" entity-name="org.apache.ofbiz.product.product.ProductType" join-from-alias="P" join-optional="true">
+            <key-map field-name="productTypeId"/>
+        </member-entity>
+        <member-entity entity-alias="SCENM" entity-name="moqui.basic.Enumeration" join-from-alias="OH" join-optional="true">
+            <key-map field-name="salesChannelEnumId" related="enumId"/>
+        </member-entity>
+        <alias entity-alias="OH" name="productStoreId"/>
+        <alias entity-alias="OIA" field="attrValue" name="netsuiteItemLineId"/>
+        <alias entity-alias="OH" name="orderId"/>
+        <alias entity-alias="OH" name="orderDate"/>
+        <alias entity-alias="OH" name="orderTypeId"/>
+        <alias entity-alias="OH" field="statusId" name="orderStatusId"/>
+        <alias entity-alias="OH" name="entryDate"/>
+        <alias entity-alias="OI" name="orderItemSeqId"/>
+        <alias entity-alias="OI" field="statusId" name="itemStatusId"/>
+        <alias entity-alias="OI"  name="quantity"/>
+        <alias entity-alias="OI" field="externalId" name="orderItemExternalId"/>
+        <alias entity-alias="OISG" name="shipGroupSeqId"/>
+        <alias entity-alias="OISG" name="maySplit"/>
+        <alias entity-alias="OISG" field="shipmentMethodTypeId" name="slaShipmentMethodTypeId"/>
+        <alias entity-alias="OISG" field="contactMechId" name="postalContactMechId"/>
+        <alias entity-alias="F" name="facilityId"/>
+        <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
+        <alias entity-alias="FGM" name="facilityGroupId"/>
+        <alias entity-alias="OS" name="statusDatetime" function="max"/>
+        <alias entity-alias="P" name="productId"/>
+        <alias entity-alias="PT" name="productTypeId"/>
+        <alias entity-alias="PT" name="isPhysical"/>
+        <alias entity-alias="PT" name="isDigital"/>
+        <entity-condition>
+            <econditions combine="and">
+                <econdition entity-alias="OFH" field-name="orderId" operator="equals" value=""/>
+                <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="OMS_FULFILLMENT"/>
+                <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
+                <econdition entity-alias="OA" field-name="attrValue" operator="not-equals" value=""/>
+                <econdition entity-alias="OISG" field-name="shipmentMethodTypeId" operator="not-equals" value="POS_COMPLETED"/>
+            </econditions>
+            <order-by field-name="entryDate"/>
+        </entity-condition>
+    </view-entity>
+
+    <!-- View created for brokered order feed -->
+    <view-entity entity-name="BrokeredOrderItemsFeed" package="co.hotwax.netsuite.warehouse">
+        <description> View to get details for the brokered orders Items.</description>
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="OIA" entity-name="org.apache.ofbiz.order.order.OrderItemAttribute" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <entity-condition>
+                <econdition entity-alias="OIA" field-name="attrName" value="NetsuiteItemLineId"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="shipGroupSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="EFO" entity-name="co.hotwax.integration.order.ExternalFulfillmentOrderItem" join-from-alias="OI" join-optional="true">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <key-map field-name="shipGroupSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="F" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG">
+            <key-map field-name="facilityId"/>
+        </member-entity>
+        <member-entity entity-alias="FT"  entity-name="org.apache.ofbiz.product.facility.FacilityType" join-from-alias="F">
+            <key-map field-name="facilityTypeId"/>
+        </member-entity>
+        <member-entity entity-alias="FGM" entity-name="org.apache.ofbiz.product.facility.FacilityGroupMember" join-from-alias="F" join-optional="true">
+            <key-map field-name="facilityId"/>
+            <entity-condition>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <alias entity-alias="OH" name="productStoreId"/>
+        <alias entity-alias="OIA" field="attrValue" name="netsuiteItemLineId"/>
+        <alias entity-alias="OH" field="orderId" name="orderId"/>
+        <alias entity-alias="OI" field="orderItemSeqId" name="orderItemSeqId"/>
+        <alias entity-alias="OI" field="quantity" name="orderItemQuantity"/>
+        <alias entity-alias="OI" field="productId" name="productId"/>
+        <alias entity-alias="OI" field="statusId" name="itemStatusId"/>
+        <alias entity-alias="OISG" name="shipmentMethodTypeId"/>
+        <alias entity-alias="OISG" field="shipGroupSeqId" name="shipGroupSeqId"/>
+        <alias entity-alias="OH" name="entryDate"/>
+        <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
+        <alias entity-alias="FGM" field="facilityGroupId" name="facilityGroupId"/>
+        <alias entity-alias="OISG" field="contactMechId" name="postalContactMechId"/>
+        <alias entity-alias="EFO" name="externalFulfillmentOrderItemId"/>
+        <entity-condition>
+            <econditions combine="and">
+                <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
+                <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
+                <econdition entity-alias="FT" field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
+                <econditions combine="or">
+                    <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value="REJECT"/>
+                    <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value=""/>
+                </econditions>
+            </econditions>
+            <order-by field-name="entryDate"/>
+        </entity-condition>
+    </view-entity>
 </entities>
