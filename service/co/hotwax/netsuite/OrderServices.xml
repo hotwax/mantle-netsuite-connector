@@ -61,7 +61,7 @@
                 }
 
                 netsuiteOrders_find.selectField("orderId,netsuiteCustomerId,salesChannelEnumId,orderDate")
-                netsuiteOrders_find.distinct(true)
+                // netsuiteOrders_find.distinct(true)
 
                 //If no eligible orders, then don't generate the file
                 long netsuiteOrdersCount = netsuiteOrders_find.count()

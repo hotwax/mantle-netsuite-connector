@@ -1,5 +1,5 @@
 <@compress>
-    orderId,HCOrderId,orderDate,customer,salesChannel,addressee,address1,address2,city,state,zip,country,billingAddress1,billingAddress2,billingCity,billingState,billingZip,billingCountry,billingAddressee,phone,billingPhone,billingEmail,email,shippingCost,orderLineId,item,closed,shipmentMethod,itemLocation,location,orderType,department,subsidiary,priceLevel,quantity,orderNote,price,externalId,shopifyOrderNumber,HCShopifySalesOrderId,shippingTaxCode,taxCode,HCGiftCardPayment,HCOrderTotal
+    orderId,HCOrderId,orderDate,customer,salesChannel,addressee,address1,address2,city,state,zip,country,billingAddress1,billingAddress2,billingCity,billingState,billingZip,billingCountry,billingAddressee,phone,billingPhone,billingEmail,email,shippingCost,orderLineId,item,closed,shipmentMethod,itemLocation,location,orderType,department,subsidiary,priceLevel,quantity,orderNote,price,externalId,shopifyOrderNumber,HCShopifySalesOrderId,shippingTaxCode,taxCode,HCOrderTotal
     <#list ordersItr as netsuiteOrder>
         <#assign orderMaster = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader").condition("orderId", netsuiteOrder.orderId).oneMaster("default")!>
 
@@ -77,21 +77,31 @@
         </#if>
 
         <#-- Add this after orderMaster is assigned to get order identifications -->
-        <#if orderMaster.orderIdentifications?has_content>
-            <#list orderMaster.orderIdentifications as orderId>
+        <#if orderMaster.identifications?has_content>
+            <#list orderMaster.identifications as orderId>
                 <#if orderId.orderIdentificationTypeId == "SHOPIFY_ORD_ID">
                     <#assign HCShopifySalesOrderId = orderId.idValue!"">
-                <#elseif orderId.orderIdentificationTypeId == "SHOPIFY_ORDER_NUMBER">
-                    <#assign shopifyOrderNumber = orderId.idValue!"">
-                <#elseif orderId.orderIdentificationTypeId == "SHOPIFY_ORD_ID">
                     <#assign externalId = orderId.idValue!"">
+                <#elseif orderId.orderIdentificationTypeId == "SHOPIFY_ORD_NO">
+                    <#assign shopifyOrderNumber = orderId.idValue!"">
                 </#if>
             </#list>
         </#if>
 
+        <#-- Get price level from order or customer -->
+        <#assign priceLevel = "custom">
+
         <#-- CSV Data -->
         <#list orderMaster.shipGroups as shipGroup>
             <#if shipGroup?has_content>
+                <#assign shippingMethodMapping =  ec.entity.find("co.hotwax.integration.IntegrationTypeMapping")
+                    .condition("integrationTypeId","NETSUITE_SHP_MTHD")
+                    .condition("mappingKey",shipGroup.shipmentMethodTypeId)
+                    .list()!>
+
+                <#-- Get department from facility -->
+                <#assign department = "">
+
                 <#if shipGroup.items?has_content>
                     <#list shipGroup.items as item>
                         <#assign orderDate = ec.l10n.format(orderMaster.orderDate, 'MM/dd/yyyy')>
@@ -101,7 +111,10 @@
                             .orderBy("-fromDate")
                             .list()
                             .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)>
-                        <#assign netsuiteProductId = goodIdentificationList[0].idValue!>
+                        <#assign netsuiteProductId = "">
+                        <#if goodIdentificationList?has_content>
+                            <#assign netsuiteProductId = goodIdentificationList[0].idValue!>
+                        </#if>
                         <#assign isClosed = (item.statusId?upper_case == 'ITEM_CANCELLED')?string('true', 'false')>
 
                         <#-- Get location information -->
@@ -114,8 +127,7 @@
                                 <#assign location = facilityType.externalId!>
                             </#if>
                         </#if>
-
-                        "${orderMaster.orderName!}","${orderMaster.orderId!}","${orderDate!}","${netsuiteOrder.netsuiteCustomerId!}","${netsuiteOrder.orderSalesChannelDescription!}","${shippingContactMech.postalAddress.toName!}","${shippingContactMech.postalAddress.address1!}","${shippingContactMech.postalAddress.address2!}","${shippingContactMech.postalAddress.city!}","${shippingContactMech.postalAddress.stateProvinceGeoId!}","${shippingContactMech.postalAddress.postalCode!}","${shippingContactMech.postalAddress.countryGeoId!}","${billingContactMech.postalAddress.address1!}","${billingContactMech.postalAddress.address2!}","${billingContactMech.postalAddress.city!}","${billingContactMech.postalAddress.stateProvinceGeoId!}","${billingContactMech.postalAddress.postalCode!}","${billingContactMech.postalAddress.countryGeoId!}","${billingContactMech.postalAddress.toName!}","${shippingPhoneNo!}","${billingPhoneNo!}","${billingEmail!}","${shippingEmail!}",${shippingCost},"${item.orderItemSeqId!}","${netsuiteProductId!}","${isClosed}","${shipGroup.shipmentMethodTypeId!}","${location}"<#sep>
+                        "${orderMaster.orderName!}","${orderMaster.orderId!}","${orderDate!}","${netsuiteOrder.netsuiteCustomerId!}","${netsuiteOrder.orderSalesChannelDescription!}","${shippingContactMech.postalAddress.toName!}","${shippingContactMech.postalAddress.address1!}","${shippingContactMech.postalAddress.address2!}","${shippingContactMech.postalAddress.city!}","${shippingContactMech.postalAddress.stateProvinceGeoId!}","${shippingContactMech.postalAddress.postalCode!}","${shippingContactMech.postalAddress.countryGeoId!}","${billingContactMech.postalAddress.address1!}","${billingContactMech.postalAddress.address2!}","${billingContactMech.postalAddress.city!}","${billingContactMech.postalAddress.stateProvinceGeoId!}","${billingContactMech.postalAddress.postalCode!}","${billingContactMech.postalAddress.countryGeoId!}","${billingContactMech.postalAddress.toName!}","${shippingPhoneNo!}","${billingPhoneNo!}","${billingEmail!}","${shippingEmail!}",${shippingCost},"${item.orderItemSeqId!}","${netsuiteProductId!}","${isClosed}","${shippingMethodMapping.mappingValue!}","${location}","","${netsuiteOrder.orderSalesChannelCode!}","${department}","${netsuiteOrder.productStoreExternalId!}","${priceLevel}",${item.quantity!1},"",${item.unitPrice!0},"${externalId}","${shopifyOrderNumber}","${HCShopifySalesOrderId}","${shippingTaxCode}","${taxCode}","${orderMaster.grandTotal!0}"
                     </#list>
                 </#if>
             </#if>

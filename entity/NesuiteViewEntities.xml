@@ -43,6 +43,9 @@
         <member-entity entity-alias="SCENM" entity-name="moqui.basic.Enumeration" join-from-alias="OH" join-optional="true">
             <key-map field-name="salesChannelEnumId" related="enumId"/>
         </member-entity>
+        <member-entity entity-alias="PS" entity-name="org.apache.ofbiz.product.store.ProductStore" join-from-alias="OH">
+            <key-map field-name="productStoreId"/>
+        </member-entity>
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
             <econdition entity-alias="OID" field-name="orderId" operator="equals" value=""/>
@@ -52,8 +55,9 @@
         <alias name="netsuiteCustomerId" entity-alias="PID" field="idValue"/>
         <alias entity-alias="SCENM" field="enumCode" name="orderSalesChannelCode"/>
         <alias entity-alias="SCENM" field="description" name="orderSalesChannelDescription"/>
-        <alias-all entity-alias="OH"/>
+        <alias entity-alias="PS" field="externalId" name="productStoreExternalId"/>
         <alias entity-alias="OIASG" field="orderItemSeqId" name="nonPosCompletedItemsCount" function="count"/>
+        <alias-all entity-alias="OH"/>
     </view-entity>
     <view-entity entity-name="InvalidOrdersForNetsuite" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
