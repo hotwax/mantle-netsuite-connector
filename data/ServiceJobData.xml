@@ -376,26 +376,6 @@
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0 0 * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPLOAD_INV"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_uploadCSV_InventoryItems" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTOFulfillmentCSV" description="Export Store Transfer Order Item Fulfillment CSV from NetSuite" instanceOfProductId="NS_EXP_STORE_TO_IF"
-                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_STORE_TO_IF"/>
-    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoreTOFulfillmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
-
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedStoreTransferOrderCSV" description="Export Store Transfer Order CSV from NetSuite" instanceOfProductId="NS_EXP_STORE_TO"
-                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_STORE_TO"/>
-    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedStoreTransferOrderCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
-
-    <moqui.service.job.ServiceJob jobName="HC_MR_ExportedWHTOFulfillmentCSV" description="Export Warehouse Transfer Order Item Fulfillment CSV from NetSuite" instanceOfProductId="NS_EXP_WH_TO_IF"
-                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_EXP_WH_TO_IF"/>
-    <moqui.service.job.ServiceJobParameter jobName="HC_MR_ExportedWHTOFulfillmentCSV" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
-
-    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOFulfillmentReceipts" description="Import Transfer Order Item Receipt" instanceOfProductId="NS_IMP_TO_IR"
-                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_TO_IR"/>
-    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOFulfillmentReceipts" parameterName="scriptType" parameterValue="SCHEDULED"/>
-
-    <moqui.service.job.ServiceJob jobName="HC_SC_ImportTOItemFulfillment" description="Import Transfer Order Item Fulfillment" instanceOfProductId="NS_IMP_TO_IF"
-                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_IMP_TO_IF"/>
-    <moqui.service.job.ServiceJobParameter jobName="HC_SC_ImportTOItemFulfillment" parameterName="scriptType" parameterValue="SCHEDULED"/>
-
     <!-- Service Job to poll Transfer Orders Feed file from NetSuite -->
     <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_TransferOrder" description="Poll Transfer Orders Feed from SFTP location" instanceOfProductId="POL_TRANSORD_FD"
                                   serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" jobTypeEnumId="POL_TRANSORD_FD">
