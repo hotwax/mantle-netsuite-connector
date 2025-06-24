@@ -32,6 +32,12 @@
             </parameter>
         </in-parameters>
         <actions>
+            <script>
+                import java.nio.file.Files
+                import java.nio.file.Paths
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+            </script>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
             <log message="Generating Order Feed file for Order ${orderId} at time ${nowTimestamp}"/>
 
@@ -40,12 +46,33 @@
                 <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
             </if>
 
-            <script>
-                import java.nio.file.Files
-                import java.nio.file.Paths
-                import java.nio.charset.StandardCharsets
-                import org.moqui.entity.EntityCondition
 
+            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
+                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                <field-map field-name="parameterName" value="resourcePath"/>
+            </entity-find-one>
+
+            <if condition="groovyFileResource &amp;&amp; groovyFileResource.parameterValue">
+                <set field="templateLocation" from="groovyFileResource.parameterValue"/>
+                <else><set field="templateLocation" value="component://mantle-netsuite-connector/template/GenerateCreateOrderCsv.ftl"/></else>
+            </if>
+
+            <log message="time before calling the Template: ${ec.user.nowTimestamp}"/>
+
+            <set field="count" value="0" type="Integer"/>
+            <while condition="count &lt; 20">
+                <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+                <!-- Prepare csv File Path -->
+                <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                 productStoreId:productStoreId], false)"/>
+                <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+
+                <set field="csvFile" from="new File(csvFilePath)"/>
+                <set field="isFileEmpty" value="true" type="Boolean"/>
+                <set field="csvHeaders" from="null" type="String"/>
+
+                <script>
                 netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
                 if(fromOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
@@ -61,7 +88,7 @@
                 }
 
                 netsuiteOrders_find.selectField("orderId,netsuiteCustomerId,salesChannelEnumId,orderDate")
-                // netsuiteOrders_find.distinct(true)
+                netsuiteOrders_find.distinct(true)
 
                 //If no eligible orders, then don't generate the file
                 long netsuiteOrdersCount = netsuiteOrders_find.count()
@@ -72,38 +99,6 @@
                 try(ordersItr = netsuiteOrders_find.iterator()){
                     context.ordersItr = ordersItr
             </script>
-
-            <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
-                <field-map field-name="enumId" from="systemMessageTypeId"/>
-            </entity-find-one>
-
-            <if condition="enumValue &amp;&amp; enumValue.relatedEnumId">
-                <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
-                    <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
-                </entity-find-one>
-                <if condition="!relatedSystemMessageType"><log level="warn" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing requiredFieldsMissing system message."/></if>
-                <else><log level="warn" message="Related SystemMessageType to produce for ${systemMessage.systemMessageTypeId} not defined, not producing requiredFieldsMissing system message."/></else>
-            </if>
-
-            <!-- Prepare csv File Path -->
-            <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
-                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS'),
-                 productStoreId:productStoreId], false)"/>
-            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
-
-            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
-                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
-                <field-map field-name="parameterName" value="resourcePath"/>
-            </entity-find-one>
-
-            <if condition="groovyFileResource &amp;&amp; groovyFileResource.parameterValue">
-                <set field="templateLocation" from="groovyFileResource.parameterValue"/>
-                <else><set field="templateLocation" value="component://mantle-netsuite-connector/template/GenerateCreateOrderCsv.ftl"/></else>
-            </if>
-
-            <set field="csvFile" from="new File(csvFilePath)"/>
-            <set field="isFileEmpty" value="true" type="Boolean"/>
-            <set field="csvHeaders" from="null" type="String"/>
             <script>
                     if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
                     try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8)){
@@ -115,12 +110,15 @@
                         ec.message.addMessage("Error generating Order Items Feed file with type ${systemMessageTypeId} and remote ${systemMessageRemoteId}: ${e.getMessage()}")
                     }
             </script>
-            <if condition="!isFileEmpty">
-                <!-- Save the Json Feed File path in System Message messageText -->
-                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                    in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                    messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
-            </if>
+            <set field="count" from="count + 1" type="Integer"/>
+                <log message="count is ${count}, file name is ${csvFilePath}"/>
+            </while>
+            <log message="time after calling the Template: ${ec.user.nowTimestamp}"/>
+            <!-- Save the Json Feed File path in System Message messageText -->
+            <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
+
             <return message="Generating Order Items Feed file with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut?.systemMessageId}"/>
         </actions>
