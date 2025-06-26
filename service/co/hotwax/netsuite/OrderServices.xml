@@ -28,47 +28,28 @@
                     like: POS_COMPLETED,STORE_PICKUP
                 </description>
             </parameter>
-            <parameter name="isMixCartOrder">
+            <parameter name="includeSalesChannel" type="List">
+                <description>Parameter to fetch Order details for specific sales channel or a list of sales channel.</description>
+            </parameter>
+            <parameter name="excludeSalesChannel" type="List">
+                <description>Parameter to exclude the Orders from the specific sales channel or a list of sales channel.</description>
+            </parameter>
+            <parameter name="isCashOrderFeed">
                 <description>
-                    Parameter to include or exclude the orders which have multiple shipping methods.
-                    Example: Y to include the order with multiple shipping methods.
-                    N to not include the order with multiple shipping methods.
+                    Parameter to determine if the feed is for cash orders or not.
+                    Need to configure this as the same service is used for both sales orders and cash sales orders.
+                    if set to 'Y' then the feed is for cash orders and if set to 'N' then the feed is for sales orders.
                 </description>
             </parameter>
         </in-parameters>
         <actions>
-            <set field="nowDate" from="ec.user.nowTimestamp"/>
-            <log message="Generating Order Feed file for Order ${orderId} at time ${nowDate}"/>
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <log message="Generating Order Feed file for Order ${orderId} at time ${nowTimestamp}"/>
 
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null">
                 <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
             </if>
-
-            <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
-                <field-map field-name="enumId" from="systemMessageTypeId"/>
-            </entity-find-one>
-
-            <if condition="enumValue &amp;&amp; enumValue.relatedEnumId">
-                <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
-                    <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
-                </entity-find-one>
-                <if condition="!relatedSystemMessageType"><log level="warn" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing requiredFieldsMissing system message."/></if>
-                <else><log level="warn" message="Related SystemMessageType to produce for ${systemMessage.systemMessageTypeId} not defined, not producing requiredFieldsMissing system message."/></else>
-            </if>
-
-            <!-- Prepare csv File Path -->
-            <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
-                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
-                 productStoreId:productStoreId], false)"/>
-            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
-
-            <!-- Prepare csv File Path -->
-            <set field="invalidFilePathRef" from="ec.resource.expand(relatedSystemMessageType.receivePath, null,
-                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
-                 productStoreId:productStoreId], false)"/>
-            <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
-
             <script>
                 import org.apache.commons.csv.CSVFormat
                 import org.apache.commons.csv.CSVPrinter
@@ -77,420 +58,160 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
                 import co.hotwax.common.SchemaValidation
+                import co.hotwax.netsuite.NetSuiteMappingWorker
 
-                File csvFile = new File(csvFilePath)
-                File invalidFile = new File(invalidFilePath)
-                if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
-                if (!invalidFile.parentFile.exists()) invalidFile.parentFile.mkdirs()
-                def isReqFieldMissFileEmpty = true
-                def isFileEmpty = true
-                def csvHeaders = null
-
-                netsuiteOrders_find = ec.entity.find("co.hotwax.order.EligibleOrdersForNetSuiteView")
+                netsuiteOrders_find = ec.entity.find("co.hotwax.netsuite.order.EligibleOrdersForNetSuiteView")
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
                 if(fromOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
                 if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
                 if(includeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
                 if(excludeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
-                if(isMixCartOrder) netsuiteOrders_find.condition("isMixCartOrder", EntityCondition.ComparisonOperator.EQUALS, isMixCartOrder)
+                if(includeSalesChannel) netsuiteOrders_find.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.IN, includeSalesChannel)
+                if(excludeSalesChannel) netsuiteOrders_find.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.NOT_IN, excludeSalesChannel)
 
-                netsuiteOrders_find.selectField("orderId,partyId,isMixCartOrder")
+                // Add conditions based on isCashOrderFeed parameter
+                if (isCashOrderFeed == "Y") {
+                    netsuiteOrders_find.condition("nonPosCompletedItemsCount", EntityCondition.ComparisonOperator.EQUALS, 0)
+                } else if (isCashOrderFeed == "N") {
+                    netsuiteOrders_find.condition("nonPosCompletedItemsCount", EntityCondition.ComparisonOperator.GREATER_THAN, 0)
+                }
+
+                netsuiteOrders_find.selectField("orderId,partyId,netsuiteCustomerId,orderDate")
                 netsuiteOrders_find.distinct(true)
 
                 //If no eligible orders, then don't generate the file
                 long netsuiteOrdersCount = netsuiteOrders_find.count()
                 if (netsuiteOrdersCount == 0) {
-                    ec.message.addMessage("No eligible orders at ${nowDate}, not generating the HotWax Feed file for Netsuite.")
+                    ec.message.addMessage("No eligible orders at ${nowTimestamp}, not generating the HotWax Feed file for Netsuite.")
                     return
                 }
+            </script>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
+                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                <field-map field-name="parameterName" value="resourcePath"/>
+            </entity-find-one>
+            <!-- Check if the Groovy file resource is available. -->
+            <if condition="groovyFileResource &amp;&amp; groovyFileResource.parameterValue">
+                <set field="scriptPath" from="groovyFileResource.parameterValue"/>
+            </if>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="schemaPath">
+                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                <field-map field-name="parameterName" value="schemaPath"/>
+            </entity-find-one>
+            <if condition="schemaPath">
+                <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
+                <else><set field="schemaLocation" value="component://mantle-netsuite-connector/schemas/DefaultOrderSchema.json"/></else>
+            </if>
 
+            <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
+                <field-map field-name="enumId" from="systemMessageTypeId"/>
+            </entity-find-one>
+
+            <if condition="enumValue &amp;&amp; enumValue.relatedEnumId">
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
+                <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
+            </entity-find-one>
+
+            <if condition="!relatedSystemMessageType"><log level="warn" message="Could not find SystemMessageType with ID ${enumValue.relatedEnumId}, not producing requiredFieldsMissing system message."/></if>
+            <else><log level="warn" message="Related SystemMessageType to produce for ${systemMessage.systemMessageTypeId} not defined, not producing requiredFieldsMissing system message."/></else>
+            </if>
+
+            <!-- Prepare csv File Path -->
+            <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+            [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+             productStoreId:productStoreId], false)"/>
+            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+
+            <!-- Prepare csv File Path -->
+            <set field="invalidFilePathRef" from="ec.resource.expand(relatedSystemMessageType.receivePath, null,
+            [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+             productStoreId:productStoreId], false)"/>
+            <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
+
+            <script>
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
                 try (ordersItr = netsuiteOrders_find.iterator()) {
-                    try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
-                        def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8);
-                        def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
-                        def invalidCsvPrinter = new CSVPrinter(invalidWriter, CSVFormat.DEFAULT)) {
             </script>
 
             <iterate list="ordersItr" entry="order">
-                <service-call name="co.hotwax.netsuite.OrderServices.prepare#OrdersFeedDataForNetSuite" in-map="[orderId:order.orderId]"
-                    out-map="context"/>
-                <set field="orderMap" from="context?.orderMap"/>
-                <if condition="orderMap">
-                    <service-call name="co.hotwax.netsuite.OrderServices.add#BusinessLogicInFeedData" in-map="[orderMap:orderMap,isMixCartOrder:order.isMixCartOrder]"
-                        out-map="orderMapOut"/>
-                    <!-- Find the System Message Type Parameter based on the systemMessageTypeId and parameterName.
-                    This will retrieve the Groovy script resource path if configured.
-                    -->
-                    <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
-                        <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
-                        <field-map field-name="parameterName" value="resourcePath"/>
-                    </entity-find-one>
-                    <!-- Check if the Groovy file resource is available. -->
-                    <if condition="groovyFileResource &amp;&amp; groovyFileResource.parameterValue">
-                        <!-- Set the scriptPath using the retrieved parameterValue from the entity find operation. -->
-                        <set field="scriptPath" from="groovyFileResource.parameterValue"/>
-                        <!-- Execute the Groovy script located at the scriptPath and store the result in the context. -->
-                        <set field="result" from="ec.resource.script(scriptPath, null)"/>
-                        <else>
-                            <!-- If no Groovy file resource is found, fallback to using the default orderMapDetail. -->
-                            <set field="result" from="orderMapOut.orderMapDetail"/>
-                        </else>
+                <set field="orderDetailMap" from="[:]"/>
+                <entity-find-one entity-name="co.hotwax.netsuite.order.OrderDetailsForNetSuiteView" value-field="orderDetails">
+                    <field-map field-name="orderId" from="order.orderId"/>
+                </entity-find-one>
+
+                <set field="orderDetailMap.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
+                <set field="orderDetailMap.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
+
+                <set field="orderDetailMap.billingPhone" from="((orderDetails.billingCountryCode?:'') || (orderDetails.billingAreaCode?:'') || (orderDetails.billingContactNumber?:'')) ? ((orderDetails.billingCountryCode ?:'') + ' ' + (orderDetails.billingAreaCode ?:'') + ' ' + (orderDetails.billingContactNumber ?:'')) : ''" />
+                <set field="orderDetailMap.phone" from="((orderDetails.shippingCountryCode?:'') || (orderDetails.shippingAreaCode?:'') || (orderDetails.shippingContactNumber?:'')) ? ((orderDetails.shippingCountryCode ?:'') + ' ' + (orderDetails.shippingAreaCode ?:'') + ' ' + (orderDetails.shippingContactNumber ?:'')) : ''" />
+
+                <if condition="(!orderDetails.billingContactMechId &amp;&amp; orderDetails.shippingContactMechId)">
+                    <set field="orderDetailMap" from="orderDetailMap + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip]"/>
+                    <else><set field="orderDetailMap" from="orderDetailMap + [billingAddress1:orderDetails.billingAddress1, billingAddress2:orderDetails.billingAddress2, billingCity:orderDetails.billingCity, billingState:orderDetails.billingState, billingCountry:orderDetails.billingCountry, billingZip:orderDetails.billingZip]"/></else>
+                </if>
+
+                <entity-find entity-name="co.hotwax.netsuite.order.NonRefundedGiftCardPaymentTotal" list="giftCardPaymentTotalList">
+                    <econdition field-name="orderId" from="orderDetails.orderId"/>
+                    <econdition field-name="paymentMethodTypeId" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
+                </entity-find>
+                <set field="orderDetailMap.giftCardPaymentTotal" from="giftCardPaymentTotalList[0]?.giftCardPaymentTotal ?: BigDecimal.ZERO"/>
+
+                <!-- Calculate total discount amount and get discount codes -->
+                <entity-find entity-name="co.hotwax.order.OrderItemAdjustmentAndAttribute" list="orderDiscounts">
+                    <econdition field-name="orderId" from="orderDetails.orderId"/>
+                    <econdition field-name="orderAdjustmentTypeId" value="EXT_PROMO_ADJUSTMENT"/>
+                    <econdition field-name="attrName" value="discount_code"/>
+                </entity-find>
+                <set field="totalDiscount" type="BigDecimal" default-value="0"/>
+                <set field="discountCodes" from="''"/>
+
+                <if condition="orderDiscounts">
+                    <set field="totalDiscount" from="orderDiscounts.collect{ it.amount ?: 0 }.sum()" type="BigDecimal"/>
+                    <set field="discountCodes" from="orderDiscounts.collect{ it.attrValue }.findAll{ it }.unique().join(', ')"/>
+                </if>
+
+                <set field="orderDetailMap" from="orderDetailMap + [address1:orderDetails.address1, address2:orderDetails.address2, city:orderDetails.city, state:orderDetails.state, zip:orderDetails.zip, country:orderDetails.country, orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId,
+                    customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription, HCOrderTotal:orderDetails.grandTotal, shopifyOrderNumber:orderDetails.orderName, HCShopifySalesOrderId:orderDetails.orderExternalId,
+                    externalId: orderDetails.orderExternalId, email:orderDetails.email, billingEmail:orderDetails.billingEmail, rate:totalDiscount, discountItem:discountCodes]"/>
+
+                <set field="orderItems" from="[]"/>
+                <entity-find entity-name="co.hotwax.netsuite.order.OrderItemsForNetSuiteView" list="orderItemsList">
+                    <econdition field-name="orderId" operator="equals" from="orderDetails.orderId"/>
+                </entity-find>
+
+                <iterate list="orderItemsList" entry="orderItem">
+                    <set field="orderItemMap" from="[:]"/>
+                    <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
+                    <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
+                    <set field="department" from="NetSuiteMappingWorker.getFacilityIdentifications(ec, orderItem.orderFacilityId, 'ORDR_ORGN_DPT')" type="String"/>
+
+                    <set field="orderItemMap" from="orderItemMap + [item:orderItem.item, price:orderItem.price, quantity:orderItem.quantity, lineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department]"/>
+                    <script>orderItems.add(orderItemMap)</script>
+
+                    <!-- Process Promotions -->
+                    <entity-find entity-name="co.hotwax.order.OrderItemAdjustmentAndAttribute" list="orderAdjustmentList">
+                        <econdition field-name="orderId" from="orderMap.orderId"/>
+                        <econdition field-name="orderItemSeqId" from="orderItem.orderItemSeqId"/>
+                        <econdition field-name="orderAdjustmentTypeId" value="EXT_PROMO_ADJUSTMENT"/>
+                        <econdition field-name="attrName" operator="is-null"/>
+                    </entity-find>
+                    <if condition="orderAdjustmentList &amp;&amp; orderAdjustmentList.size() > 0">
+                        <set field="totalPromotionAmount" from="orderAdjustmentList.collect{ it.amount }.sum()" type="BigDecimal" default-value="0"/>
+                        <set field="discountRow" from="orderItemMap" type="NewMap"/>
+                        <set field="discountRow.price" from="totalPromotionAmount"/>
+                        <set field="discountRow.isDiscountRow" from="'true'"/>
+                        <script>orderItems.add(promoOrderItemDetail)</script>
                     </if>
-                    <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="schemaPath">
-                        <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
-                        <field-map field-name="parameterName" value="schemaPath"/>
-                    </entity-find-one>
-                    <if condition="schemaPath">
-                        <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
-                        <else><set field="schemaLocation" value="component://mantle-netsuite-connector/schemas/DefaultOrderSchema.json"/></else>
-                    </if>
-
-                    <script>
-
-                        def order = context.get("result")
-                        def orderItems = order.remove("orderItems")
-                        def orderId = order.remove("orderName")
-                        def flattenedOrders = []
-
-                        orderItems.each { item ->
-                            item.put("orderId", orderId)
-                            item.remove("orderItemSeqId")
-                            item.remove("isDiscountRow")
-                            item.remove("productId")
-                            item.remove("orderFacilityId")
-                            def flattenedOrder = [:]
-                            flattenedOrder.putAll(order)
-                            item.each { key, value -> flattenedOrder["$key"] = value }
-                            flattenedOrders.add(flattenedOrder)
-                        }
-                        context.flattenedOrders = flattenedOrders
-
-                        // Dynamically determine headers in the first iteration
-                        if (!csvHeaders) {
-                            csvHeaders = flattenedOrders[0].keySet().collect { it as String }
-                            csvPrinter.printRecord(csvHeaders)
-                            invalidCsvPrinter.printRecord(csvHeaders)
-                        }
-
-                        // Check for required fields and separate valid/invalid orders
-                        flattenedOrders.each { record ->
-                            try {
-                                def schemaValidation = new co.hotwax.common.SchemaValidation(ec.ecfi ,ec)
-                                schemaValidation.validateSchema(record, schemaLocation)
-                                def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
-                                csvPrinter.printRecord(orderedRecord)
-                                isFileEmpty = false
-
-                            } catch (Exception e) {
-                                def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
-                                orderedRecord.add(e.message)
-                                invalidCsvPrinter.printRecord(orderedRecord)
-                                isReqFieldMissFileEmpty = false
-                            }
-                        }
-                    </script>
+                </iterate>
+                <if condition="scriptPath">
+                    <set field="orderDetailMap" from="ec.resource.script(scriptPath, null)"/>
                 </if>
             </iterate>
             <script>
                     } catch (Exception e) {
                         ec.message.addError("Error preparing order feed file ${e}")
                     }
-                }
-                // Delete invalid file if empty
-                if (isReqFieldMissFileEmpty) {
-                    invalidFile.delete()
-                }
             </script>
-
-            <if condition="!isFileEmpty">
-                <!-- Save the Json Feed File path in System Message messageText -->
-                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                    in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                    messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
-            </if>
-            <if condition="!isReqFieldMissFileEmpty">
-                <!-- Save the Json Feed File path in System Message messageText -->
-                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                    in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                    messageText:invalidFilePath]" out-map="MissingFieldSysMsgOut"/>
-            </if>
-
-            <return message="Generating Order Items Feed file with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut?.systemMessageId} and missing file response in ${MissingFieldSysMsgOut?.systemMessageId}"/>
-        </actions>
-    </service>
-    <service verb="prepare" noun="OrdersFeedDataForNetSuite">
-        <!--
-        This service prepares the order and order item details for eligible orders that need to be
-        exported to NetSuite. The service fetches order data from the `OrderDetailsForNetSuiteView`
-        and order item data from the `OrderItemsForNetSuiteView`. It then prepares a consolidated
-        map containing both the order-level details and the associated order items. This map is
-        returned as `orderMap` which will be used in further processing.
-
-        - To retrieve and compile order details and corresponding order item details for NetSuite integration.
-        - If no eligible order items are found, the service terminates early, returning an empty order map and logging a message.
-        - If order items exist, they are added to a list and merged with the order details to create a final map (`orderMap`) which contains
-         both the order-level information and associated items.
-        - The service is executed for each order individually.
-
-        -->
-        <in-parameters>
-            <parameter name="orderId">
-                <description>Parameter to fetch Order details for a specific orderId.</description>
-            </parameter>
-        </in-parameters>
-        <out-parameters>
-            <parameter name="orderMap"/>
-        </out-parameters>
-        <actions>
-            <entity-find entity-name="co.hotwax.order.OrderDetailsForNetSuiteView" list="orderLevelDetailList">
-                <econdition field-name="orderId" from="orderId"/>
-            </entity-find>
-            <set field="orderDetails" from="orderLevelDetailList[0]"/>
-            <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
-            <script>orderDetails.date = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(orderDetails.date.toString()))</script>
-
-            <!-- Set orderItemList List to add the order Item Detail map -->
-            <set field="orderItemList" from="[]"/>
-            <entity-find entity-name="co.hotwax.order.OrderItemsForNetSuiteView" list="orderItemsList">
-                <econdition field-name="orderId" operator="equals" from="orderDetails.orderId"/>
-            </entity-find>
-
-            <if condition="!orderItemsList">
-                <set field="orderMap" from="[]"/>
-                <return message="There is no eligible order items for this order" />
-            </if>
-
-            <iterate list="orderItemsList" entry="orderItem">
-                <script>orderItemList.add(orderItem.getMap())</script>
-            </iterate>
-            <!-- Prepare the Order Detail map -->
-            <set field="orderMap" from="orderDetails.getMap() + [orderItems:orderItemList]"/>
-        </actions>
-    </service>
-    <service verb="add" noun="BusinessLogicInFeedData">
-        <in-parameters>
-            <parameter name="orderMap" type="Map"/>
-            <parameter name="isMixCartOrder"/>
-        </in-parameters>
-        <out-parameters>
-            <parameter name="orderMapDetail" type="Map"/>
-        </out-parameters>
-        <actions>
-            <!-- Create a New Map for Processed Data -->
-            <set field="processedOrderMap" from="orderMap" type="NewMap"/>
-            <set field="processedOrderMap.billingPhone" from="((processedOrderMap.billingCountryCode?:'') || (processedOrderMap.billingAreaCode?:'') || (processedOrderMap.billingContactNumber?:'')) ? ((processedOrderMap.remove('billingCountryCode')?:'') + ' ' + (processedOrderMap.remove('billingAreaCode')?:'') + ' ' + (processedOrderMap.remove('billingContactNumber')?:'')) : ''" />
-            <set field="processedOrderMap.phone" from="((processedOrderMap.shippingCountryCode?:'') || (processedOrderMap.shippingAreaCode?:'') || (processedOrderMap.shippingContactNumber?:'')) ? ((processedOrderMap.remove('shippingCountryCode')?:'') + ' ' + (processedOrderMap.remove('shippingAreaCode')?:'') + ' ' + (processedOrderMap.remove('shippingContactNumber')?:'')) : ''" />
-
-            <set field="billingContactMechId" from="processedOrderMap.remove('billingContactMechId')"/>
-            <set field="shippingContactMechId" from="processedOrderMap.remove('shippingContactMechId')"/>
-            <if condition="(!billingContactMechId &amp;&amp; shippingContactMechId)">
-                <set field="processedOrderMap.billingAddress1" from="processedOrderMap.address1"/>
-                <set field="processedOrderMap.billingAddress2" from="processedOrderMap.address2"/>
-                <set field="processedOrderMap.billingCity" from="processedOrderMap.city"/>
-                <set field="processedOrderMap.billingState" from="processedOrderMap.state"/>
-                <set field="processedOrderMap.billingCountry" from="processedOrderMap.country"/>
-                <set field="processedOrderMap.billingPostalCode" from="processedOrderMap.postalCode"/>
-            </if>
-            <!--
-            we need to ensure that **only non-refunded gift card payments** are included
-            in the total gift card payment amount for an order. This is critical to maintain the accuracy of payment
-            tracking and avoid over-reporting the payment total when a gift card transaction has been refunded.
-
-            **Problem When Refunded Gift Card Payments are Not Excluded**:
-            Without filtering out refunded gift card payments, we risk including **invalid or duplicate payment records**
-            in the order’s total gift card payment. For example, a gift card transaction might fail, causing a refund record
-            to be created, but due to multiple records being generated for the same failed transaction, the order’s total
-            could incorrectly reflect the refunded amount. This could lead to discrepancies in payment reporting, affecting
-            both financial reconciliation and downstream systems like NetSuite.
-
-            - **Gift Card Payments**: We identify gift card payments by checking for transactions where the `paymentMethodTypeId` is `EXT_GIFT_CARD`. This ensures we are processing only gift card payments.
-            - **Refunded Gift Cards**: Refunds are identified by the presence of a `parentRefNumber` field on a gift card payment. The `parentRefNumber` links the payment to a previous transaction, indicating that this is a refund of a previously processed gift card payment.
-            - **Non-Refunded Payments**: After identifying refunded payments, we sum up the gift card payments that **do not have a corresponding refund**. This is done by comparing the `manualRefNumber` of each gift card payment against a list of refunded transactions.
-            -->
-
-            <!-- Process Gift Card Payments -->
-            <entity-find entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" list="GiftCardPaymentList">
-                <econdition field-name="paymentMethodTypeId" value="EXT_GIFT_CARD"/>
-                <econdition field-name="orderId" from="orderMap.orderId"/>
-            </entity-find>
-
-            <!-- Initialize total amount for non-refunded gift cards -->
-            <set field="totalNonRefundedGiftCardAmount" type="Integer"/>
-
-            <!-- Logic to sum non-refunded gift card payments -->
-            <set field="refundedSet" from="[]"/>
-            <set field="manualRefSet" from="[]"/>
-            <iterate list="GiftCardPaymentList" entry="giftCardPayment">
-                <if condition="giftCardPayment.parentRefNumber">
-                    <set field="refundedSet" from="refundedSet + [giftCardPayment.parentRefNumber]"/>
-                </if>
-            </iterate>
-
-            <iterate list="GiftCardPaymentList" entry="giftCardPayment">
-                <if condition="(!refundedSet.contains(giftCardPayment.manualRefNumber) &amp;&amp; !manualRefSet.contains(giftCardPayment.manualRefNumber))">
-                    <set field="totalNonRefundedGiftCardAmount" from="totalNonRefundedGiftCardAmount + giftCardPayment.amount"/>
-                    <set field="manualRefSet" from="manualRefSet + [giftCardPayment.manualRefNumber]"/>
-                </if>
-            </iterate>
-            <script><![CDATA[
-                processedOrderMap.put("HCGiftCardPayment", totalNonRefundedGiftCardAmount)
-                processedOrderMap.put("taxCode", "AVATAX") // TODO: Currently setting a hardcoded tax code "AVATAX"
-                processedOrderMap.put("shippingTaxCode", orderMap.salesChannel != "POS Channel" ? "AVATAX" : "")
-            ]]></script>
-            <!--
-            TODO:
-            - Currently, the tax code is hardcoded as "AVATAX". This should be made dynamic based on business requirements.
-              It can be changed in the future to reflect different tax codes as needed.
-            - For Digital Goods, the tax code is sent as "-Not Taxable-" to NetSuite.(in some cases vary based on the )
-              The current hardcoded "AVATAX" may not be suitable for all product types.
-            - We can create the record in integration type mapping based on the product types.
-            - Or we can modify this in custom groovy file.
-            -->
-
-            <!-- Process Order Items -->
-            <set field="orderItemList" from="orderMap.orderItems"/>
-            <script><![CDATA[ List<Map<String, Object>> processedOrderItemList = new ArrayList<>();]]></script>
-            <if condition="'Y'.equals(isMixCartOrder)">
-                <set field="shippingMethods" from="orderItemList*.shipmentMethodTypeId
-                    .findAll { it &amp;&amp; it != 'POS_COMPLETED' &amp;&amp; it != 'STOREPICKUP' }.toSet()"/>
-                <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first() : null"/>
-            </if>
-            <iterate list="orderItemList" entry="orderItem">
-
-                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList" limit="1">
-                    <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
-                    <econdition field-name="productId" from="orderItem.productId"/>
-                    <date-filter/>
-                    <order-by field-name="fromDate"/>
-                </entity-find>
-
-                <set field="orderItem.item" from="goodIdentificationList[0].idValue"/>
-
-                <set field="processedOrderItem" from="orderItem" type="NewMap"/>
-
-                <set field="processedOrderItem.closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(processedOrderItem.remove('itemStatus'))"/>
-                <set field="processedOrderItem.orderLineId" from="processedOrderItem.orderItemSeqId"/>
-                <if condition="isMixCartOrder">
-                    <set field="processedOrderItem.shipmentMethodTypeId" from="selectedShippingMethod"/>
-                </if>
-
-                <!-- Map Shipping Method -->
-                <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="ShippingMethodMappingList">
-                    <econdition field-name="integrationTypeId" value="NETSUITE_SHP_MTHD"/>
-                    <econdition field-name="mappingKey" from="processedOrderItem.remove('shipmentMethodTypeId')"/>
-                </entity-find>
-                <if condition="!ShippingMethodMappingList.isEmpty()">
-                    <script>processedOrderItem.put("shippingMethod", ShippingMethodMappingList[0].mappingValue)</script>
-                    <else>
-
-                        <!--Case: Digital Goods
-                        - Digital goods are imported into OMS with a default shipping method (e.g., "STANDARD").
-                        - If processed using the existing logic, digital goods may incorrectly inherit this shipping method.
-                        TODO:
-                        - For orders consisting solely of digital goods we need to handle this in the custom groovy logic.
-                            - The `shippingMethod` is either hardcoded or set as empty per the client’s custom requirement.
-                        -->
-
-                        <!--Currently setting the shipment method as empty as in case of pos_completed method we does not have itm available
-                        We can handle this in custom groovy if needed.-->
-                        <script>processedOrderItem.put("shippingMethod", "")</script>
-                    </else>
-                </if>
-                <!--
-                - This logic retrieves the department value by mapping the `facilityId` from the order item to the corresponding department identifier (`idValue`).
-                - The mapping is fetched from the `FacilityIdentification` entity with the following conditions:
-                    - `facilityId` matches the `location` field in the `orderItem`.
-                    - `facilityIdenTypeId` is set to "ORDR_ORGN_DPT" (indicating the department associated with the facility).
-
-                Case: POS Orders
-                - The department is specifically mapped for orders originating from the "POS Channel".
-                - If the mapping is successful, the first matched `idValue` is set as the `department` in the processed order item.
-
-                order other than POS:
-                - We does not have the location associated with it.
-                - The logic for setting the `department` may vary based on client-specific requirements.
-                - For non-POS orders (e.g., web orders), the department logic might differ and require custom mapping in groovy.
-
-                Custom Handling:
-                - The `department` field is overwritten in the custom Groovy service for client-specific scenarios.
-                - This is necessary as the location is associated only with POS orders, and for other order types, the logic must adapt to meet the client’s requirements.
-                - For example:
-                    - Certain clients may require a default department for specific order types.
-                    - Others might base the department on additional fields like the product category or sales region.
-                -->
-                <entity-find entity-name="co.hotwax.facility.FacilityIdentification" list="facilityIdentificationList">
-                    <econdition field-name="facilityId" from="orderItem.location"/>
-                    <econdition field-name="facilityIdenTypeId" value="ORDR_ORGN_DPT"/>
-                    <date-filter/>
-                </entity-find>
-
-                <if condition="!facilityIdentificationList.isEmpty() &amp;&amp; 'POS Channel' == orderMap.salesChannel">
-                    <script>processedOrderItem.put("department", facilityIdentificationList[0].idValue)</script>
-                        <!--TODO: currently setting the department as empty for orders other then POS orders
-                         this is handled in custom groovy script. -->
-                </if>
-
-                <!-- Map Price Level -->
-                <entity-find entity-name="co.hotwax.integration.IntegrationTypeMappingAndEnum" list="priceLevelList">
-                    <econdition field-name="integrationTypeId" value="NETSUITE_PRICE_LEVEL"/>
-                    <econdition field-name="mappingKey" value="PRICE_LEVEL"/>
-                </entity-find>
-
-                <if condition="!priceLevelList.isEmpty()">
-                    <script>processedOrderItem.put("priceLevel",priceLevelList[0].mappingValue)</script>
-                    <else>
-                        <!--TODO: currently setting the price level as custom if mapping is not available -->
-                        <script><![CDATA[
-                            processedOrderItem.put("priceLevel", "custom")
-                        ]]></script>
-                    </else>
-                </if>
-
-                <script>processedOrderItemList.add(processedOrderItem);</script>
-
-                <!-- Process Promotions -->
-                <entity-find entity-name="co.hotwax.order.OrderItemAdjustmentAndAttribute" list="orderAdjustmentList">
-                    <econdition field-name="orderId" from="orderMap.orderId"/>
-                    <econdition field-name="orderItemSeqId" from="orderItem.orderItemSeqId"/>
-                    <econdition field-name="orderAdjustmentTypeId" value="EXT_PROMO_ADJUSTMENT"/>
-                    <econdition field-name="attrName" operator="is-null"/>
-                </entity-find>
-                <if condition="orderAdjustmentList &amp;&amp; orderAdjustmentList.size() > 0">
-
-                    <set field="totalPromotionAmount" default-value="0" type="BigDecimal"/>
-                    <iterate list="orderAdjustmentList" entry="adjustment">
-                        <set field="totalPromotionAmount" from="totalPromotionAmount + adjustment.amount"/>
-                    </iterate>
-
-                    <!--
-                    - A duplicate item map is created to represent the promotional discount as a separate row in the processed order item list.
-                    - Key updates in the duplicate map:
-                        - `price` is set to the total promotional amount.
-                        - A custom field, `isDiscountRow`, is set to "true" to distinguish this row as a promotional discount.
-
-                    TODO:
-                    - Currently, the promotional discount item is created as an exact copy of the original item, except for the `price` and `isDiscountRow` fields.
-                    - Revisit this logic to ensure that only relevant fields are copied or modified.
-                    -->
-                    <script><![CDATA[
-                        Map<String, Object> promoOrderItemDetail = new HashMap<>(processedOrderItem);
-                        promoOrderItemDetail.put("price", totalPromotionAmount);
-                        promoOrderItemDetail.put("isDiscountRow", "true");
-                        processedOrderItemList.add(promoOrderItemDetail);
-                    ]]></script>
-                </if>
-            </iterate>
-
-            <!-- Add Processed Order Items to Processed Order Map -->
-            <script>
-                processedOrderMap.put("HCOrderId", processedOrderMap.orderId)
-                processedOrderMap.put("orderItems", processedOrderItemList);
-            </script>
-
-            <!-- Prepare the Final Order Detail Map -->
-            <set field="orderMapDetail" from="processedOrderMap"/>
         </actions>
     </service>
     <service verb="consume" noun="FulfilledOrderItemFeed" authenticate="anonymous-all">
