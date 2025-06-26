@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-upgrade-v1.5.2">
 
-    <!-- Fixes in data for Import Store To Fulfillment -->
+    <!-- Fixes in data for TO v2 -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportStoreToFulfillmentFeed"
             consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"/>
 
@@ -10,4 +10,13 @@
     </moqui.service.job.ServiceJob>
 
     <moqui.basic.Enumeration enumId="GenerateOMSUpdateTOShipmentFeed" relatedEnumId="OMSUpdateTOShipmentFeed"/>
+
+    <Product productId="GEN_TO_SHIPMENT_FD" productTypeId="SERVICE" internalName="GEN_TO_SHIPMENT_FD"
+             productName="Generate Store Transfer Order Shipment Feed Job" description="Generate Store Transfer Order Shipment Feed Job"
+             primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
+    <ProductCategoryMember productId="GEN_TO_SHIPMENT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_SHIPMENT_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentFeed" instanceOfProductId="GEN_TO_SHIPMENT_FD"/>
+
 </entity-facade-xml>
