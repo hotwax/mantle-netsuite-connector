@@ -29,6 +29,7 @@
     <moqui.basic.Enumeration enumId="NS_IMP_TO_IR" enumCode="NS_IMP_TO_IR" description="NetSuite Import Transfer Order Item Receipt Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_IMP_TO_IF" enumCode="NS_IMP_TO_IF" description="NetSuite Import Transfer Order Item Fulfillment Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_TO_SHPMT_RCPT_FD" enumCode="GEN_TO_SHPMT_RCPT_FD" description="Generate Transfer Order Shipment Receipt Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_TO_SHIPMENT_FD" enumCode="GEN_TO_SHIPMENT_FD" description="Generate Store Transfer Order Shipment Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_TO_FULFILLMNT_FD" enumCode="POL_TO_FULFILLMNT_FD" description="NetSuite Import Store TO Item Fulfillment Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_WH_FULFILLMNT_FD" enumCode="POL_WH_FULFILLMNT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
@@ -134,6 +135,9 @@
     <Product productId="GEN_TO_SHPMT_RCPT_FD" productTypeId="SERVICE" internalName="GEN_TO_SHPMT_RCPT_FD"
              productName="Generate Transfer Order Shipment Receipt Feed Job" description="Generate Transfer Order Shipment Receipt Feed Job"
              primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
+    <Product productId="GEN_TO_SHIPMENT_FD" productTypeId="SERVICE" internalName="GEN_TO_SHIPMENT_FD"
+             productName="Generate Store Transfer Order Shipment Feed Job" description="Generate Store Transfer Order Shipment Feed Job"
+             primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
     <Product productId="POL_TO_FULFILLMNT_FD" productTypeId="SERVICE" internalName="POL_TO_FULFILLMNT_FD"
              productName="NetSuite Import Store TO Item Fulfillment Job" description="NetSuite Import Store TO Item Fulfillment Job"
              primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
@@ -183,6 +187,7 @@
     <ProductCategoryMember productId="NS_EXP_STORE_TO" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_SHPMT_RCPT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_SHIPMENT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_TRANSORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -220,6 +225,7 @@
     <ProductCategoryMember productId="NS_EXP_STORE_TO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_STORE_TO" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_SHPMT_RCPT_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_SHIPMENT_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_BRKR_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_FLFLD_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
@@ -316,7 +322,7 @@
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportStoreToFulfillmentFeed"
          description="Import Store Fulfill TO fulfillment Feed file from SFTP location"
          parentTypeId="LocalFeedFile"
-         consumeServiceName="co.hotwax.system.FeedServices.consume#NetSuiteFeed"
+         consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
          receivePath="/home/${sftpUsername}/netsuite/transferorderv2/import/fulfillment-store"
          receiveResponseEnumId="MsgRrMove"
          receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/import/fulfillment-store/archive"
@@ -325,7 +331,7 @@
 
      <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMNT_FD"
         serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" instanceOfProductId="POL_TO_FULFILLMNT_FD">
-        <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillment"/>
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillmentFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
@@ -338,7 +344,7 @@
     </moqui.service.message.SystemMessageType>
 
     <moqui.basic.Enumeration description="Generate mapped Feed file from Store TO Fulfillment of NetSuite to Update TO Shipment in OMS" enumId="OMSUpdateTOShipmentFeed" enumTypeId="OMSMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Generate mapped Feed file of Store TO Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSUpdateTOShipmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSStoreToFulfillmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Generate mapped Feed file of Store TO Fulfillment from NetSuite connector to OMS" enumId="GenerateOMSUpdateTOShipmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="OMSUpdateTOShipmentFeed" relatedEnumTypeId="OMSMessageTypeEnum"/>
     <moqui.basic.Enumeration description="Import Store Fulfillment" enumId="ImportStoreToFulfillmentFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="GenerateOMSUpdateTOShipmentFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
     <!-- Template Service Job to generate Transfer Order Shipments Receipt Feed from HotWax -->
@@ -364,9 +370,8 @@
     <Enumeration description="NetSuite Order Name" enumCode="NETSUITE_ORDER_NAME" enumId="NETSUITE_ORDER_NAME" enumTypeId="ORDER_IDENTITY" sequenceId="01"/>
 
     <!-- Template service job to generate Transfer Order Shipment Feed -->
-    <moqui.basic.Enumeration enumId="GEN_TO_SHIPMENT_FD" enumCode="GEN_TO_SHIPMENT_FD" description="Generate Store Transfer Order Shipment Feed Job" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.service.job.ServiceJob jobName="generate_TransferOrderShipmentFeed" jobTypeEnumId="GEN_TO_SHIPMENT_FD"
-            description="Template Service Job to generate the Transfer Orders Shipment Feed from HotWax"
+            description="Template Service Job to generate the Transfer Orders Shipment Feed from HotWax" instanceOfProductId="GEN_TO_SHIPMENT_FD"
             serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderShipmentFeed"
             cronExpression="0 0 0 * * ?" paused="Y">
         <parameters parameterName="orderId"/>

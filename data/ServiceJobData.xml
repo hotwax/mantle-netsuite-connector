@@ -392,7 +392,7 @@
 
     <moqui.service.job.ServiceJob jobName="poll_SystemMessageFileSftp_Store_TO_Fulfillment" description="Poll Transfer Order Fulfillment Feed from SFTP location" jobTypeEnumId="POL_TO_FULFILLMNT_FD"
                                   serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y" instanceOfProductId="POL_TO_FULFILLMNT_FD">
-        <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillment"/>
+        <parameters parameterName="systemMessageTypeId" parameterValue="ImportStoreToFulfillmentFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
