@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
-    <service verb="generate" noun="CreateOrderFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <service verb="generate" noun="NewOrdersSyncFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <in-parameters>
             <parameter name="orderId">
                 <description>Parameter to fetch Order details for a specific orderId.</description>
@@ -34,6 +34,13 @@
             <parameter name="excludeSalesChannel" type="List">
                 <description>Parameter to exclude the Orders from the specific sales channel or a list of sales channel.</description>
             </parameter>
+            <parameter name="isMixCartOrder">
+                <description>
+                    Parameter to include or exclude the orders which have multiple shipping methods.
+                    Example: Y to include the order with multiple shipping methods.
+                    N to not include the order with multiple shipping methods.
+                </description>
+            </parameter>
             <parameter name="isCashOrderFeed">
                 <description>
                     Parameter to determine if the feed is for cash orders or not.
@@ -60,7 +67,7 @@
                 import co.hotwax.common.SchemaValidation
                 import co.hotwax.netsuite.NetSuiteMappingWorker
 
-                netsuiteOrders_find = ec.entity.find("co.hotwax.netsuite.order.EligibleOrdersForNetSuiteView")
+                netsuiteOrders_find = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
                 if(fromOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
                 if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
@@ -76,7 +83,7 @@
                     netsuiteOrders_find.condition("nonPosCompletedItemsCount", EntityCondition.ComparisonOperator.GREATER_THAN, 0)
                 }
 
-                netsuiteOrders_find.selectField("orderId,partyId,netsuiteCustomerId,orderDate")
+                netsuiteOrders_find.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder")
                 netsuiteOrders_find.distinct(true)
 
                 //If no eligible orders, then don't generate the file
@@ -128,33 +135,55 @@
              productStoreId:productStoreId], false)"/>
             <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
 
+            <set field="flattenedOrders" from="[]" type="List"/>
             <script>
+                File csvFile = new File(csvFilePath)
+                File invalidFile = new File(invalidFilePath)
+                if (!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
+                if (!invalidFile.parentFile.exists()) invalidFile.parentFile.mkdirs()
+                isReqFieldMissFileEmpty = true
+                isFileEmpty = true
+                csvHeaders = null
+
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
                 try (ordersItr = netsuiteOrders_find.iterator()) {
+                     try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
+                        def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8);
+                        def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
+                        def invalidCsvPrinter = new CSVPrinter(invalidWriter, CSVFormat.DEFAULT)) {
             </script>
 
             <iterate list="ordersItr" entry="order">
-                <set field="orderDetailMap" from="[:]"/>
-                <entity-find-one entity-name="co.hotwax.netsuite.order.OrderDetailsForNetSuiteView" value-field="orderDetails">
+                <entity-find-one entity-name="co.hotwax.netsuite.order.OrderDetails" value-field="orderDetails">
                     <field-map field-name="orderId" from="order.orderId"/>
                 </entity-find-one>
+                <set field="orderDetails" from="orderDetails.getPlainValueMap(0)"/>
 
-                <set field="orderDetailMap.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
-                <set field="orderDetailMap.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
+                <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
+                <set field="orderDetails.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
 
-                <set field="orderDetailMap.billingPhone" from="((orderDetails.billingCountryCode?:'') || (orderDetails.billingAreaCode?:'') || (orderDetails.billingContactNumber?:'')) ? ((orderDetails.billingCountryCode ?:'') + ' ' + (orderDetails.billingAreaCode ?:'') + ' ' + (orderDetails.billingContactNumber ?:'')) : ''" />
-                <set field="orderDetailMap.phone" from="((orderDetails.shippingCountryCode?:'') || (orderDetails.shippingAreaCode?:'') || (orderDetails.shippingContactNumber?:'')) ? ((orderDetails.shippingCountryCode ?:'') + ' ' + (orderDetails.shippingAreaCode ?:'') + ' ' + (orderDetails.shippingContactNumber ?:'')) : ''" />
+                <set field="orderDetails.billingPhone" from="((orderDetails.billingCountryCode?:'') || (orderDetails.billingAreaCode?:'') || (orderDetails.billingContactNumber?:'')) ? ((orderDetails.billingCountryCode ?:'') + ' ' + (orderDetails.billingAreaCode ?:'') + ' ' + (orderDetails.billingContactNumber ?:'')) : ''" />
+                <set field="orderDetails.phone" from="((orderDetails.shippingCountryCode?:'') || (orderDetails.shippingAreaCode?:'') || (orderDetails.shippingContactNumber?:'')) ? ((orderDetails.shippingCountryCode ?:'') + ' ' + (orderDetails.shippingAreaCode ?:'') + ' ' + (orderDetails.shippingContactNumber ?:'')) : ''" />
 
                 <if condition="(!orderDetails.billingContactMechId &amp;&amp; orderDetails.shippingContactMechId)">
-                    <set field="orderDetailMap" from="orderDetailMap + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip]"/>
-                    <else><set field="orderDetailMap" from="orderDetailMap + [billingAddress1:orderDetails.billingAddress1, billingAddress2:orderDetails.billingAddress2, billingCity:orderDetails.billingCity, billingState:orderDetails.billingState, billingCountry:orderDetails.billingCountry, billingZip:orderDetails.billingZip]"/></else>
+                    <set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip]"/>
+                    <else><set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.billingAddress1, billingAddress2:orderDetails.billingAddress2, billingCity:orderDetails.billingCity, billingState:orderDetails.billingState, billingCountry:orderDetails.billingCountry, billingZip:orderDetails.billingZip]"/></else>
                 </if>
 
-                <entity-find entity-name="co.hotwax.netsuite.order.NonRefundedGiftCardPaymentTotal" list="giftCardPaymentTotalList">
-                    <econdition field-name="orderId" from="orderDetails.orderId"/>
-                    <econdition field-name="paymentMethodTypeId" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
+                <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="shippingTaxAdjustments">
+                    <econdition field-name="orderId" from="order.orderId"/>
+                    <econdition field-name="orderAdjustmentTypeId" value="SHIPPING_SALES_TAX"/>
                 </entity-find>
-                <set field="orderDetailMap.giftCardPaymentTotal" from="giftCardPaymentTotalList[0]?.giftCardPaymentTotal ?: BigDecimal.ZERO"/>
+
+                <if condition="shippingTaxAdjustments &amp;&amp; shippingTaxAdjustments.size() > 0">
+                    <set field="shippingTaxCode" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT')"/>
+                    <else><set field="shippingTaxCode" value="-Not Taxable-"/></else>
+                </if>
+
+                <entity-find entity-name="co.hotwax.netsuite.order.NonRefundedGiftCardPayment" list="giftCardPaymentTotalList">
+                    <econdition field-name="orderId" from="orderDetails.orderId"/>
+                </entity-find>
+                <set field="orderDetails.giftCardPaymentTotal" from="giftCardPaymentTotalList[0]?.giftCardPaymentTotal ?: BigDecimal.ZERO"/>
 
                 <!-- Calculate total discount amount and get discount codes -->
                 <entity-find entity-name="co.hotwax.order.OrderItemAdjustmentAndAttribute" list="orderDiscounts">
@@ -170,48 +199,125 @@
                     <set field="discountCodes" from="orderDiscounts.collect{ it.attrValue }.findAll{ it }.unique().join(', ')"/>
                 </if>
 
-                <set field="orderDetailMap" from="orderDetailMap + [address1:orderDetails.address1, address2:orderDetails.address2, city:orderDetails.city, state:orderDetails.state, zip:orderDetails.zip, country:orderDetails.country, orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId,
-                    customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription, HCOrderTotal:orderDetails.grandTotal, shopifyOrderNumber:orderDetails.orderName, HCShopifySalesOrderId:orderDetails.orderExternalId,
-                    externalId: orderDetails.orderExternalId, email:orderDetails.email, billingEmail:orderDetails.billingEmail, rate:totalDiscount, discountItem:discountCodes]"/>
+                <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
+                    HCOrderTotal:orderDetails.grandTotal, shopifyOrderNumber:orderDetails.orderName, HCShopifySalesOrderId:orderDetails.orderExternalId,
+                    externalId: orderDetails.orderExternalId, rate:totalDiscount, discountItem:discountCodes, shippingTaxCode:shippingTaxCode]"/>
 
                 <set field="orderItems" from="[]"/>
-                <entity-find entity-name="co.hotwax.netsuite.order.OrderItemsForNetSuiteView" list="orderItemsList">
-                    <econdition field-name="orderId" operator="equals" from="orderDetails.orderId"/>
+                <entity-find entity-name="co.hotwax.netsuite.order.OrderItemsDetails" list="orderItemsList">
+                    <econdition field-name="orderId" operator="equals" from="order.orderId"/>
                 </entity-find>
+                <if condition="'Y'.equals(order.isMixCartOrder)">
+                    <set field="shippingMethods" from="orderItemList*.shipmentMethodTypeId
+                    .findAll { it &amp;&amp; it != 'POS_COMPLETED' &amp;&amp; it != 'STOREPICKUP' }.toSet()"/>
+                    <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first() : null"/>
+                </if>
 
                 <iterate list="orderItemsList" entry="orderItem">
-                    <set field="orderItemMap" from="[:]"/>
+                    <set field="orderItem" from="orderItem.getPlainValueMap(0)"/>
+                    <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="itemTaxAdjustments">
+                        <econdition field-name="orderId" from="order.orderId"/>
+                        <econdition field-name="orderItemSeqId" from="orderItem.orderItemSeqId"/>
+                        <econdition field-name="orderAdjustmentTypeId" value="SALES_TAX"/>
+                    </entity-find>
+
+                    <if condition="itemTaxAdjustments &amp;&amp; itemTaxAdjustments.size() > 0">
+                        <set field="taxCode" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT')"/>
+                        <else><set field="taxCode" value="-Not Taxable-"/></else>
+                    </if>
+
+                    <if condition="'Y'.equals(order.isMixCartOrder)">
+                        <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD', selectedShippingMethod)"/>
+                        <else><set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD' ,orderItem.shipmentMethodTypeId)"/></else>
+                    </if>
                     <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
                     <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
-                    <set field="department" from="NetSuiteMappingWorker.getFacilityIdentifications(ec, orderItem.orderFacilityId, 'ORDR_ORGN_DPT')" type="String"/>
+                    <set field="department" from="NetSuiteMappingWorker.getFacilityDepartment(ec, orderItem.orderFacilityId)" type="String"/>
 
-                    <set field="orderItemMap" from="orderItemMap + [item:orderItem.item, price:orderItem.price, quantity:orderItem.quantity, lineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department]"/>
-                    <script>orderItems.add(orderItemMap)</script>
+                    <entity-find entity-name="co.hotwax.facility.FacilityAndType" list="facilityAndType">
+                        <econdition field-name="facilityId" from="orderItem.facilityId"/>
+                        <econdition field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
+                    </entity-find>
+                    <set field="location" from="facilityAndType[0]?.externalId ?: ''"/>
+
+                    <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, lineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:location]"/>
+                    <script>orderItems.add(orderItem)</script>
 
                     <!-- Process Promotions -->
                     <entity-find entity-name="co.hotwax.order.OrderItemAdjustmentAndAttribute" list="orderAdjustmentList">
-                        <econdition field-name="orderId" from="orderMap.orderId"/>
+                        <econdition field-name="orderId" from="order.orderId"/>
                         <econdition field-name="orderItemSeqId" from="orderItem.orderItemSeqId"/>
                         <econdition field-name="orderAdjustmentTypeId" value="EXT_PROMO_ADJUSTMENT"/>
                         <econdition field-name="attrName" operator="is-null"/>
                     </entity-find>
                     <if condition="orderAdjustmentList &amp;&amp; orderAdjustmentList.size() > 0">
                         <set field="totalPromotionAmount" from="orderAdjustmentList.collect{ it.amount }.sum()" type="BigDecimal" default-value="0"/>
-                        <set field="discountRow" from="orderItemMap" type="NewMap"/>
+                        <set field="discountRow" from="orderItem" type="NewMap"/>
                         <set field="discountRow.price" from="totalPromotionAmount"/>
                         <set field="discountRow.isDiscountRow" from="'true'"/>
                         <script>orderItems.add(promoOrderItemDetail)</script>
                     </if>
                 </iterate>
+                <set field="orderDetails.orderItems" from="orderItems"/>
                 <if condition="scriptPath">
-                    <set field="orderDetailMap" from="ec.resource.script(scriptPath, null)"/>
+                    <set field="orderDetails" from="ec.resource.script(scriptPath, null)"/>
                 </if>
+                <script>
+                    def orderItems = orderDetails.remove("orderItems")
+                    orderItems.each { item ->
+                        item.putAll(orderDetails)
+                        item.each { key, value -> item["$key"] = value }
+                        item.keySet().removeAll(['productStoreExternalId', 'shippingContactMechId', 'orderSalesChannelCode', '_entity', 'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProductId', 'orderItemSeqId',
+                            'orderSalesChannelDescription', 'productId', 'grandTotal', 'orderExternalId', 'netsuiteCustomerId', 'shippingContactNumber', 'billingContactMechId', 'itemStatus', 'orderName', 'facilityId', 'shippingCountryCode', 'isDiscountRow'])
+                        flattenedOrders.add(item)
+                    }
+                    // Dynamically determine headers in the first iteration
+                    if (!csvHeaders) {
+                        csvHeaders = flattenedOrders[0].keySet().collect { it as String }
+                        csvPrinter.printRecord(csvHeaders)
+                        invalidCsvPrinter.printRecord(csvHeaders)
+                    }
+
+                    // Check for required fields and separate valid/invalid orders
+                    flattenedOrders.each { record ->
+                        try {
+                            def schemaValidation = new co.hotwax.common.SchemaValidation(ec.ecfi ,ec)
+                            schemaValidation.validateSchema(record as LinkedHashMap, schemaLocation)
+                            def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
+                            csvPrinter.printRecord(orderedRecord)
+                            isFileEmpty = false
+                        } catch (Exception e) {
+                            def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
+                            orderedRecord.add(e.message)
+                            invalidCsvPrinter.printRecord(orderedRecord)
+                            isReqFieldMissFileEmpty = false
+                        }
+                    }
+                    orderDetails = null
+                    flattenedOrders = []
+                </script>
             </iterate>
             <script>
-                    } catch (Exception e) {
-                        ec.message.addError("Error preparing order feed file ${e}")
-                    }
+                  }
+
+                }
+                if (isReqFieldMissFileEmpty) {
+                    invalidFile.delete()
+                }
             </script>
+            <if condition="!isFileEmpty">
+                <!-- Save the Json Feed File path in System Message messageText -->
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId, messageText:csvFilePath]" out-map="FeedSysMsgOut"/>
+            </if>
+            <if condition="!isReqFieldMissFileEmpty">
+                <!-- Save the Json Feed File path in System Message messageText -->
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                    in-map="[systemMessageTypeId:relatedSystemMessageType.systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId, messageText:invalidFilePath]" out-map="MissingFieldSysMsgOut"/>
+            </if>
+
+            <return message="Generating Order Items Feed file with type ${systemMessageTypeId} and
+                remote ${systemMessageRemoteId} saved response in messages ${FeedSysMsgOut?.systemMessageId} and missing file response in ${MissingFieldSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
     <service verb="consume" noun="FulfilledOrderItemFeed" authenticate="anonymous-all">

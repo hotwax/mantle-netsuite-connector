@@ -1,6 +1,7 @@
 package co.hotwax.netsuite
 
 import org.moqui.context.ExecutionContext
+import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 
 class NetSuiteMappingWorker {
@@ -33,12 +34,39 @@ class NetSuiteMappingWorker {
      */
     static String getNetSuiteProductId(ExecutionContext ec, String hcProductId) {
         if (!hcProductId) return null
-        EntityValue gid = ec.entity.find("mantle.product.good.GoodIdentification")
+        EntityList gid = ec.entity.find("org.apache.ofbiz.product.product.GoodIdentification")
             .condition([productId: hcProductId, goodIdentificationTypeEnumId: "NETSUITE_PRODUCT_ID"])
-            .useCache(true)
+            .list()
             .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
-            .one()
-        return gid?.idValue
+        return gid?.first?.idValue
+    }
+
+    /**
+     * Get NetSuite order type for a facility.
+     */
+    static String getOrderType(ExecutionContext ec, String facilityId) {
+        return getFacilityIdentifications(ec, facilityId, "NETSUITE_ORDR_TYPE")
+    }
+
+    /**
+     * Get department ID for a facility.
+     */
+    static String getFacilityDepartment(ExecutionContext ec, String facilityId) {
+        return getFacilityIdentifications(ec, facilityId, "ORDR_ORGN_DPT")
+    }
+
+    /**
+     * Get sales channel for a facility.
+     */
+    static String getFacilitySalesChannel(ExecutionContext ec, String facilityId) {
+        return getFacilityIdentifications(ec, facilityId, "ORDR_ORGN_SLS_CHNL")
+    }
+
+    /**
+     * Get blanket customer ID for a facility.
+     */
+    static String getDefaultFacilityCustomer(ExecutionContext ec, String facilityId) {
+        return getFacilityIdentifications(ec, facilityId, "FAC_BLKT_CUST")
     }
 
     /**
@@ -50,16 +78,14 @@ class NetSuiteMappingWorker {
      * @return identification values matching the criteria
      */
     static String getFacilityIdentifications(ExecutionContext ec, String facilityId, String facilityIdenTypeId) {
-        if (!facilityId || !facilityIdenTypeId) return []
+        if (!facilityId || !facilityIdenTypeId) return null
 
-        EntityValue identifications = ec.entity.find("co.hotwax.facility.FacilityIdentification")
+        EntityList identifications = ec.entity.find("co.hotwax.facility.FacilityIdentification")
             .condition("facilityId", facilityId)
             .condition("facilityIdenTypeId", facilityIdenTypeId)
-            .useCache(true)
+            .list()
             .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
-            .one()
-
-        return identifications?.idValue
+        return identifications?.first?.idValue
     }
 
 }
