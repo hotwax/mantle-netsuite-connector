@@ -199,11 +199,13 @@
                 <econdition field-name="orderAdjustmentTypeId" value="SHIPPING_CHARGES"/>
             </entity-condition>
         </member-entity>
+        <member-entity entity-alias="TOTALOADJ" entity-name="org.apache.ofbiz.order.order.OrderAdjustment" join-from-alias="OH" join-optional="true">
+            <key-map field-name="orderId"/>
+        </member-entity>
         <alias name="orderName" field="orderName" entity-alias="OH"/>
         <alias name="orderId" field="orderId" entity-alias="OH"/>
         <alias name="date" field="orderDate" entity-alias="OH"/>
         <alias name="orderExternalId" field="externalId" entity-alias="OH"/>
-        <alias name="grandTotal" field="grandTotal" entity-alias="OH"/>
         <alias name="netsuiteCustomerId" field="idValue" entity-alias="PID"/>
         <alias entity-alias="SCENM" field="enumCode" name="orderSalesChannelCode"/>
         <alias entity-alias="SCENM" field="description" name="orderSalesChannelDescription"/>
@@ -233,6 +235,7 @@
         <alias name="billingEmail" field="infoString" entity-alias="CMBE"/>
         <alias name="email" field="infoString" entity-alias="CMSE"/>
         <alias name="shippingCost" field="amount" entity-alias="OADJ"/>
+        <alias name="adjustmentTotalAmount" field="amount" entity-alias="TOTALOADJ" function="sum"/>
     </view-entity>
     <!--
     Purpose of this view:

@@ -259,7 +259,6 @@
         <parameters parameterName="thruOrderDate" parameterValue=""/>
         <parameters parameterName="includeShipmentMethod" parameterValue=""/>
         <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
-        <parameters parameterName="isMixCartOrder" parameterValue=""/>
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
     </moqui.service.job.ServiceJob>
