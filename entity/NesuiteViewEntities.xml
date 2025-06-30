@@ -260,6 +260,15 @@
             <key-map field-name="orderId"/>
             <key-map field-name="shipGroupSeqId"/>
         </member-entity>
+        <member-entity entity-alias="ORDF" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG" join-optional="true">
+            <key-map field-name="facilityId" related="orderFaciltyId"/>
+        </member-entity>
+        <member-entity entity-alias="F" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true">
+            <key-map field-name="facilityId"/>
+            <entity-condition>
+                <econdition field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
+            </entity-condition>
+        </member-entity>
         <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI" join-optional="true">
             <key-map field-name="productId"/>
         </member-entity>
@@ -280,6 +289,8 @@
         <alias name="facilityId" field="facilityId" entity-alias="OISG"/>
         <alias name="orderFacilityId" entity-alias="OISG"/>
         <alias name="netsuiteProductId" field="idValue" entity-alias="GID"/>
+        <alias name="orderFacilityExternalId" field="externalId" entity-alias="ORDF"/>
+        <alias name="facilityExternalId" field="externalId" entity-alias="F"/>
     </view-entity>
     <view-entity entity-name="InvalidOrders" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>

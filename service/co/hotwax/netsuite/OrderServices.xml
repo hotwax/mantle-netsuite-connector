@@ -115,9 +115,10 @@
             </entity-find-one>
 
             <if condition="enumValue &amp;&amp; enumValue.relatedEnumId">
-            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
-                <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
-            </entity-find-one>
+                <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="relatedSystemMessageType">
+                    <field-map field-name="systemMessageTypeId" from="enumValue.relatedEnumId"/>
+                </entity-find-one>
+            </if>
 
             <!-- Prepare csv File Path -->
             <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
@@ -208,7 +209,7 @@
                     .findAll { it &amp;&amp; it != 'POS_COMPLETED' &amp;&amp; it != 'STOREPICKUP' }.toSet()"/>
                     <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first() : null"/>
                 </if>
-                <set field="grandTotal" from="order.adjustmentTotalAmount"/>
+                <set field="grandTotal" from="orderDetails.adjustmentTotalAmount" default-value="0" type="BigDecimal"/>
 
                 <iterate list="orderItemsList" entry="orderItem">
                     <set field="orderItem" from="orderItem.getPlainValueMap(0)"/>
@@ -227,18 +228,12 @@
                         <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD', selectedShippingMethod)"/>
                         <else><set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD' ,orderItem.shipmentMethodTypeId)"/></else>
                     </if>
-                    <set field="grandTotal" from="grandTotal + (orderItem.unitPrice * orderItem.quantity)"/>
+                    <set field="grandTotal" from="grandTotal + ((orderItem.price ?: 0) * (orderItem.quantity ?: 0))"/>
                     <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
                     <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
                     <set field="department" from="NetSuiteMappingWorker.getFacilityDepartment(ec, orderItem.orderFacilityId)" type="String"/>
 
-                    <entity-find entity-name="co.hotwax.facility.FacilityAndType" list="facilityAndType">
-                        <econdition field-name="facilityId" from="orderItem.facilityId"/>
-                        <econdition field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
-                    </entity-find>
-                    <set field="location" from="facilityAndType[0]?.externalId ?: ''"/>
-
-                    <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, lineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:location, itemLocation:location]"/>
+                    <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, lineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:orderItem.orderFacilityExternalId, itemLocation:orderItem.facilityExternalId]"/>
                     <script>orderItems.add(orderItem)</script>
 
                     <!-- Process Promotions -->
@@ -253,7 +248,7 @@
                         <set field="discountRow" from="orderItem" type="NewMap"/>
                         <set field="discountRow.price" from="totalPromotionAmount"/>
                         <set field="discountRow.isDiscountRow" from="'true'"/>
-                        <script>orderItems.add(promoOrderItemDetail)</script>
+                        <script>orderItems.add(discountRow)</script>
                     </if>
                 </iterate>
                 <set field="orderDetails" from="orderDetails + [HCOrderTotal:grandTotal, orderItems:orderItems]"/>
@@ -266,7 +261,8 @@
                         item.putAll(orderDetails)
                         item.each { key, value -> item["$key"] = value }
                         item.keySet().removeAll(['productStoreExternalId', 'shippingContactMechId', 'orderSalesChannelCode', '_entity', 'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProductId', 'orderItemSeqId',
-                            'orderSalesChannelDescription', 'productId', 'adjustmentTotalAmount', 'orderExternalId', 'netsuiteCustomerId', 'shippingContactNumber', 'billingContactMechId', 'itemStatus', 'orderName', 'facilityId', 'shippingCountryCode', 'isDiscountRow'])
+                            'orderSalesChannelDescription', 'productId', 'adjustmentTotalAmount', 'orderExternalId', 'netsuiteCustomerId', 'shippingContactNumber', 'billingContactMechId', 'itemStatus', 'orderName', 'facilityId',
+                            'shippingCountryCode', 'isDiscountRow', 'orderFacilityExternalId', 'facilityExternalId'])
                         flattenedOrders.add(item)
                     }
                     // Dynamically determine headers in the first iteration

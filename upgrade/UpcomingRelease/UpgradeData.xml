@@ -3,8 +3,35 @@
     <Enumeration enumCode="NETSUITE_TAX_CODE" enumId="NETSUITE_TAX_CODE" enumName="Netsuite Tax codes" enumTypeId="NETSUITE" />
     <IntegrationTypeMapping integrationTypeId="NETSUITE_TAX_CODE" mappingKey="DEFAULT" mappingValue="" />
 
-    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed">
+    <!-- ServiceJob data for create order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"
+        serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="NetSuiteOrderItemsFeed"/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue="POS_COMPLETED"/>
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
+        <parameters parameterName="isCashOrderFeed" parameterValue="Y"/>
+    </moqui.service.job.ServiceJob>
+
+    <moqui.basic.Enumeration enumId="GEN_CRT_POS_ORD_FD" enumCode="GEN_CRT_POS_ORD_FD" description="Generate create POS orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_CRT_POS_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_POS_ORD_FD"
+        productName="Generate Create POS Orders Feed For NetSuite Job" description="Generate Create POS Orders Feed For NetSuite Job"
+        primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <ProductCategoryMember productId="GEN_CRT_POS_ORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_POS_ORD_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
+    <!-- ServiceJob data for create POS order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed_pos" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_POS_ORD_FD" jobTypeEnumId="GEN_CRT_POS_ORD_FD"
+        serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="PosCashOrderItemsFeed"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="orderId" parameterValue=""/>
+        <parameters parameterName="fromOrderDate" parameterValue=""/>
+        <parameters parameterName="thruOrderDate" parameterValue=""/>
+        <parameters parameterName="includeShipmentMethod" parameterValue="POS_COMPLETED"/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="includeSalesChannel" parameterValue=""/>
+        <parameters parameterName="excludeSalesChannel" parameterValue="" />
+        <parameters parameterName="isCashOrderFeed" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 </entity-facade-xml>

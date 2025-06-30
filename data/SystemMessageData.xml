@@ -9,7 +9,7 @@
         sendPath="/home/${sftpUsername}/netsuite/cashsale/export/PosCashOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/CreateOrderFeed/cashsale/createOrderFeed-${dateTime}.csv">
-        <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
+        <parameters parameterValue="ResourcePath" parameterName=""/>
         <parameters parameterName="SchemaPath" parameterValue=""/>
     </moqui.service.message.SystemMessageType>
 
@@ -21,13 +21,8 @@
         receivePath="${contentRoot}/CreateOrderFeed/salesorder/createOrderFeed-${dateTime}.csv">
         <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
      <parameters parameterName="SchemaPath" parameterValue=""/>
+     <parameters parameterValue="ResourcePath" parameterName=""/>
     </moqui.service.message.SystemMessageType>
-
-    <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="PosCashOrderItemsFeed"
-        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
-
-    <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="NetSuiteOrderItemsFeed"
-        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
 
     <!-- System Message Type for Customer Deposit Feed for Netsuite -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="GenerateCustomerDepositFeed"

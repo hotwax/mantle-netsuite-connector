@@ -33,6 +33,7 @@
     <moqui.basic.Enumeration enumId="POL_WH_FULFILLMNT_FD" enumCode="POL_WH_FULFILLMNT_FD" description="NetSuite Import Warehouse Fulfillment Feed" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_TRANSORD_FD" enumCode="POL_TRANSORD_FD" description="NetSuite Import Transfer Order Feed" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CRT_ORD_FD" enumCode="GEN_CRT_ORD_FD" description="Generate create orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_CRT_POS_ORD_FD" enumCode="GEN_CRT_POS_ORD_FD" description="Generate create POS orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CUST_DEP_FD" enumCode="GEN_CUST_DEP_FD" description="Generate Customer Deposit Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CRT_CUST_FD" enumCode="GEN_CRT_CUST_FD" description="Generate HotWax Create Customer Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="POL_FLFLD_ITM_FRM_NS" enumCode="POL_FLFLD_ITM_FRM_NS" description="Poll Fufilled Order Items From NetSuite Job" enumTypeId="ORDER_SYS_JOB"/>
@@ -110,6 +111,9 @@
     <Product productId="GEN_CRT_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_ORD_FD" 
              productName="Generate Create Orders Feed For NetSuite Job" description="Generate Create Orders Feed For NetSuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_CRT_POS_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_POS_ORD_FD"
+             productName="Generate Create POS Orders Feed For NetSuite Job" description="Generate Create POS Orders Feed For NetSuite Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
     <Product productId="GEN_CUST_DEP_FD" productTypeId="SERVICE" internalName="GEN_CUST_DEP_FD" 
              productName="Generate Customer Deposit Feed for Netsuite Job" description="Generate Customer Deposit Feed for Netsuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
@@ -179,6 +183,7 @@
     <ProductCategoryMember productId="NS_EXP_SO_IF" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_SO_ITEMS" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_CRT_ORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_POS_ORD_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_CUST_DEP_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_CRT_CUST_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_WH_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -232,6 +237,7 @@
     <ProductCategoryMember productId="NS_UPLOAD_INV" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPLOAD_PROD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_CRT_ORD_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_CRT_POS_ORD_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_CUST_DEP_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_CRT_CUST_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_STORE_TO_IF" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -252,15 +258,31 @@
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"
         serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue=""/>
+        <parameters parameterName="systemMessageTypeId" parameterValue="NetSuiteOrderItemsFeed"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
         <parameters parameterName="orderId" parameterValue=""/>
         <parameters parameterName="fromOrderDate" parameterValue=""/>
         <parameters parameterName="thruOrderDate" parameterValue=""/>
         <parameters parameterName="includeShipmentMethod" parameterValue=""/>
+        <parameters parameterName="excludeShipmentMethod" parameterValue="POS_COMPLETED"/>
+        <parameters parameterName="includeSalesChannel" parameterValue=""/>
+        <parameters parameterName="excludeSalesChannel" parameterValue="" />
+        <parameters parameterName="isCashOrderFeed" parameterValue="Y"/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- ServiceJob data for create POS order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed_pos" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_POS_ORD_FD" jobTypeEnumId="GEN_CRT_POS_ORD_FD"
+        serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="PosCashOrderItemsFeed"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="orderId" parameterValue=""/>
+        <parameters parameterName="fromOrderDate" parameterValue=""/>
+        <parameters parameterName="thruOrderDate" parameterValue=""/>
+        <parameters parameterName="includeShipmentMethod" parameterValue="POS_COMPLETED"/>
         <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
+        <parameters parameterName="isCashOrderFeed" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- ServiceJob data for create customer deposit from HC to netsuite -->
