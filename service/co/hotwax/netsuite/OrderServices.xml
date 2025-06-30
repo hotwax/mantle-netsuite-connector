@@ -181,24 +181,8 @@
                     <econdition field-name="orderId" from="orderDetails.orderId"/>
                 </entity-find>
                 <set field="orderDetails.giftCardPaymentTotal" from="giftCardPaymentTotalList[0]?.giftCardPaymentTotal ?: BigDecimal.ZERO"/>
-
-                <!-- Calculate total discount amount and get discount codes -->
-                <entity-find entity-name="co.hotwax.order.OrderItemAdjustmentAndAttribute" list="orderDiscounts">
-                    <econdition field-name="orderId" from="orderDetails.orderId"/>
-                    <econdition field-name="orderAdjustmentTypeId" value="EXT_PROMO_ADJUSTMENT"/>
-                    <econdition field-name="attrName" value="discount_code"/>
-                </entity-find>
-                <set field="totalDiscount" type="BigDecimal" default-value="0"/>
-                <set field="discountCodes" from="''"/>
-
-                <if condition="orderDiscounts">
-                    <set field="totalDiscount" from="orderDiscounts.collect{ it.amount ?: 0 }.sum()" type="BigDecimal"/>
-                    <set field="discountCodes" from="orderDiscounts.collect{ it.attrValue }.findAll{ it }.unique().join(', ')"/>
-                </if>
-
                 <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
-                    shopifyOrderNumber:orderDetails.orderName, HCShopifySalesOrderId:order.shopifyOrderId,
-                    externalId: orderDetails.orderExternalId, rate:totalDiscount, discountItem:discountCodes, shippingTaxCode:shippingTaxCode]"/>
+                    HCShopifySalesOrderId:order.shopifyOrderId, externalId: orderDetails.orderExternalId, shippingTaxCode:shippingTaxCode]"/>
 
                 <set field="orderItems" from="[]"/>
                 <entity-find entity-name="co.hotwax.netsuite.order.OrderItemsDetails" list="orderItemsList">
@@ -210,7 +194,6 @@
                     <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first() : null"/>
                 </if>
                 <set field="grandTotal" from="orderDetails.adjustmentTotalAmount" default-value="0" type="BigDecimal"/>
-
                 <iterate list="orderItemsList" entry="orderItem">
                     <set field="orderItem" from="orderItem.getPlainValueMap(0)"/>
                     <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="itemTaxAdjustments">
@@ -233,7 +216,7 @@
                     <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
                     <set field="department" from="NetSuiteMappingWorker.getFacilityDepartment(ec, orderItem.orderFacilityId)" type="String"/>
 
-                    <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, lineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:orderItem.orderFacilityExternalId, itemLocation:orderItem.facilityExternalId]"/>
+                    <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, orderLineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:orderItem.orderFacilityExternalId, itemLocation:orderItem.facilityExternalId, taxCode:taxCode]"/>
                     <script>orderItems.add(orderItem)</script>
 
                     <!-- Process Promotions -->
@@ -245,7 +228,7 @@
                     </entity-find>
                     <if condition="orderAdjustmentList &amp;&amp; orderAdjustmentList.size() > 0">
                         <set field="totalPromotionAmount" from="orderAdjustmentList.collect{ it.amount }.sum()" type="BigDecimal" default-value="0"/>
-                        <set field="discountRow" from="orderItem" type="NewMap"/>
+                        <script><![CDATA[Map<String, Object> discountRow = new HashMap<>(orderItem);]]></script>
                         <set field="discountRow.price" from="totalPromotionAmount"/>
                         <set field="discountRow.isDiscountRow" from="'true'"/>
                         <script>orderItems.add(discountRow)</script>
@@ -262,7 +245,7 @@
                         item.each { key, value -> item["$key"] = value }
                         item.keySet().removeAll(['productStoreExternalId', 'shippingContactMechId', 'orderSalesChannelCode', '_entity', 'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProductId', 'orderItemSeqId',
                             'orderSalesChannelDescription', 'productId', 'adjustmentTotalAmount', 'orderExternalId', 'netsuiteCustomerId', 'shippingContactNumber', 'billingContactMechId', 'itemStatus', 'orderName', 'facilityId',
-                            'shippingCountryCode', 'isDiscountRow', 'orderFacilityExternalId', 'facilityExternalId'])
+                            'shippingCountryCode', 'isDiscountRow', 'orderFacilityExternalId', 'facilityExternalId', 'billingAreaCode', 'shippingAreaCode', 'orderFacilityId'])
                         flattenedOrders.add(item)
                     }
                     // Dynamically determine headers in the first iteration
