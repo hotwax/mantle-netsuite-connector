@@ -190,7 +190,7 @@
                 <if condition="'Y'.equals(order.isMixCartOrder)">
                     <set field="shippingMethods" from="orderItemList*.shipmentMethodTypeId
                     .findAll { it &amp;&amp; it != 'POS_COMPLETED' &amp;&amp; it != 'STOREPICKUP' }.toSet()"/>
-                    <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first()"/>
+                    <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first() : null"/>
                 </if>
                 <set field="grandTotal" from="orderDetails.adjustmentTotalAmount" default-value="0" type="BigDecimal"/>
                 <iterate list="orderItemsList" entry="orderItem">
@@ -528,7 +528,7 @@
             ]]></script>
             <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
             <iterate list="fulfilledOrdersItemsItr" entry="fulfilledOrderItem">
-                <entity-find entity-name="co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue" list="fulfilledOrderItem">
+                <entity-find entity-name="co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue" list="fulfilledOrderItemsList">
                     <econdition field-name="orderId" from="fulfilledOrderItem.orderId"/>
                     <order-by field-name="orderItemSeqId"/>
                 </entity-find>
@@ -546,7 +546,7 @@
                 <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
                 <set field="fulfilledOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
 
-                <iterate list="fulfilledOrderItem" entry="item">
+                <iterate list="fulfilledOrderItemsList" entry="item">
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
                         in-map="[orderId:item.orderId, orderItemSeqId:item.orderItemSeqId, comments:'Order Item sent as part of Fulfilled Items Feed', createdDate:nowDate, externalFulfillmentId:'_NA_']"/>
                 </iterate>
