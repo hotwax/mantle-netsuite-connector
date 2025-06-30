@@ -73,56 +73,6 @@
         </actions>
     </service>
 
-    <service verb="map" noun="StoreTransferOrderFulfillment" transaction-timeout="1800">
-        <in-parameters>
-            <parameter name="payload" type="Map" required="true">
-                <description>The Transfer Order Fulfillment map from NetSuite to be mapped as per Shipment in OMS.</description>
-                <parameter name="shipmentId"/>
-                <parameter name="externalId"/>
-                <parameter name="items" type="List">
-                    <parameter name="itemMap" type="Map">
-                        <parameter name="externalId"/>
-                        <parameter name="productIdType"/>
-                        <parameter name="productIdValue"/>
-                    </parameter>
-                </parameter>
-            </parameter>
-        </in-parameters>
-        <out-parameters>
-            <parameter name="payload" type="Map">
-                <description>The Shipment map with mapped fields for OMS.</description>
-                <parameter name="shipmentId"/>
-                <parameter name="externalId"/>
-                <parameter name="items" type="List">
-                    <parameter name="itemMap" type="Map">
-                        <parameter name="shipmentItemSeqId"/>
-                        <parameter name="externalId"/>
-                        <parameter name="productId"/>
-                    </parameter>
-                </parameter>
-            </parameter>
-        </out-parameters>
-        <actions>
-            <iterate list="payload.items" entry="item">
-                <!-- Get HC Product ID -->
-                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
-                    <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
-                    <econdition field-name="idValue" from="item.remove('productIdValue')"/>
-                    <date-filter/>
-                    <order-by field-name="-fromDate"/>
-                </entity-find>
-                <set field="item.productId" from="goodIdentifications?.first?.productId"/>
-
-                <!-- Get shipment Item Seq ID  -->
-                <entity-find entity-name="org.apache.ofbiz.shipment.shipment.ShipmentItem" list="shipmentItemList">
-                    <econdition field-name="shipmentId" from="payload.shipmentId"/>
-                    <econdition field-name="productId" from="item.productId"/>
-                </entity-find>
-                <set field="item.shipmentItemSeqId" from="shipmentItemList?.first?.shipmentItemSeqId"/>
-            </iterate>
-        </actions>
-    </service>
-
     <!-- NOTE: Removed the support of productStoreId for now, TODO need to check in future for multi store setup -->
     <service verb="generate" noun="TransferOrderShipmentReceiptFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <in-parameters>
@@ -443,7 +393,7 @@
                     </entity-find>
 
                     <!-- Set Shipment Item level details -->
-                    <set field="shipmentItemMap" from="[lineId:orderItemAttrList?.first?.attrValue, quantity:shipmentItem.quantity, tags:'hotwax-fulfilled']"/>
+                    <set field="shipmentItemMap" from="[shipmentItemSeqId:shipmentItem.shipmentItemSeqId, lineId:orderItemAttrList?.first?.attrValue, quantity:shipmentItem.quantity, tags:'hotwax-fulfilled']"/>
                     <script>items.add(shipmentItemMap)</script>
 
                     <!-- Create Order Fulfillment History record for each shipment item included in the feed -->
