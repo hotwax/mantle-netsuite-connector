@@ -83,7 +83,7 @@
                     netsuiteOrders_find.condition("nonPosCompletedItemsCount", EntityCondition.ComparisonOperator.GREATER_THAN, 0)
                 }
 
-                netsuiteOrders_find.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder")
+                netsuiteOrders_find.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
                 netsuiteOrders_find.distinct(true)
 
                 //If no eligible orders, then don't generate the file
@@ -197,7 +197,7 @@
                 </if>
 
                 <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
-                    shopifyOrderNumber:orderDetails.orderName, HCShopifySalesOrderId:orderDetails.orderExternalId,
+                    shopifyOrderNumber:orderDetails.orderName, HCShopifySalesOrderId:order.shopifyOrderId,
                     externalId: orderDetails.orderExternalId, rate:totalDiscount, discountItem:discountCodes, shippingTaxCode:shippingTaxCode]"/>
 
                 <set field="orderItems" from="[]"/>

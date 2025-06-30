@@ -57,6 +57,7 @@
             <econdition entity-alias="OID2" field-name="idValue" operator="not-equals" value=""/>
         </entity-condition>
         <alias name="partyId" entity-alias="PID"/>
+        <alias name="shopifyOrderId" entity-alias="OID2" field="idValue"/>
         <alias name="netsuiteCustomerId" entity-alias="PID" field="idValue"/>
         <alias name="orderId" entity-alias="OH"/>
         <alias name="orderDate" entity-alias="OH"/>
@@ -260,13 +261,16 @@
             <key-map field-name="orderId"/>
             <key-map field-name="shipGroupSeqId"/>
         </member-entity>
-        <member-entity entity-alias="ORDF" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG" join-optional="true">
-            <key-map field-name="facilityId" related="orderFaciltyId"/>
+        <member-entity entity-alias="ORDF" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true" sub-select="non-lateral">
+            <key-map field-name="orderFacilityId" related="facilityId"/>
+            <entity-condition>
+                <econdition field-name="parentTypeId" entity-alias="ORDF" operator="not-equals" value="VIRTUAL_FACILITY"/>
+            </entity-condition>
         </member-entity>
-        <member-entity entity-alias="F" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true">
+        <member-entity entity-alias="F" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true" sub-select="non-lateral">
             <key-map field-name="facilityId"/>
             <entity-condition>
-                <econdition field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
+                <econdition field-name="parentTypeId" entity-alias="F" operator="not-equals" value="VIRTUAL_FACILITY"/>
             </entity-condition>
         </member-entity>
         <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI" join-optional="true">
