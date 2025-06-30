@@ -38,7 +38,7 @@
                 <econdition entity-alias="PID" field-name="partyIdentificationTypeId" value="NETSUITE_CUSTOMER_ID"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="OIV" entity-name="co.hotwax.netsuite.order.OrderItemsDetails" sub-select="non-lateral" join-from-alias="OH">
+        <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemAndShipGroup" sub-select="non-lateral" join-from-alias="OH">
             <key-map field-name="orderId"/>
         </member-entity>
         <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrders" sub-select="non-lateral" join-from-alias="OH" join-optional="true">
@@ -439,12 +439,6 @@
                 <econdition entity-alias="OIA" field-name="attrName" value="NetsuiteItemLineId"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="OA" entity-name="org.apache.ofbiz.order.order.OrderAttribute" join-from-alias="OI">
-            <key-map field-name="orderId"/>
-            <entity-condition>
-                <econdition entity-alias="OA" field-name="attrName" value="NETSUITE_ORDER_EXPORTED"/>
-            </entity-condition>
-        </member-entity>
         <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OI">
             <key-map field-name="orderId"/>
             <key-map field-name="shipGroupSeqId"/>
@@ -507,7 +501,6 @@
                 <econdition entity-alias="OFH" field-name="orderId" operator="equals" value=""/>
                 <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="OMS_FULFILLMENT"/>
                 <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
-                <econdition entity-alias="OA" field-name="attrValue" operator="not-equals" value=""/>
                 <econdition entity-alias="OISG" field-name="shipmentMethodTypeId" operator="not-equals" value="POS_COMPLETED"/>
             </econditions>
             <order-by field-name="entryDate"/>
