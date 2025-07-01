@@ -61,9 +61,9 @@
         <alias name="netsuiteCustomerId" entity-alias="PID" field="idValue"/>
         <alias name="orderId" entity-alias="OH"/>
         <alias name="orderDate" entity-alias="OH"/>
-        <alias entity-alias="OIASG" field="orderItemSeqId" name="nonPosCompletedItemsCount" function="count"/>
-        <alias-all entity-alias="OIV"/>
-        <alias name="isMixCartOrder" type="text-indicator">
+        <alias entity-alias="OIASG" field="orderItemSeqId" name="nonPosCompletedItemsCount" function="count-distinct"/>
+        <alias name="shipmentMethodTypeId" entity-alias="OIV" />
+        <alias name="isMixCartOrder" type="text-indicator" is-aggregate="true">
             <case>
                 <when expression="(SELECT COUNT(DISTINCT OISG.shipment_Method_Type_Id)
                            FROM Order_Item_Ship_Group OISG
