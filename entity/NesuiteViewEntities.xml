@@ -387,10 +387,11 @@
                 <econdition entity-alias="OIA" field-name="attrName" value="NetsuiteItemLineId"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="OA" entity-name="org.apache.ofbiz.order.order.OrderAttribute" join-from-alias="OI">
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
             <entity-condition>
-                <econdition entity-alias="OA" field-name="attrName" value="NETSUITE_ORDER_EXPORTED"/>
+                <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                <date-filter/>
             </entity-condition>
         </member-entity>
         <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OI">
@@ -400,11 +401,6 @@
         <member-entity entity-alias="OFH" entity-name="co.hotwax.integration.order.OrderFulfillmentHistory" join-from-alias="OI" join-optional="true">
             <key-map field-name="orderId"/>
             <key-map field-name="orderItemSeqId"/>
-        </member-entity>
-        <member-entity entity-alias="OS" entity-name="org.apache.ofbiz.order.order.OrderStatus" join-from-alias="OI">
-            <key-map field-name="orderId"/>
-            <key-map field-name="orderItemSeqId"/>
-            <key-map field-name="statusId"/>
         </member-entity>
         <member-entity entity-alias="F" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG">
             <key-map field-name="facilityId"/>
@@ -417,15 +413,6 @@
             <entity-condition>
                 <date-filter/>
             </entity-condition>
-        </member-entity>
-        <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI" join-optional="true">
-            <key-map field-name="productId"/>
-        </member-entity>
-        <member-entity entity-alias="PT" entity-name="org.apache.ofbiz.product.product.ProductType" join-from-alias="P" join-optional="true">
-            <key-map field-name="productTypeId"/>
-        </member-entity>
-        <member-entity entity-alias="SCENM" entity-name="moqui.basic.Enumeration" join-from-alias="OH" join-optional="true">
-            <key-map field-name="salesChannelEnumId" related="enumId"/>
         </member-entity>
         <alias entity-alias="OH" name="productStoreId"/>
         <alias entity-alias="OIA" field="attrValue" name="netsuiteItemLineId"/>
@@ -444,19 +431,16 @@
         <alias entity-alias="OISG" field="contactMechId" name="postalContactMechId"/>
         <alias entity-alias="F" name="facilityId"/>
         <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
+        <alias entity-alias="FT" field="parentTypeId" name="parentFacilityTypeId"/>
         <alias entity-alias="FGM" name="facilityGroupId"/>
-        <alias entity-alias="OS" name="statusDatetime" function="max"/>
-        <alias entity-alias="P" name="productId"/>
-        <alias entity-alias="PT" name="productTypeId"/>
-        <alias entity-alias="PT" name="isPhysical"/>
-        <alias entity-alias="PT" name="isDigital"/>
+        <alias entity-alias="OID" field="idValue" name="netsuiteOrderId"/>
         <entity-condition>
-            <econditions combine="and">
-                <econdition entity-alias="OFH" field-name="orderId" operator="equals" value=""/>
+            <econditions>
+<!--                <econdition entity-alias="OFH" field-name="orderId" operator="equals" value=""/>-->
                 <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="OMS_FULFILLMENT"/>
                 <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
-                <econdition entity-alias="OA" field-name="attrValue" operator="not-equals" value=""/>
                 <econdition entity-alias="OISG" field-name="shipmentMethodTypeId" operator="not-equals" value="POS_COMPLETED"/>
+                <econdition entity-alias="OID" field-name="idValue" operator="not-equals" value=""/>
             </econditions>
             <order-by field-name="entryDate"/>
         </entity-condition>

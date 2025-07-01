@@ -616,58 +616,26 @@
                 and remote ${sendSmrId} saved response in messages ${queueSystemMessageOut?.systemMessageId}"/>
         </actions>
     </service>
-
-    <service verb="get" noun="FulfilledOrders" authenticate="anonymous-all" transaction-timeout="7200">
-        <in-parameters>
-            <parameter name="fulfilledOrdersCountPerFeed" type="Integer"/>
-            <parameter name="orderId"/>
-            <parameter name="orderItemSeqId"/>
-            <parameter name="orderStatusId"/>
-            <parameter name="systemMessageTypeId" required="true"/>
-            <parameter name="systemMessageRemoteId" required="true"/>
-            <parameter name="parentFacilityTypeIds" type="List"/>
-            <parameter name="productTypeIds" type="List"/>
-            <parameter name="productStoreIds" type="List"/>
-        </in-parameters>
-        <actions>
-            <set field="isFirstFeed" from="true"/>
-            <while condition="isFirstFeed || (fulfilledOrdersCount != null &amp;&amp; fulfilledOrdersCount > 0 &amp;&amp; fulfilledOrdersCount == fulfilledOrdersCountPerFeed)">
-                <service-call name="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"
-                              in-map="context" out-map="fulfilledFeedOut" transaction="force-new"/>
-                <set field="fulfilledOrdersCount" from="fulfilledFeedOut?.fulfilledFeedOrdersCount"/>
-                <set field="isFirstFeed" from="false"/>
-            </while>
-        </actions>
-    </service>
     <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true"/>
             <parameter name="systemMessageTypeId" required="true"/>
-            <parameter name="fulfilledOrdersCountPerFeed" type="Integer"/>
+            <parameter name="fulfilledOrdersCountPerFeed" type="Integer" default-value="2500"/>
             <parameter name="orderId"/>
             <parameter name="orderItemSeqId"/>
             <parameter name="orderStatusId"/>
             <parameter name="orderTypeId" default-value="SALES_ORDER"/>
             <parameter name="parentFacilityTypeIds" type="List"/>
-            <parameter name="productTypeIds" type="List"/>
-            <parameter name="productStoreIds" type="List"/>
         </in-parameters>
-        <out-parameters>
-            <parameter name="fulfilledFeedOrdersCount" type="Integer"/>
-        </out-parameters>
         <actions>
-            <set field="fulfilledFeedOrdersCount" from="0"/>
-            <set field="nowDate" from="ec.user.nowTimestamp"/>
             <script>
             import org.moqui.entity.EntityCondition
-            import com.fasterxml.jackson.core.JsonFactory
-            import com.fasterxml.jackson.core.JsonGenerator
-            import com.fasterxml.jackson.databind.ObjectMapper
+            import org.apache.commons.csv.CSVFormat
+            import org.apache.commons.csv.CSVPrinter
             import java.nio.file.Files
             import java.nio.file.Paths
             import java.nio.charset.StandardCharsets
             import java.text.SimpleDateFormat
-            import java.io.File
 
             def fulfilledOrdersItems = ec.entity.find("co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue")
                 .condition("itemStatusId", "ITEM_COMPLETED")
@@ -678,10 +646,6 @@
             if (orderStatusId) fulfilledOrdersItems.condition("orderStatusId", orderStatusId)
             if (parentFacilityTypeIds) fulfilledOrdersItems.condition("parentFacilityTypeId", EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
             if (productStoreIds) fulfilledOrdersItems.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
-            if (productTypeIds) fulfilledOrdersItems.condition("productTypeId", EntityCondition.ComparisonOperator.IN, productTypeIds)
-
-            fulfilledOrdersItems.selectField("orderId,productStoreId,shopId")
-                .orderBy("statusDatetime")
 
             //If no eligible fulfilled orders, then don't generate the file
             long fulfilledOrdersCount = fulfilledOrdersItems.count()
@@ -692,7 +656,7 @@
 
             try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
             </script>
-
+            <set field="fulfilledFeedOrdersCount" type="Integer" value="0"/>
             <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() != 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
 
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType">
@@ -701,69 +665,77 @@
             <if condition="systemMessageType == null">
                 <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
             </if>
-            <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
-                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager',
-                 date: ec.l10n.format(nowDate, 'yyyy-MM-dd'),
-                 dateTime: ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
-                 productStoreId: productStoreId,
-                 shopId: customParametersMap?.shopId], false)"/>
-
-            <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
-
-            <script><![CDATA[
-                File fulfilledOrderItemsFeedFile = new File(jsonFilePath)
-                if (!fulfilledOrderItemsFeedFile.parentFile.exists()) fulfilledOrderItemsFeedFile.parentFile.mkdirs()
-
-                JsonFactory jfactory = new JsonFactory()
-                ObjectMapper objectMapper = new ObjectMapper()
-                objectMapper.setDateFormat(new SimpleDateFormat(System.getProperty('default_date_time_format')))
-
-                def path = Paths.get(jsonFilePath)
-                try(def writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
-                JsonGenerator jGenerator = jfactory.createGenerator(writer)){
-                    jGenerator.writeStartArray()
-            ]]></script>
-            <set field="jsonSlurper" from="new groovy.json.JsonSlurper()"/>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="ftlFileResource">
+                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
+                <field-map field-name="parameterName" value="resourcePath"/>
+            </entity-find-one>
+            <!-- Check if the custom ftl file resource is available. -->
+            <if condition="ftlFileResource &amp;&amp; ftlFileResource.parameterValue">
+                <set field="templateLocation" from="ftlFileResource.parameterValue"/>
+            </if>
             <iterate list="fulfilledOrdersItemsItr" entry="fulfilledOrderItem">
-                <entity-find entity-name="co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue" list="fulfilledOrderItem">
-                    <econdition field-name="orderId" from="fulfilledOrderItem.orderId"/>
-                    <order-by field-name="orderItemSeqId"/>
-                </entity-find>
-
-                <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="ftlFileResource">
-                    <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
-                    <field-map field-name="parameterName" value="resourcePath"/>
-                </entity-find-one>
-                <!-- Check if the custom ftl file resource is available. -->
-                <if condition="ftlFileResource &amp;&amp; ftlFileResource.parameterValue">
-                    <set field="templateLocation" from="ftlFileResource.parameterValue"/>
-                    <else><set field="templateLocation" value="component://mantle-netsuite-connector/template/FulfilledOrderItemsFeedDetail.ftl"/></else>
+                <if condition="fulfilledFeedOrdersCount == 0">
+                    <set field="nowDate" from="ec.user.nowTimestamp"/>
+                    <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                        [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
+                        productStoreId:productStoreId], false)"/>
+                    <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+                    <log message="opening new file ${csvFilePath}"/>
+                    <script>
+                        File csvFile = new File(csvFilePath)
+                        if(!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
+                        writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8)
+                        CSVFormat format = CSVFormat.DEFAULT
+                            .withQuote(null)
+                            .withRecordSeparator("\n")
+                            .withIgnoreEmptyLines();
+                        csvPrinter = new CSVPrinter(writer, format);
+                        def isFileEmpty = true
+                        def csvHeaders = ['lineId','internalId','item','quantity','location','tags','closed','addressee','address1','address2','city','state','country','zip','shippingMethod']
+                        csvPrinter.printRecord(csvHeaders)
+                    </script>
                 </if>
-                <set field="templateWriter" from="new StringWriter()"/>
-                <script>ec.resourceFacade.template(templateLocation, templateWriter)</script>
-                <set field="fulfilledOrderItemMap" from="jsonSlurper.parseText(templateWriter.toString())"/>
+                <if condition="ftlFileResource">
+                    <set field="templateWriter" from="new StringWriter()"/>
+                    <script>
+                        ec.resourceFacade.template(templateLocation, templateWriter)
+                        csvPrinter.printRecord(templateWriter)
+                    </script>
+                    <else>
+                        <set field="fulfilledOrderItemMap" from="['lineId': fulfilledOrderItem.netsuiteItemLineId ?: '', 'internalId': fulfilledOrderItem.netsuiteOrderId ?: '', 'item': '', 'quantity': fulfilledOrderItem.quantity ?: '1',
+                            'location': fulfilledOrderItem.facilityExternalId ?: '', 'tags': 'hotwax-fulfilled', 'closed': '', 'addressee': '', 'address1': '',
+                            'address2': '', 'city': '','state': '', 'country': '', 'zip': '', 'shippingMethod': '']"/>
+                        <script>
+                            csvPrinter.printRecord(fulfilledOrderItemMap.values().collect { it ?: "" })
+                        </script>
+                    </else>
+                </if>
+                <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
+                    in-map="[orderId:fulfilledOrderItem.orderId, orderItemSeqId:fulfilledOrderItem.orderItemSeqId, comments:'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate:nowDate, externalFulfillmentId:'_NA_']"/>
 
-                <iterate list="fulfilledOrderItem" entry="item">
-                    <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
-                        in-map="[orderId:item.orderId, orderItemSeqId:item.orderItemSeqId, comments:'Order Item sent as part of Fulfilled Items Feed', createdDate:nowDate, externalFulfillmentId:'_NA_']"/>
-                </iterate>
-
-                <script>
-                    objectMapper.writerWithDefaultPrettyPrinter().writeValue(jGenerator, fulfilledOrderItemMap)
-                    fulfilledFeedOrdersCount = (fulfilledFeedOrdersCount ?: 0) + 1
-                </script>
+                <set field="fulfilledFeedOrdersCount" from="fulfilledFeedOrdersCount + 1"/>
+                <if condition="fulfilledFeedOrdersCount == fulfilledOrdersCountPerFeed">
+                    <script>
+                        csvPrinter.flush()
+                        writer.close()
+                    </script>
+                    <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                        in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId, messageText:csvFilePath, productStoreId:productStoreId]"
+                        out-map="fulfillmentFeedSysMsgOut"/>
+                    <set field="fulfilledFeedOrdersCount" value="0" type="Integer"/>
+                </if>
             </iterate>
             <script>
-                    jGenerator.writeEndArray()
+                } catch (Exception e) {
+                    log.error("Error processing Fulfilled Order Items Feed file with ${fulfilledFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and remote ${systemMessageRemoteId}", e)
                 }
-            }
+                if (writer != null) {
+                    writer.close()
+                }
+                if (csvPrinter != null) {
+                    csvPrinter.close()
+                }
             </script>
-            <if condition="fulfilledFeedOrdersCount != 0">
-                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                    in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                    messageText:jsonFilePathRef, productStoreId:productStoreId, shopId:customParametersMap?.shopId]"
-                    out-map="fulfillmentFeedSysMsgOut"/>
-            </if>
             <return message="Completed Fulfilled Order Items Feed file with ${fulfilledFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${fulfillmentFeedSysMsgOut?.systemMessageId}"/>
         </actions>
