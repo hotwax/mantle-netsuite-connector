@@ -163,8 +163,7 @@
                 <set field="orderDetails.phone" from="((orderDetails.shippingCountryCode?:'') || (orderDetails.shippingAreaCode?:'') || (orderDetails.shippingContactNumber?:'')) ? ((orderDetails.shippingCountryCode ?:'') + ' ' + (orderDetails.shippingAreaCode ?:'') + ' ' + (orderDetails.shippingContactNumber ?:'')) : ''" />
 
                 <if condition="(!orderDetails.billingContactMechId &amp;&amp; orderDetails.shippingContactMechId)">
-                    <set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip]"/>
-                    <else><set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.billingAddress1, billingAddress2:orderDetails.billingAddress2, billingCity:orderDetails.billingCity, billingState:orderDetails.billingState, billingCountry:orderDetails.billingCountry, billingZip:orderDetails.billingZip]"/></else>
+                    <set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip, billingAddressee:orderDetails.addressee]"/>
                 </if>
 
                 <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="shippingTaxAdjustments">
@@ -180,7 +179,7 @@
                 <entity-find entity-name="co.hotwax.netsuite.order.NonRefundedGiftCardPayment" list="giftCardPaymentTotalList">
                     <econdition field-name="orderId" from="orderDetails.orderId"/>
                 </entity-find>
-                <set field="orderDetails.giftCardPaymentTotal" from="giftCardPaymentTotalList[0]?.giftCardPaymentTotal ?: BigDecimal.ZERO"/>
+                <set field="orderDetails.giftCardPaymentTotal" from="giftCardPaymentTotalList[0]?.giftCardPaymentTotal"/>
                 <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
                     HCShopifySalesOrderId:order.shopifyOrderId, externalId: orderDetails.orderExternalId, shippingTaxCode:shippingTaxCode]"/>
 
