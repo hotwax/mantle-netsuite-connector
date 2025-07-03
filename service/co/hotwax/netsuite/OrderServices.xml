@@ -616,129 +616,14 @@
                 and remote ${sendSmrId} saved response in messages ${queueSystemMessageOut?.systemMessageId}"/>
         </actions>
     </service>
-    <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200" type="script" location="component://mantle-netsuite-connector/src/main/groovy/co/hotwax/netsuite/FulfilledOrderItemsFeed.groovy">
         <in-parameters>
-            <parameter name="systemMessageRemoteId" required="true"/>
-            <parameter name="systemMessageTypeId" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true" default-value="ExampleSftpLocal"/>
+            <parameter name="systemMessageTypeId" required="true" default-value="FulfilledOrderItemsFeedNS"/>
             <parameter name="fulfilledOrdersCountPerFeed" type="Integer" default-value="2500"/>
             <parameter name="orderId"/>
             <parameter name="orderItemSeqId"/>
-            <parameter name="orderStatusId"/>
-            <parameter name="orderTypeId" default-value="SALES_ORDER"/>
-            <parameter name="parentFacilityTypeIds" type="List"/>
         </in-parameters>
-        <actions>
-            <script>
-            import org.moqui.entity.EntityCondition
-            import org.apache.commons.csv.CSVFormat
-            import org.apache.commons.csv.CSVPrinter
-            import java.nio.file.Files
-            import java.nio.file.Paths
-            import java.nio.charset.StandardCharsets
-            import java.text.SimpleDateFormat
-
-            def fulfilledOrdersItems = ec.entity.find("co.hotwax.netsuite.warehouse.FulfilledOrderItemsSyncQueue")
-                .condition("itemStatusId", "ITEM_COMPLETED")
-                .condition("orderTypeId", orderTypeId)
-
-            if (orderId) fulfilledOrdersItems.condition("orderId", orderId)
-            if (orderItemSeqId) fulfilledOrdersItems.condition("orderItemSeqId", orderItemSeqId)
-            if (orderStatusId) fulfilledOrdersItems.condition("orderStatusId", orderStatusId)
-            if (parentFacilityTypeIds) fulfilledOrdersItems.condition("parentFacilityTypeId", EntityCondition.ComparisonOperator.IN, parentFacilityTypeIds)
-            if (productStoreIds) fulfilledOrdersItems.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
-
-            //If no eligible fulfilled orders, then don't generate the file
-            long fulfilledOrdersCount = fulfilledOrdersItems.count()
-            if (fulfilledOrdersCount == 0) {
-                ec.message.addMessage("No eligible orders for Fulfilled Order and Items Feed at ${nowDate}, not generating the HotWax Feed file.")
-                return
-            }
-
-            try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
-            </script>
-            <set field="fulfilledFeedOrdersCount" type="Integer" value="0"/>
-            <set field="productStoreId" from="(!productStoreIds || productStoreIds.size() != 1) ? System.getProperty('hotwax_feed_default_prefix') : productStoreIds[0]"/>
-
-            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType">
-                <field-map field-name="systemMessageTypeId" value="${systemMessageTypeId}"/>
-            </entity-find-one>
-            <if condition="systemMessageType == null">
-                <return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/>
-            </if>
-            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="ftlFileResource">
-                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
-                <field-map field-name="parameterName" value="resourcePath"/>
-            </entity-find-one>
-            <!-- Check if the custom ftl file resource is available. -->
-            <if condition="ftlFileResource &amp;&amp; ftlFileResource.parameterValue">
-                <set field="templateLocation" from="ftlFileResource.parameterValue"/>
-            </if>
-            <iterate list="fulfilledOrdersItemsItr" entry="fulfilledOrderItem">
-                <if condition="fulfilledFeedOrdersCount == 0">
-                    <set field="nowDate" from="ec.user.nowTimestamp"/>
-                    <set field="csvFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
-                        [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowDate, 'yyyy-MM-dd'), dateTime:ec.l10n.format(nowDate, 'yyyy-MM-dd-HH-mm-ss-SSS'),
-                        productStoreId:productStoreId], false)"/>
-                    <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
-                    <log message="opening new file ${csvFilePath}"/>
-                    <script>
-                        File csvFile = new File(csvFilePath)
-                        if(!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
-                        writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8)
-                        CSVFormat format = CSVFormat.DEFAULT
-                            .withQuote(null)
-                            .withRecordSeparator("\n")
-                            .withIgnoreEmptyLines();
-                        csvPrinter = new CSVPrinter(writer, format);
-                        def isFileEmpty = true
-                        def csvHeaders = ['lineId','internalId','item','quantity','location','tags','closed','addressee','address1','address2','city','state','country','zip','shippingMethod']
-                        csvPrinter.printRecord(csvHeaders)
-                    </script>
-                </if>
-                <if condition="ftlFileResource">
-                    <set field="templateWriter" from="new StringWriter()"/>
-                    <script>
-                        ec.resourceFacade.template(templateLocation, templateWriter)
-                        csvPrinter.printRecord(templateWriter)
-                    </script>
-                    <else>
-                        <set field="fulfilledOrderItemMap" from="['lineId': fulfilledOrderItem.netsuiteItemLineId ?: '', 'internalId': fulfilledOrderItem.netsuiteOrderId ?: '', 'item': '', 'quantity': fulfilledOrderItem.quantity ?: '1',
-                            'location': fulfilledOrderItem.facilityExternalId ?: '', 'tags': 'hotwax-fulfilled', 'closed': '', 'addressee': '', 'address1': '',
-                            'address2': '', 'city': '','state': '', 'country': '', 'zip': '', 'shippingMethod': '']"/>
-                        <script>
-                            csvPrinter.printRecord(fulfilledOrderItemMap.values().collect { it ?: "" })
-                        </script>
-                    </else>
-                </if>
-                <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
-                    in-map="[orderId:fulfilledOrderItem.orderId, orderItemSeqId:fulfilledOrderItem.orderItemSeqId, comments:'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate:nowDate, externalFulfillmentId:'_NA_']"/>
-
-                <set field="fulfilledFeedOrdersCount" from="fulfilledFeedOrdersCount + 1"/>
-                <if condition="fulfilledFeedOrdersCount == fulfilledOrdersCountPerFeed">
-                    <script>
-                        csvPrinter.flush()
-                        writer.close()
-                    </script>
-                    <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                        in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId, messageText:csvFilePath, productStoreId:productStoreId]"
-                        out-map="fulfillmentFeedSysMsgOut"/>
-                    <set field="fulfilledFeedOrdersCount" value="0" type="Integer"/>
-                </if>
-            </iterate>
-            <script>
-                } catch (Exception e) {
-                    log.error("Error processing Fulfilled Order Items Feed file with ${fulfilledFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and remote ${systemMessageRemoteId}", e)
-                }
-                if (writer != null) {
-                    writer.close()
-                }
-                if (csvPrinter != null) {
-                    csvPrinter.close()
-                }
-            </script>
-            <return message="Completed Fulfilled Order Items Feed file with ${fulfilledFeedOrdersCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${fulfillmentFeedSysMsgOut?.systemMessageId}"/>
-        </actions>
     </service>
     <service verb="get" noun="BrokeredOrders" authenticate="anonymous-all" transaction-timeout="7200">
         <in-parameters>
