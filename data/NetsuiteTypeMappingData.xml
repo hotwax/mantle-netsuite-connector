@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="ext">
+    <Enumeration enumCode="NETSUITE_TAX_CODE" enumId="NETSUITE_TAX_CODE" enumName="Netsuite Tax codes" enumTypeId="NETSUITE" />
+    <IntegrationTypeMapping integrationTypeId="NETSUITE_TAX_CODE" mappingKey="DEFAULT" mappingValue="" />
+</entity-facade-xml>
