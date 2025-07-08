@@ -420,6 +420,7 @@
         <alias entity-alias="OI"  name="quantity"/>
         <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
         <alias entity-alias="FGM" name="facilityGroupId"/>
+        <alias entity-alias="OID" name="netsuiteOrderId" field="idValue"/>
         <entity-condition>
             <econditions>
                 <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
@@ -428,7 +429,6 @@
                 <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="OMS_FULFILLMENT"/>
                 <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
                 <econdition entity-alias="OISG" field-name="shipmentMethodTypeId" operator="not-equals" value="POS_COMPLETED"/>
-                <econdition entity-alias="OID" field-name="idValue" operator="not-equals" value=""/>
             </econditions>
             <order-by field-name="entryDate"/>
         </entity-condition>
