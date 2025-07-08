@@ -97,10 +97,7 @@
                 <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
                 <field-map field-name="parameterName" value="resourcePath"/>
             </entity-find-one>
-            <!-- Check if the Groovy file resource is available. -->
-            <if condition="groovyFileResource &amp;&amp; groovyFileResource.parameterValue">
-                <set field="scriptPath" from="groovyFileResource.parameterValue"/>
-            </if>
+            <set field="scriptPath" from="groovyFileResource?.parameterValue"/>
             <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="schemaPath">
                 <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
                 <field-map field-name="parameterName" value="schemaPath"/>
@@ -132,7 +129,6 @@
              productStoreId:productStoreId], false)"/>
             <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
 
-            <set field="flattenedOrders" from="[]" type="List"/>
             <script>
                 File csvFile = new File(csvFilePath)
                 File invalidFile = new File(invalidFilePath)
@@ -166,15 +162,7 @@
                     <set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip, billingAddressee:orderDetails.addressee]"/>
                 </if>
 
-                <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="shippingTaxAdjustments">
-                    <econdition field-name="orderId" from="order.orderId"/>
-                    <econdition field-name="orderAdjustmentTypeId" value="SHIPPING_SALES_TAX"/>
-                </entity-find>
-
-                <if condition="shippingTaxAdjustments &amp;&amp; shippingTaxAdjustments.size() > 0">
-                    <set field="shippingTaxCode" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT')"/>
-                    <else><set field="shippingTaxCode" value="-Not Taxable-"/></else>
-                </if>
+                <set field="shippingTaxCode" from="NetSuiteMappingWorker.getShippingTaxCode(ec, order.orderId)"/>
 
                 <entity-find entity-name="co.hotwax.netsuite.order.NonRefundedGiftCardPayment" list="giftCardPaymentTotalList">
                     <econdition field-name="orderId" from="orderDetails.orderId"/>
@@ -187,75 +175,39 @@
                 <entity-find entity-name="co.hotwax.netsuite.order.OrderItemsDetails" list="orderItemsList">
                     <econdition field-name="orderId" operator="equals" from="order.orderId"/>
                 </entity-find>
-                <if condition="'Y'.equals(order.isMixCartOrder)">
-                    <set field="shippingMethods" from="orderItemList*.shipmentMethodTypeId
-                    .findAll { it &amp;&amp; it != 'POS_COMPLETED' &amp;&amp; it != 'STOREPICKUP' }.toSet()"/>
-                    <set field="selectedShippingMethod" from="shippingMethods ? shippingMethods.first() : null"/>
-                </if>
-                <set field="grandTotal" from="orderDetails.adjustmentTotalAmount" default-value="0" type="BigDecimal"/>
+                <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getShippingMethod(ec, order.isMixCartOrder, orderItemsList)"/>
+                <set field="grandTotal" from="NetSuiteMappingWorker.getGrandTotal(orderDetails.adjustmentTotalAmount ?: 0, orderItemsList)" type="BigDecimal"/>
                 <iterate list="orderItemsList" entry="orderItem">
                     <set field="orderItem" from="orderItem.getPlainValueMap(0)"/>
-                    <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="itemTaxAdjustments">
-                        <econdition field-name="orderId" from="order.orderId"/>
-                        <econdition field-name="orderItemSeqId" from="orderItem.orderItemSeqId"/>
-                        <econdition field-name="orderAdjustmentTypeId" value="SALES_TAX"/>
-                    </entity-find>
 
-                    <if condition="itemTaxAdjustments &amp;&amp; itemTaxAdjustments.size() > 0">
-                        <set field="taxCode" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT')"/>
-                        <else><set field="taxCode" value="-Not Taxable-"/></else>
-                    </if>
-
-                    <if condition="'Y'.equals(order.isMixCartOrder)">
-                        <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD', selectedShippingMethod)"/>
-                        <else><set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD' ,orderItem.shipmentMethodTypeId)"/></else>
-                    </if>
-                    <set field="grandTotal" from="grandTotal + ((orderItem.price ?: 0) * (orderItem.quantity ?: 0))"/>
+                    <set field="taxCode" from="NetSuiteMappingWorker.getTaxCode(ec, orderItem)"/>
                     <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
                     <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
-                    <set field="department" from="NetSuiteMappingWorker.getFacilityDepartment(ec, orderItem.orderFacilityId)" type="String"/>
+                    <set field="department" from="NetSuiteMappingWorker.getDepartment(ec, orderItem)" type="String"/>
 
                     <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, orderLineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:orderItem.orderFacilityExternalId, itemLocation:orderItem.facilityExternalId, taxCode:taxCode]"/>
                     <script>orderItems.add(orderItem)</script>
 
-                    <!-- Process Promotions -->
-                    <entity-find entity-name="co.hotwax.order.OrderItemAdjustmentAndAttribute" list="orderAdjustmentList">
-                        <econdition field-name="orderId" from="order.orderId"/>
-                        <econdition field-name="orderItemSeqId" from="orderItem.orderItemSeqId"/>
-                        <econdition field-name="orderAdjustmentTypeId" value="EXT_PROMO_ADJUSTMENT"/>
-                        <econdition field-name="attrName" operator="is-null"/>
-                    </entity-find>
-                    <if condition="orderAdjustmentList &amp;&amp; orderAdjustmentList.size() > 0">
-                        <set field="totalPromotionAmount" from="orderAdjustmentList.collect{ it.amount }.sum()" type="BigDecimal" default-value="0"/>
-                        <script><![CDATA[Map<String, Object> discountRow = new HashMap<>(orderItem);]]></script>
-                        <set field="discountRow.price" from="totalPromotionAmount"/>
-                        <set field="discountRow.isDiscountRow" from="'true'"/>
-                        <script>orderItems.add(discountRow)</script>
+                    <set field="discountItems" from="NetSuiteMappingWorker.getDiscountItems(ec, order.orderId, orderItem)"/>
+                    <if condition="discountItems">
+                        <script>orderItems.addAll(discountItems)</script>
                     </if>
+
                 </iterate>
                 <set field="orderDetails" from="orderDetails + [HCOrderTotal:grandTotal, orderItems:orderItems]"/>
                 <if condition="scriptPath">
                     <set field="orderDetails" from="ec.resource.script(scriptPath, null)"/>
                 </if>
+                <set field="netsuiteOrderMap" from="NetSuiteMappingWorker.mergeOrderDataIntoItem(orderDetails)"/>
                 <script>
-                    def orderItems = orderDetails.remove("orderItems")
-                    orderItems.each { item ->
-                        item.putAll(orderDetails)
-                        item.each { key, value -> item["$key"] = value }
-                        item.keySet().removeAll(['productStoreExternalId', 'shippingContactMechId', 'orderSalesChannelCode', '_entity', 'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProductId', 'orderItemSeqId',
-                            'orderSalesChannelDescription', 'productId', 'adjustmentTotalAmount', 'orderExternalId', 'netsuiteCustomerId', 'shippingContactNumber', 'billingContactMechId', 'itemStatus', 'orderName', 'facilityId',
-                            'shippingCountryCode', 'isDiscountRow', 'orderFacilityExternalId', 'facilityExternalId', 'billingAreaCode', 'shippingAreaCode', 'orderFacilityId'])
-                        flattenedOrders.add(item)
-                    }
-                    // Dynamically determine headers in the first iteration
                     if (!csvHeaders) {
-                        csvHeaders = flattenedOrders[0].keySet().collect { it as String }
+                        csvHeaders = netsuiteOrderMap[0].keySet().collect { it as String }
                         csvPrinter.printRecord(csvHeaders)
                         invalidCsvPrinter.printRecord(csvHeaders)
                     }
 
                     // Check for required fields and separate valid/invalid orders
-                    flattenedOrders.each { record ->
+                    netsuiteOrderMap.each { record ->
                         try {
                             def schemaValidation = new co.hotwax.common.SchemaValidation(ec.ecfi ,ec)
                             schemaValidation.validateSchema(record as LinkedHashMap, schemaLocation)
@@ -270,12 +222,10 @@
                         }
                     }
                     orderDetails = null
-                    flattenedOrders = []
                 </script>
             </iterate>
             <script>
                   }
-
                 }
                 if (isReqFieldMissFileEmpty) {
                     invalidFile.delete()
