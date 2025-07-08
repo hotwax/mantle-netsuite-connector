@@ -618,8 +618,8 @@
     </service>
     <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200" type="script" location="component://mantle-netsuite-connector/src/main/groovy/co/hotwax/netsuite/FulfilledOrderItemsFeed.groovy">
         <in-parameters>
-            <parameter name="systemMessageRemoteId" required="true" default-value="ExampleSftpLocal"/>
-            <parameter name="systemMessageTypeId" required="true" default-value="FulfilledOrderItemsFeedNS"/>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="systemMessageTypeId" required="true"/>
             <parameter name="fulfilledOrdersCountPerFeed" type="Integer" default-value="2500"/>
             <parameter name="orderId"/>
             <parameter name="orderItemSeqId"/>
