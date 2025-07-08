@@ -7,7 +7,6 @@ import java.nio.file.Paths
 import java.nio.charset.StandardCharsets
 import org.moqui.entity.EntityValue
 
-
 EntityValue systemMessageType = ec.entity.find("moqui.service.message.SystemMessageType")
     .condition("systemMessageTypeId", systemMessageTypeId).one()
 
@@ -30,35 +29,31 @@ if (fulfilledOrdersCount == 0) {
 EntityValue ftlFileResource = ec.entity.find("moqui.service.message.SystemMessageTypeParameter")
     .condition("systemMessageTypeId", systemMessageTypeId).condition("parameterName", "resourcePath").one()
 
-if (ftlFileResource && ftlFileResource.parameterValue) {
-    templateLocation = (ftlFileResource.parameterValue)
-}
+templateLocation = ftlFileResource?.parameterValue
 
 Boolean isFirstFile = true
 int fileCount = 1
 int totalFileCount = (fulfilledOrdersCount + fulfilledOrdersCountPerFeed - 1) / fulfilledOrdersCountPerFeed
-def csvHeaders = ['lineId','internalId','item','quantity','location','tags','closed','addressee','address1','address2','city','state','country','zip','shippingMethod']
 def createdSystemMessageIds = []
+def templateWriter = new StringWriter()
 
 try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
     while (fileCount <= totalFileCount) {
-        csvFilePathRef = (ec.resource.expand(systemMessageType.receivePath, null,[contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(ec.user.nowTimestamp, 'yyyy-MM-dd'), dateTime:ec.l10n.format(ec.user.nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS'),                             productStoreId:productStoreId], false))
+        csvFilePathRef = (ec.resource.expand(systemMessageType.receivePath, null,[contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(ec.user.nowTimestamp, 'yyyy-MM-dd'), dateTime:ec.l10n.format(ec.user.nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')], false))
         csvFilePath = (ec.resource.getLocationReference(csvFilePathRef).getUri().getPath())
         File csvFile = new File(csvFilePath)
         if(!csvFile.parentFile.exists()) csvFile.parentFile.mkdirs()
-        CSVFormat format = CSVFormat.DEFAULT.withQuote(null).withRecordSeparator("\n").withIgnoreEmptyLines();
+        CSVFormat format = CSVFormat.DEFAULT.builder().setQuote(null).setRecordSeparator("\n").setIgnoreEmptyLines(true).setHeader('lineId','internalId','item','quantity','location','tags','closed','addressee','address1','address2','city','state','country','zip','shippingMethod').build()
 
         try (writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8); csvPrinter = new CSVPrinter(writer, format)) {
-            csvPrinter.printRecord(csvHeaders)
             int fulfilledOrderItemCount = 0
-            while (fulfilledOrdersItemsItr.hasNext() && fulfilledOrderItemCount < fulfilledOrdersCountPerFeed) {
-                def fulfilledOrderItem = fulfilledOrdersItemsItr.next()
+            while ((fulfilledOrderItem = fulfilledOrdersItemsItr.next()) != null && fulfilledOrderItemCount < fulfilledOrdersCountPerFeed) {
                 fulfilledOrderItemCount++
 
-                if (ftlFileResource && ftlFileResource.parameterValue) {
-                    def templateWriter = new StringWriter()
+                if (templateLocation) {
                     ec.resourceFacade.template(templateLocation, templateWriter)
                     csvPrinter.printRecord(templateWriter)
+                    templateWriter.getBuffer().setLength(0); // clear the buffer for the next iteration.
                 } else {
                     def fulfilledOrderItemMap = ['lineId': fulfilledOrderItem.netsuiteItemLineId ?: '', 'internalId': fulfilledOrderItem.netsuiteOrderId ?: '', 'quantity': fulfilledOrderItem.quantity ?: '1', 'location': fulfilledOrderItem.facilityExternalId ?: '', 'tags': 'hotwax-fulfilled' ]
                     csvPrinter.printRecord(fulfilledOrderItemMap.values().collect { it ?: "" })
@@ -66,26 +61,26 @@ try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
                 ec.service.sync().name("create#co.hotwax.integration.order.OrderFulfillmentHistory")
                     .parameters([orderId: fulfilledOrderItem.orderId, orderItemSeqId: fulfilledOrderItem.orderItemSeqId, comments: 'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate: nowDate, externalFulfillmentId: '_NA_'])
                     .call()
-                if (fulfilledOrderItemCount >= fulfilledOrdersCountPerFeed || !fulfilledOrdersItemsItr.hasNext()) {
-                    csvPrinter.flush()
-                    writer.close()
-
-                    def fulfillmentFeedSysMsgOut = ec.service.sync().name("org.moqui.impl.SystemMessageServices.queue#SystemMessage")
-                        .parameters([systemMessageTypeId: systemMessageTypeId, systemMessageRemoteId: systemMessageRemoteId, messageText: csvFilePath])
-                        .call()
-                    createdSystemMessageIds.add(fulfillmentFeedSysMsgOut.systemMessageId)
-
+                if (fulfilledOrderItemCount >= fulfilledOrdersCountPerFeed || isFirstFile) {
                     fileCount = fileCount + 1
+                    isFirstFile = false
                     break
                 }
             }
-        } catch (Exception e) {
+            csvPrinter.flush()
+            writer.close()
+            def fulfillmentFeedSysMsgOut = ec.service.sync().name("org.moqui.impl.SystemMessageServices.queue#SystemMessage")
+                .parameters([systemMessageTypeId: systemMessageTypeId, systemMessageRemoteId: systemMessageRemoteId, messageText: csvFilePath])
+                .call()
+            createdSystemMessageIds.add(fulfillmentFeedSysMsgOut.systemMessageId)
+        }
+        catch (Exception e) {
             throw ("Error preparing fulfilled order feed file ${e}")
         }
     }
-} catch (Exception e) {
+}
+catch (Exception e) {
     throw ("Error preparing fulfilled order feed file ${e}")
 }
-
 ec.message.addMessage("Completed Fulfilled Order Items Feed file with ${totalFileCount} at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and remote ${systemMessageRemoteId} saved response in messages ${createdSystemMessageIds}")
 return;

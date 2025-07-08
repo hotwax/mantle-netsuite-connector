@@ -425,7 +425,7 @@
             <econditions>
                 <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
                 <econdition entity-alias="OI" field-name="statusId" operator="equals" value="ITEM_COMPLETED"/>
-<!--                <econdition entity-alias="OFH" field-name="orderId" operator="equals" value=""/>-->
+                <econdition entity-alias="OFH" field-name="orderId" operator="equals" value=""/>
                 <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="OMS_FULFILLMENT"/>
                 <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
                 <econdition entity-alias="OISG" field-name="shipmentMethodTypeId" operator="not-equals" value="POS_COMPLETED"/>
