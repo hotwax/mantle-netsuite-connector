@@ -31,7 +31,6 @@ EntityValue ftlFileResource = ec.entity.find("moqui.service.message.SystemMessag
 
 templateLocation = ftlFileResource?.parameterValue
 
-Boolean isFirstFile = true
 int fileCount = 1
 int totalFileCount = (fulfilledOrdersCount + fulfilledOrdersCountPerFeed - 1) / fulfilledOrdersCountPerFeed
 def createdSystemMessageIds = []
@@ -63,9 +62,8 @@ try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
                     .parameters([orderId: fulfilledOrderItem.orderId, orderItemSeqId: fulfilledOrderItem.orderItemSeqId, comments: 'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate: nowDate, externalFulfillmentId: '_NA_'])
                     .requireNewTransaction(true)
                     .call()
-                if (fulfilledOrderItemCount >= fulfilledOrdersCountPerFeed || isFirstFile) {
+                if (fulfilledOrderItemCount >= fulfilledOrdersCountPerFeed || !fulfilledOrdersItemsItr.hasNext()) {
                     fileCount = fileCount + 1
-                    isFirstFile = false
                     break
                 }
             }
