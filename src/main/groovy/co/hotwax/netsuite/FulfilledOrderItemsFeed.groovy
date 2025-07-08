@@ -35,6 +35,7 @@ Boolean isFirstFile = true
 int fileCount = 1
 int totalFileCount = (fulfilledOrdersCount + fulfilledOrdersCountPerFeed - 1) / fulfilledOrdersCountPerFeed
 def createdSystemMessageIds = []
+def systemMesgInParam = ["systemMessageTypeId":systemMessageTypeId, "systemMessageRemoteId": systemMessageRemoteId, "messageText":null]
 def templateWriter = new StringWriter()
 
 try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
@@ -60,6 +61,7 @@ try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
                 }
                 ec.service.sync().name("create#co.hotwax.integration.order.OrderFulfillmentHistory")
                     .parameters([orderId: fulfilledOrderItem.orderId, orderItemSeqId: fulfilledOrderItem.orderItemSeqId, comments: 'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate: nowDate, externalFulfillmentId: '_NA_'])
+                    .requireNewTransaction(true)
                     .call()
                 if (fulfilledOrderItemCount >= fulfilledOrdersCountPerFeed || isFirstFile) {
                     fileCount = fileCount + 1
@@ -69,8 +71,9 @@ try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
             }
             csvPrinter.flush()
             writer.close()
+            systemMesgInParam.messageText = csvFilePath
             def fulfillmentFeedSysMsgOut = ec.service.sync().name("org.moqui.impl.SystemMessageServices.queue#SystemMessage")
-                .parameters([systemMessageTypeId: systemMessageTypeId, systemMessageRemoteId: systemMessageRemoteId, messageText: csvFilePath])
+                .parameters(systemMesgInParam)
                 .call()
             createdSystemMessageIds.add(fulfillmentFeedSysMsgOut.systemMessageId)
         }

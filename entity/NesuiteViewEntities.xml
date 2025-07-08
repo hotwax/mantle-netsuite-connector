@@ -388,7 +388,7 @@
                 <econdition entity-alias="OIA" field-name="attrName" value="NetsuiteItemLineId"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH" join-optional="true">
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
             <key-map field-name="orderId"/>
             <entity-condition>
                 <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
@@ -420,7 +420,6 @@
         <alias entity-alias="OI"  name="quantity"/>
         <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
         <alias entity-alias="FGM" name="facilityGroupId"/>
-        <alias entity-alias="OID" field="idValue" name="netsuiteOrderId"/>
         <entity-condition>
             <econditions>
                 <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
