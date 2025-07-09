@@ -59,21 +59,21 @@
                 import org.moqui.entity.EntityCondition
                 import co.hotwax.netsuite.NetSuiteMappingWorker
 
-                netsuiteOrders_find = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
-                if(orderId) netsuiteOrders_find.condition("orderId", orderId)
-                if(fromOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
-                if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
-                if(includeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
-                if(excludeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
-                if(includeSalesChannel) netsuiteOrders_find.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.IN, includeSalesChannel)
-                if(excludeSalesChannel) netsuiteOrders_find.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.NOT_IN, excludeSalesChannel)
-                if(isMixCartOrder) netsuiteOrders_find.condition("isMixCartOrder", isMixCartOrder)
+                netsuiteOrdersFind = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
+                if(orderId) netsuiteOrdersFind.condition("orderId", orderId)
+                if(fromOrderDate) netsuiteOrdersFind.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
+                if(thruOrderDate) netsuiteOrdersFind.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
+                if(includeShipmentMethod) netsuiteOrdersFind.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
+                if(excludeShipmentMethod) netsuiteOrdersFind.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
+                if(includeSalesChannel) netsuiteOrdersFind.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.IN, includeSalesChannel)
+                if(excludeSalesChannel) netsuiteOrdersFind.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.NOT_IN, excludeSalesChannel)
+                if(isMixCartOrder) netsuiteOrdersFind.condition("isMixCartOrder", isMixCartOrder)
 
-                netsuiteOrders_find.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
-                netsuiteOrders_find.distinct(true)
+                netsuiteOrdersFind.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
+                netsuiteOrdersFind.distinct(true)
 
                 //If no eligible orders, then don't generate the file
-                long netsuiteOrdersCount = netsuiteOrders_find.count()
+                long netsuiteOrdersCount = netsuiteOrdersFind.count()
                 if (netsuiteOrdersCount == 0) {
                     ec.message.addMessage("No eligible orders at ${nowTimestamp}, not generating the HotWax Feed file for Netsuite.")
                     return
@@ -116,7 +116,7 @@
                 isFileEmpty = true
                 csvHeaders = null
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
-                try (ordersItr = netsuiteOrders_find.iterator()) {
+                try (ordersItr = netsuiteOrdersFind.iterator()) {
                      try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
                         def invalidWriter = Files.newBufferedWriter(Paths.get(invalidFilePath), StandardCharsets.UTF_8);
                         def csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT);
