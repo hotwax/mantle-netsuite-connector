@@ -83,7 +83,7 @@ class NetSuiteMappingWorker {
             .condition("facilityIdenTypeId", facilityIdenTypeId)
             .list()
             .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
-        return identifications?.first?.idValue
+        return (identifications && !identifications.isEmpty()) ? identifications.first().idValue : null
     }
 
     /**
@@ -92,7 +92,7 @@ class NetSuiteMappingWorker {
      * @param orderItems List of order items
      * @return The calculated grand total
      */
-    static BigDecimal getGrandTotal(BigDecimal adjustmentTotalAmount, EntityListImpl orderItems) {
+    static BigDecimal getGrandTotal(BigDecimal adjustmentTotalAmount, List<Map> orderItems) {
         BigDecimal grandTotal = adjustmentTotalAmount ?: BigDecimal.ZERO
 
         if (orderItems) {
@@ -105,6 +105,21 @@ class NetSuiteMappingWorker {
         return grandTotal
     }
 
+    /**
+     * Gets the total gift card payment amount for an order
+     * @param ec ExecutionContext
+     * @param orderId The order ID to get gift card payments for
+     * @return The total gift card payment amount as BigDecimal, or 0 if none found
+     */
+    static BigDecimal getGiftCardPaymentTotal(ExecutionContext ec, String orderId) {
+        if (!orderId) return null
+
+        def giftCardPayment = ec.entity.find("co.hotwax.netsuite.order.NonRefundedGiftCardPayment")
+            .condition("orderId", orderId)
+            .useCache(true).list()
+
+        return giftCardPayment ? giftCardPayment[0].giftCardPaymentTotal : null
+    }
 
     /**
      * Gets the shipping method for an order.
@@ -113,8 +128,7 @@ class NetSuiteMappingWorker {
      * @param orderItems List of order items
      * @return The mapped shipping method or null if not found
      */
-    static String getShippingMethod(ExecutionContext ec, String isMixCartOrder, EntityListImpl orderItems) {
-        if (!orderItems) return null
+    static String getShippingMethod(ExecutionContext ec, String isMixCartOrder, List<Map> orderItems) {
 
         if ("Y".equals(isMixCartOrder)) {
             // For mixed cart orders, find all unique shipping methods excluding POS_COMPLETED and STOREPICKUP
@@ -237,7 +251,6 @@ class NetSuiteMappingWorker {
             Map<String, Object> processedItem = new HashMap<>(item)
 
             processedItem.putAll(orderDetails)
-            processedItem.each { key, value -> processedItem[key] = value }
             processedItem.keySet().removeAll([
                 'productStoreExternalId', 'shippingContactMechId', 'orderSalesChannelCode', '_entity',
                 'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProductId',

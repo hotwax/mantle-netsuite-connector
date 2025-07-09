@@ -10,7 +10,6 @@
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/CreateOrderFeed/cashsale/createOrderFeed-${dateTime}.csv">
         <parameters parameterValue="ResourcePath" parameterName=""/>
-        <parameters parameterName="SchemaPath" parameterValue=""/>
     </moqui.service.message.SystemMessageType>
 
     <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuiteOrderItemsFeed"
@@ -19,9 +18,7 @@
         sendPath="/home/${sftpUsername}/netsuite/salesorder/export/CreatedOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
         sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
         receivePath="${contentRoot}/CreateOrderFeed/salesorder/createOrderFeed-${dateTime}.csv">
-        <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
-     <parameters parameterName="SchemaPath" parameterValue=""/>
-     <parameters parameterValue="ResourcePath" parameterName=""/>
+        <parameters parameterValue="ResourcePath" parameterName=""/>
     </moqui.service.message.SystemMessageType>
 
     <!-- System Message Type for Customer Deposit Feed for Netsuite -->
@@ -58,10 +55,10 @@
         receivePath="${contentRoot}/CreateOrderFeed/salesorder/required_fields_missing/createOrderFeed-${dateTime}.csv"/>
 
     <moqui.basic.Enumeration description="Send Required filed missing fields POS orders" enumId="ReqFieldMisPosCashOrder" enumTypeId="NetsuiteMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Product Updates Feed" enumId="PosCashOrderItemsFeed" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="ReqFieldMisPosCashOrder" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Netsuite POS Order Items Feed from oms to netsuite" enumId="PosCashOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="ReqFieldMisPosCashOrder" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 
     <moqui.basic.Enumeration description="Send Required filed missing fields sales orders" enumId="ReqFieldMisOrderItems" enumTypeId="NetsuiteMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Product Updates Feed" enumId="NetSuiteOrderItemsFeed" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="ReqFieldMisOrderItems" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Netsuite Order Items Feed from oms to netsuite" enumId="NetSuiteOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="ReqFieldMisOrderItems" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
     <moqui.service.message.SystemMessageType systemMessageTypeId="FulfilledOrderItemsFeedNetsuiteToHotwax"
        description="Fetch Fulfilled Order Items feed Netsuite to Hotwax"
        parentTypeId="LocalFeedFile"

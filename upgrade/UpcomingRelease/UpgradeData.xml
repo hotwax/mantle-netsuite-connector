@@ -35,4 +35,7 @@
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
         <parameters parameterName="isCashOrderFeed" parameterValue="Y"/>
     </moqui.service.job.ServiceJob>
+
+    <moqui.basic.Enumeration description="Netsuite Order Items Feed from oms to netsuite" enumId="NetSuiteOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="ReqFieldMisOrderItems" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
+    <moqui.basic.Enumeration description="Netsuite POS Order Items Feed from oms to netsuite" enumId="PosCashOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="ReqFieldMisPosCashOrder" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 </entity-facade-xml>

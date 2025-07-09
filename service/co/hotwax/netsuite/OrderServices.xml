@@ -41,13 +41,6 @@
                     N to not include the order with multiple shipping methods.
                 </description>
             </parameter>
-            <parameter name="isCashOrderFeed">
-                <description>
-                    Parameter to determine if the feed is for cash orders or not.
-                    Need to configure this as the same service is used for both sales orders and cash sales orders.
-                    if set to 'Y' then the feed is for cash orders and if set to 'N' then the feed is for sales orders.
-                </description>
-            </parameter>
         </in-parameters>
         <actions>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
@@ -64,24 +57,17 @@
                 import java.nio.file.Paths
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
-                import co.hotwax.common.SchemaValidation
                 import co.hotwax.netsuite.NetSuiteMappingWorker
 
                 netsuiteOrders_find = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
                 if(fromOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
-                if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
+                if(thruOrderDate) netsuiteOrders_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
                 if(includeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
                 if(excludeShipmentMethod) netsuiteOrders_find.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
                 if(includeSalesChannel) netsuiteOrders_find.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.IN, includeSalesChannel)
                 if(excludeSalesChannel) netsuiteOrders_find.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.NOT_IN, excludeSalesChannel)
-
-                // Add conditions based on isCashOrderFeed parameter
-                if (isCashOrderFeed == "Y") {
-                    netsuiteOrders_find.condition("nonPosCompletedItemsCount", EntityCondition.ComparisonOperator.EQUALS, 0)
-                } else if (isCashOrderFeed == "N") {
-                    netsuiteOrders_find.condition("nonPosCompletedItemsCount", EntityCondition.ComparisonOperator.GREATER_THAN, 0)
-                }
+                if(isMixCartOrder) netsuiteOrders_find.condition("isMixCartOrder", isMixCartOrder)
 
                 netsuiteOrders_find.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
                 netsuiteOrders_find.distinct(true)
@@ -98,14 +84,6 @@
                 <field-map field-name="parameterName" value="resourcePath"/>
             </entity-find-one>
             <set field="scriptPath" from="groovyFileResource?.parameterValue"/>
-            <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="schemaPath">
-                <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
-                <field-map field-name="parameterName" value="schemaPath"/>
-            </entity-find-one>
-            <if condition="schemaPath">
-                <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
-                <else><set field="schemaLocation" value="component://mantle-netsuite-connector/schemas/DefaultOrderSchema.json"/></else>
-            </if>
 
             <entity-find-one entity-name="moqui.basic.Enumeration" value-field="enumValue">
                 <field-map field-name="enumId" from="systemMessageTypeId"/>
@@ -137,7 +115,6 @@
                 isReqFieldMissFileEmpty = true
                 isFileEmpty = true
                 csvHeaders = null
-
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
                 try (ordersItr = netsuiteOrders_find.iterator()) {
                      try (def writer = Files.newBufferedWriter(Paths.get(csvFilePath), StandardCharsets.UTF_8);
@@ -163,11 +140,7 @@
                 </if>
 
                 <set field="shippingTaxCode" from="NetSuiteMappingWorker.getShippingTaxCode(ec, order.orderId)"/>
-
-                <entity-find entity-name="co.hotwax.netsuite.order.NonRefundedGiftCardPayment" list="giftCardPaymentTotalList">
-                    <econdition field-name="orderId" from="orderDetails.orderId"/>
-                </entity-find>
-                <set field="orderDetails.giftCardPaymentTotal" from="giftCardPaymentTotalList[0]?.giftCardPaymentTotal"/>
+                <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getGiftCardPaymentTotal(ec, order.orderId)"/>
                 <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
                     HCShopifySalesOrderId:order.shopifyOrderId, externalId: orderDetails.orderExternalId, shippingTaxCode:shippingTaxCode]"/>
 
@@ -189,14 +162,15 @@
                     <script>orderItems.add(orderItem)</script>
 
                     <set field="discountItems" from="NetSuiteMappingWorker.getDiscountItems(ec, order.orderId, orderItem)"/>
-                    <if condition="discountItems">
-                        <script>orderItems.addAll(discountItems)</script>
-                    </if>
+                    <if condition="discountItems"><script>orderItems.addAll(discountItems)</script></if>
 
                 </iterate>
                 <set field="orderDetails" from="orderDetails + [HCOrderTotal:grandTotal, orderItems:orderItems]"/>
+                <set field="requiredFields" from="['date', 'country', 'customer']"/>
                 <if condition="scriptPath">
-                    <set field="orderDetails" from="ec.resource.script(scriptPath, null)"/>
+                    <set field="scriptResult" from="ec.resource.script(scriptPath, null)"/>
+                    <set field="orderDetails" from="scriptResult.orderData"/>
+                    <set field="requiredFields" from="requiredFields + scriptResult.customRequiredFileds"/>
                 </if>
                 <set field="netsuiteOrderMap" from="NetSuiteMappingWorker.mergeOrderDataIntoItem(orderDetails)"/>
                 <script>
@@ -208,17 +182,17 @@
 
                     // Check for required fields and separate valid/invalid orders
                     netsuiteOrderMap.each { record ->
-                        try {
-                            def schemaValidation = new co.hotwax.common.SchemaValidation(ec.ecfi ,ec)
-                            schemaValidation.validateSchema(record as LinkedHashMap, schemaLocation)
-                            def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
-                            csvPrinter.printRecord(orderedRecord)
-                            isFileEmpty = false
-                        } catch (Exception e) {
-                            def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
-                            orderedRecord.add(e.message)
+                        def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
+                        def missingFields = requiredFields.findAll { !record[it] || record[it].toString().trim() == '' }
+
+                        if (missingFields) {
+                            // Add to invalid CSV with error message
+                            orderedRecord.add("Missing required fields: ${missingFields.join(', ')}")
                             invalidCsvPrinter.printRecord(orderedRecord)
                             isReqFieldMissFileEmpty = false
+                        } else {
+                            csvPrinter.printRecord(orderedRecord)
+                            isFileEmpty = false
                         }
                     }
                     orderDetails = null
@@ -229,6 +203,9 @@
                 }
                 if (isReqFieldMissFileEmpty) {
                     invalidFile.delete()
+                }
+                if (isFileEmpty) {
+                invalidFile.delete()
                 }
             </script>
             <if condition="!isFileEmpty">
