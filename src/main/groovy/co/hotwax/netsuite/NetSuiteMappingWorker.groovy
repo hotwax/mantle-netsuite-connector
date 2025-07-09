@@ -213,9 +213,8 @@ class NetSuiteMappingWorker {
      * @param orderItem The order item to get discounts for
      * @return List of discount items
      */
-    static List<Map<String, Object>> getDiscountItems(ExecutionContext ec, String orderId, Map orderItem) {
-        List<Map<String, Object>> discountItems = []
-
+    static  Map<String, Object> getDiscountItems(ExecutionContext ec, String orderId, Map orderItem) {
+        Map<String, Object> discountRow;
         // Get promotion adjustments for this item
         def orderAdjustmentList = ec.entity.find("co.hotwax.order.OrderItemAdjustmentAndAttribute")
             .condition("orderId", orderId)
@@ -223,17 +222,15 @@ class NetSuiteMappingWorker {
             .condition("orderAdjustmentTypeId", "EXT_PROMO_ADJUSTMENT")
             .condition("attrName", null, "IS NULL")
             .list()
-
         if (orderAdjustmentList) {
             BigDecimal totalPromotionAmount = orderAdjustmentList.collect { it.amount ?: 0 }.sum() as BigDecimal
             if (totalPromotionAmount != 0) {
-                Map<String, Object> discountRow = new HashMap<>(orderItem)
+                discountRow = new HashMap<>(orderItem)
                 discountRow.price = totalPromotionAmount
                 discountRow.isDiscountRow = true
-                discountItems.add(discountRow)
             }
         }
-        return discountItems
+        return discountRow
     }
 
     /**

@@ -161,7 +161,7 @@
                     <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, orderLineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:orderItem.orderFacilityExternalId, itemLocation:orderItem.facilityExternalId, taxCode:taxCode]"/>
                     <script>orderItems.add(orderItem)</script>
 
-                    <set field="discountItems" from="NetSuiteMappingWorker.getDiscountItems(ec, order.orderId, orderItem)"/>
+                    <set field="discountItems" from="NetSuiteMappingWorker.getDiscountItem(ec, order.orderId, orderItem)"/>
                     <if condition="discountItems"><script>orderItems.addAll(discountItems)</script></if>
 
                 </iterate>
