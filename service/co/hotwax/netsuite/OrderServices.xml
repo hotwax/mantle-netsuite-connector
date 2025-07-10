@@ -54,7 +54,7 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
                 import co.hotwax.netsuite.NetSuiteMappingWorker
-                import co.hotwax.util.CsvHelper
+                import co.hotwax.util.CsvWriteHelper
 
                 netsuiteOrdersFind = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
                 if(orderId) netsuiteOrdersFind.condition("orderId", orderId)
@@ -91,7 +91,7 @@
 
             <script>
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
-                try (ordersItr = netsuiteOrdersFind.iterator(); CsvHelper validFileCsvHelper = new CsvHelper(csvFilePath); CsvHelper invalidFileCsvHelper = new CsvHelper(invalidFilePath)) {
+                try (ordersItr = netsuiteOrdersFind.iterator(); CsvWriteHelper validFileCsvHelper = new CsvWriteHelper(csvFilePath); CsvWriteHelper invalidFileCsvHelper = new CsvWriteHelper(invalidFilePath)) {
             </script>
 
             <iterate list="ordersItr" entry="order">
