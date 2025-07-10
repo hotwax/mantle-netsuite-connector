@@ -630,7 +630,7 @@
             <set field="sendPath" from="'home/${sftpUsername}/netsuite/salesorder/import/fulfillment/'"/>
             <set field="headers" from="['lineId', 'internalId', 'item', 'quantity', 'location', 'tags', 'closed', 'addressee', 'address1', 'address2', 'city', 'state', 'country', 'zip', 'shippingMethod']"/>
             <script>
-                import co.hotwax.util.CsvHelper
+                import co.hotwax.util.CsvWriteHelper
                 import org.moqui.sftp.SftpClient
                 fulfilledOrderItemsFind = ec.entity.find("co.hotwax.netsuite.warehouse.FulfilledOrderItems")
                 if(orderId) netsuiteOrders_find.condition("orderId", orderId)
@@ -643,17 +643,17 @@
                 return
                 }
                 try (fulfilledOrderItemsItr = fulfilledOrderItemsFind.iterator();
-                    CsvHelper csvHelper = new CsvHelper(baseFilePath, headers, fulfilledOrdersCountPerFeed)) {
+                    CsvWriteHelper CsvWriteHelper = new CsvWriteHelper(baseFilePath, headers, fulfilledOrdersCountPerFeed)) {
             </script>
             <iterate list="fulfilledOrderItemsItr" entry="fulfilledOrderItem">
                 <set field="fulfilledOrderItemList" from="[fulfilledOrderItem.netsuiteItemLineId, fulfilledOrderItem.netsuiteOrderId, '', fulfilledOrderItem.quantity, fulfilledOrderItem.facilityExternalId, 'hotwax-fulfilled', '', '', '', '', '', '', '', '', '']"/>
-                <script>csvHelper.writeToFile(fulfilledOrderItemList)</script>
+                <script>CsvWriteHelper.writeToFile(fulfilledOrderItemList)</script>
                 <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledOrderItem.orderId,
                     orderItemSeqId:fulfilledOrderItem.orderItemSeqId, comments:'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate:nowTimestamp, externalFulfillmentId:'_NA_']"/>
             </iterate>
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
             <script>
-                    csvHelper.getGeneratedFilePaths().each { generatedFilePath ->
+                    CsvWriteHelper.getGeneratedFilePaths().each { generatedFilePath ->
                         System.out.println("Generated file: ${generatedFilePath}")
                         ec.service.sync().name("co.hotwax.helper.HelperServices.send#FileOnSftp")
                             .parameters([systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]).call()
