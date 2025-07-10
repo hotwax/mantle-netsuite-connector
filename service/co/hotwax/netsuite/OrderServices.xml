@@ -82,8 +82,8 @@
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
             <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
 
-            <set field="sendPath" from="'home/${sftpUsername}/' + filePathPattern + '/'"/>
-            <set field="invalidSendPath" from="'home/${sftpUsername}/' + filePathPattern + '/required_fields_missing/'"/>
+            <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
+            <set field="invalidSendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/required_fields_missing/'"/>
 
             <set field="isFileEmpty" from="true"/>
             <set field="isReqFieldMissFileEmpty" from="true"/>
