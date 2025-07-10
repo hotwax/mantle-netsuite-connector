@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CsvHelper implements AutoCloseable {
+public class CsvWriteHelper implements AutoCloseable {
     private final String filePath;
     private List<String> headers;
     private final int rowLimit;
@@ -21,22 +21,22 @@ public class CsvHelper implements AutoCloseable {
     private final List<String> generatedFilePaths = new ArrayList<>();
 
 
-    public CsvHelper(String filePath, List<String> headers, int rowLimit) {
+    public CsvWriteHelper(String filePath, List<String> headers, int rowLimit) {
         this.filePath = filePath;
         this.rowLimit = rowLimit;
         this.headers = headers;
     }
 
-    public CsvHelper(String filePath, int rowLimit) {
+    public CsvWriteHelper(String filePath, int rowLimit) {
         this(filePath, null, rowLimit);
     }
 
-    public CsvHelper(String filePath, List<String> headers) {
+    public CsvWriteHelper(String filePath, List<String> headers) {
         this(filePath, headers, 0);
     }
 
 
-    public CsvHelper(String filePath) {
+    public CsvWriteHelper(String filePath) {
         this(filePath, null, 0);
     }
 
