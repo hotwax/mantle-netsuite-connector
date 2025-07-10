@@ -12,7 +12,7 @@ import java.util.List;
 
 public class CsvHelper implements AutoCloseable {
     private final String filePath;
-    private final List<String> headers;
+    private List<String> headers;
     private final int rowLimit;
     private int rowCount = 0;
     private int fileIndex = 1;
@@ -20,14 +20,31 @@ public class CsvHelper implements AutoCloseable {
     private BufferedWriter writer;
     private final List<String> generatedFilePaths = new ArrayList<>();
 
+
     public CsvHelper(String filePath, List<String> headers, int rowLimit) {
         this.filePath = filePath;
-        this.headers = new ArrayList<>(headers);
         this.rowLimit = rowLimit;
+        this.headers = headers;
+    }
+
+    public CsvHelper(String filePath, int rowLimit) {
+        this(filePath, null, rowLimit);
     }
 
     public CsvHelper(String filePath, List<String> headers) {
         this(filePath, headers, 0);
+    }
+
+
+    public CsvHelper(String filePath) {
+        this(filePath, null, 0);
+    }
+
+
+    public void setHeaders(List<String> headers) {
+        if (headers != null) {
+            this.headers = new ArrayList<>(headers);
+        }
     }
 
     private String getCurrentFilePath() {
