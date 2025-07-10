@@ -6,10 +6,11 @@
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"
         serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue="NetSuiteOrderItemsFeed"/>
+        <parameters parameterName="filePathPattern" parameterValue=""/>
         <parameters parameterName="excludeShipmentMethod" parameterValue="POS_COMPLETED"/>
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
+        <parameters parameterName="scriptPath" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <moqui.basic.Enumeration enumId="GEN_CRT_POS_ORD_FD" enumCode="GEN_CRT_POS_ORD_FD" description="Generate create POS orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
@@ -22,7 +23,7 @@
     <!-- ServiceJob data for create POS order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed_pos" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_POS_ORD_FD" jobTypeEnumId="GEN_CRT_POS_ORD_FD"
         serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue="PosCashOrderItemsFeed"/>
+        <parameters parameterName="filePathPattern" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
         <parameters parameterName="orderId" parameterValue=""/>
         <parameters parameterName="fromOrderDate" parameterValue=""/>
@@ -32,8 +33,7 @@
         <parameters parameterName="excludeShipmentMethod" parameterValue=""/>
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
+        <parameters parameterName="scriptPath" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
-    <moqui.basic.Enumeration description="Netsuite Order Items Feed from oms to netsuite" enumId="NetSuiteOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="ReqFieldMisOrderItems" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
-    <moqui.basic.Enumeration description="Netsuite POS Order Items Feed from oms to netsuite" enumId="PosCashOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum" relatedEnumId="ReqFieldMisPosCashOrder" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
 </entity-facade-xml>

@@ -56,7 +56,7 @@
              primaryProductCategoryId="ORDER_SYS_JOB"/>
     <Product productId="NS_EXP_CASH_SALE" productTypeId="SERVICE" internalName="NS_EXP_CASH_SALE"
              productName="NetSuite Export Cash Sale Order Job" description="NetSuite Export Cash Sale Order Job"
-             primaryProductCategoryId="ORDER_SYS_JOB"/>
+                           if (!csvHeaders) {      primaryProductCategoryId="ORDER_SYS_JOB"/>
     <Product productId="NS_EXP_CUSTOMER" productTypeId="SERVICE" internalName="NS_EXP_CUSTOMER"
              productName="NetSuite Export Customer Job" description="NetSuite Export Customer Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
@@ -258,7 +258,7 @@
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"
         serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue="NetSuiteOrderItemsFeed"/>
+        <parameters parameterName="filePathPattern" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
         <parameters parameterName="orderId" parameterValue=""/>
         <parameters parameterName="fromOrderDate" parameterValue=""/>
@@ -268,12 +268,13 @@
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
         <parameters parameterName="isMixCartOrder" parameterValue=""/>
+        <parameters parameterName="scriptPath" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- ServiceJob data for create POS order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed_pos" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_POS_ORD_FD" jobTypeEnumId="GEN_CRT_POS_ORD_FD"
         serviceName="co.hotwax.netsuite.OrderServices.generate#NewOrdersSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue="PosCashOrderItemsFeed"/>
+        <parameters parameterName="filePathPattern" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
         <parameters parameterName="orderId" parameterValue=""/>
         <parameters parameterName="fromOrderDate" parameterValue=""/>
@@ -283,6 +284,7 @@
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
         <parameters parameterName="isMixCartOrder" parameterValue=""/>
+        <parameters parameterName="scriptPath" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 
     <!-- ServiceJob data for create customer deposit from HC to netsuite -->
