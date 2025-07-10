@@ -1,1 +1,2 @@
-DELETE from service_job_parameter where job_name = 'generate_FulfilledOrderItemsFeed_Netsuite' and parameter_name in ('parentFacilityTypeIds', 'productStoreIds', 'productTypeIds', 'orderTypeId', 'orderStatusId')
+DELETE from service_job_parameter where job_name = 'generate_FulfilledOrderItemsFeed_Netsuite' and parameter_name in ('parentFacilityTypeIds', 'productStoreIds', 'productTypeIds', 'orderTypeId', 'orderStatusId','systemMessageTypeId');
+DELETE from system_message_type where message_type_id = 'FulfilledOrderItemsFeedNS';

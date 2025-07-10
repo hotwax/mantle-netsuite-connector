@@ -1,11 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-upgrade">
-
   <moqui.service.job.ServiceJob jobName="generate_FulfilledOrderItemsFeed_Netsuite" serviceName="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"/>
-
-  <moqui.service.message.SystemMessageType
-    systemMessageTypeId="FulfilledOrderItemsFeedNS"
-    sendPath="/home/${sftpUsername}/netsuite/fulfilledsalesorder/export/FulfilledOrderItemsFeed-${systemMessageId}-${dateTime}.json"
-    receivePath="${contentRoot}/netsuite/FulfilledOrderItemsFeed/HotWaxFulfilledOrderItemsFeed-${dateTime}.json">
-  </moqui.service.message.SystemMessageType>
 </entity-facade-xml>
