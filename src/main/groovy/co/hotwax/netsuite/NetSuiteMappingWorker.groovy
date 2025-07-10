@@ -213,7 +213,7 @@ class NetSuiteMappingWorker {
      * @param orderItem The order item to get discounts for
      * @return List of discount items
      */
-    static  Map<String, Object> getDiscountItems(ExecutionContext ec, String orderId, Map orderItem) {
+    static  Map<String, Object> getDiscountItem(ExecutionContext ec, String orderId, HashMap orderItem) {
         Map<String, Object> discountRow;
         // Get promotion adjustments for this item
         def orderAdjustmentList = ec.entity.find("co.hotwax.order.OrderItemAdjustmentAndAttribute")
