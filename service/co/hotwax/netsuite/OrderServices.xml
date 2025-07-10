@@ -627,7 +627,7 @@
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
             <set field="baseFile" value="runtime://datamanager/netsuite/FulfillmentFeed/fulfilledOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
             <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
-            <set field="sendPath" from="'home/${sftpUsername}/netsuite/salesorder/import/fulfillment/'"/>
+            <set field="sendPath" from="'/home/${sftpUsername}/netsuite/salesorder/import/fulfillment/'"/>
             <set field="headers" from="['lineId', 'internalId', 'item', 'quantity', 'location', 'tags', 'closed', 'addressee', 'address1', 'address2', 'city', 'state', 'country', 'zip', 'shippingMethod']"/>
             <script>
                 import co.hotwax.util.CsvWriteHelper
