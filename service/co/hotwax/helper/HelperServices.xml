@@ -138,7 +138,7 @@
                 if (systemMessageRemote.remoteAttributes == 'N') sftpClient.preserveAttributes(false)
 
                 sftpClient.connect()
-                sftpClient.put(sendPath, filename, (InputStream) inputStream)
+                sftpClient.put(sendPath, filename, (InputStream) inputStream, true)
                 }
             </script>
         </actions>
