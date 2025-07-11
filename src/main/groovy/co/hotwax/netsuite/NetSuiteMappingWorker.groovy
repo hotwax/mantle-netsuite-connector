@@ -167,11 +167,11 @@ class NetSuiteMappingWorker {
             .condition("orderId", orderId)
             .condition("orderItemSeqId", orderItem.orderItemSeqId)
             .condition("orderAdjustmentTypeId", "EXT_PROMO_ADJUSTMENT")
-            .condition("attrName", null, "IS NULL")
+            .condition("attrName", "")
             .list()
         if (orderAdjustmentList) {
             BigDecimal totalPromotionAmount = orderAdjustmentList.collect { it.amount ?: 0 }.sum() as BigDecimal
-            if (totalPromotionAmount != 0) {
+            if (totalPromotionAmount.compareTo(BigDecimal.ZERO) != 0 ) {
                 discountRow = new HashMap<>(orderItem)
                 discountRow.price = totalPromotionAmount
                 discountRow.isDiscountRow = true
@@ -186,7 +186,7 @@ class NetSuiteMappingWorker {
      * @return List of processed order items with order details merged in
      */
     static List<Map<String, Object>> prepareNetSuiteOrderItemList(Map orderDetails) {
-        if (!orderDetails) return [] as List<Map<String, Object>>
+        if (!orderDetails) return []
 
         List<Map<String, Object>> netsuiteOrderItemList = []
         List<Map> orderItems = orderDetails.remove("orderItems") as List<Map> ?: []
