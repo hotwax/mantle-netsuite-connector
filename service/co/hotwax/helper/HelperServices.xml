@@ -111,7 +111,7 @@
         </actions>
     </service>
 
-    <service verb="send" noun="FileOnSftp">
+    <service verb="put" noun="FileOnSftp">
         <in-parameters>
             <parameter name="systemMessageRemoteId"/>
             <parameter name="receivePath"/>
