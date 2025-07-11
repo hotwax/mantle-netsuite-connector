@@ -75,6 +75,6 @@ public class CsvWriteHelper implements AutoCloseable {
     }
 
     public List<String> getGeneratedFilePaths() {
-        return new ArrayList<>(generatedFilePaths);
+        return generatedFilePaths;
     }
 }
