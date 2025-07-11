@@ -6,6 +6,14 @@ import org.moqui.entity.EntityValue
 import org.moqui.impl.entity.EntityListImpl
 
 class NetSuiteMappingWorker {
+    private static final List<String> fieldsToRemove = [
+        'productStoreExternalId', 'shippingContactMechId', 'orderSalesChannelCode', '_entity',
+        'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProductId',
+        'orderItemSeqId', 'orderSalesChannelDescription', 'productId', 'adjustmentTotalAmount',
+        'orderExternalId', 'netsuiteCustomerId', 'shippingContactNumber', 'billingContactMechId',
+        'itemStatus', 'orderName', 'facilityId', 'shippingCountryCode', 'isDiscountRow',
+        'orderFacilityExternalId', 'facilityExternalId', 'billingAreaCode', 'shippingAreaCode',
+        'orderFacilityId']
     /**
      * Gets the mapped value from IntegrationTypeMapping for the given integration type and key.
      * @param ec ExecutionContext
@@ -195,15 +203,7 @@ class NetSuiteMappingWorker {
             Map<String, Object> processedItem = new HashMap<>(item)
 
             processedItem.putAll(orderDetails)
-            processedItem.keySet().removeAll([
-                'productStoreExternalId', 'shippingContactMechId', 'orderSalesChannelCode', '_entity',
-                'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProductId',
-                'orderItemSeqId', 'orderSalesChannelDescription', 'productId', 'adjustmentTotalAmount',
-                'orderExternalId', 'netsuiteCustomerId', 'shippingContactNumber', 'billingContactMechId',
-                'itemStatus', 'orderName', 'facilityId', 'shippingCountryCode', 'isDiscountRow',
-                'orderFacilityExternalId', 'facilityExternalId', 'billingAreaCode', 'shippingAreaCode',
-                'orderFacilityId'
-            ])
+            processedItem.keySet().removeAll(fieldsToRemove)
             netsuiteOrderItemList.add(processedItem)
         }
         return netsuiteOrderItemList
