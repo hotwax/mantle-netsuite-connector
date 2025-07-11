@@ -119,7 +119,7 @@
         </in-parameters>
         <actions>
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
-            <if condition="systemMessageRemote"><return error="true" message="System message ${systemMessageId} has no SystemMessageRemote, not sending."/></if>
+            <if condition="!systemMessageRemote"><return error="true" message="System message ${systemMessageId} has no SystemMessageRemote, not sending."/></if>
             <if condition="!systemMessageRemote.sendUrl"><return error="true" message="No sendUrl on SystemMessageRemote ${systemMessageRemote.systemMessageRemoteId}, not sending."/></if>
             <if condition="!systemMessageRemote.username"><return error="true" message="No username on SystemMessageRemote ${systemMessageRemote.systemMessageRemoteId}, not sending."/></if>
             <set field="sendPath" from="ec.resource.expand(sendPath, null, [sftpUsername:systemMessageRemote.username], false)"/>
