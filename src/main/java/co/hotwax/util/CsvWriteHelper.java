@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CsvWriteHelper implements AutoCloseable {
     private final String filePath;
@@ -27,12 +28,6 @@ public class CsvWriteHelper implements AutoCloseable {
         this.rowLimit = rowLimit;
     }
 
-    public void setHeaders(List<String> headers) {
-        if (headers != null) {
-            this.headers = new ArrayList<>(headers);
-        }
-    }
-
     private void createCSVFile() throws IOException {
         String currentFilePath = fileIndex == 1 ? filePath : (filePath.endsWith(".csv") ? filePath.replace(".csv", "_" + fileIndex + ".csv") : filePath + "_" + fileIndex + ".csv");
         File file = new File(currentFilePath);
@@ -46,11 +41,17 @@ public class CsvWriteHelper implements AutoCloseable {
         generatedFilePaths.add(currentFilePath);
     }
 
-    public void writeToFile(List<String> rowData) throws IOException {
+    public void writeToFile(Map rowData) throws IOException {
         if (csvPrinter == null) {
+            if (this.headers == null) {this.headers = new ArrayList<>(rowData.keySet());}
             createCSVFile();
         }
-        csvPrinter.printRecord(rowData);
+        List<Object> record = new ArrayList<>();
+        for (String header : headers) {
+            Object value = rowData.get(header);
+            record.add(value != null ? value : "");
+        }
+        csvPrinter.printRecord(record);
         rowCount++;
 
         if (rowLimit > 0 && rowCount >= rowLimit) {
