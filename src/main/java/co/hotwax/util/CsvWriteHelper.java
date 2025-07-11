@@ -23,23 +23,9 @@ public class CsvWriteHelper implements AutoCloseable {
 
     public CsvWriteHelper(String filePath, List<String> headers, int rowLimit) {
         this.filePath = filePath;
-        this.rowLimit = rowLimit;
         this.headers = headers;
+        this.rowLimit = rowLimit;
     }
-
-    public CsvWriteHelper(String filePath, int rowLimit) {
-        this(filePath, null, rowLimit);
-    }
-
-    public CsvWriteHelper(String filePath, List<String> headers) {
-        this(filePath, headers, 0);
-    }
-
-
-    public CsvWriteHelper(String filePath) {
-        this(filePath, null, 0);
-    }
-
 
     public void setHeaders(List<String> headers) {
         if (headers != null) {
@@ -47,18 +33,8 @@ public class CsvWriteHelper implements AutoCloseable {
         }
     }
 
-    private String getCurrentFilePath() {
-        if (fileIndex == 1) {
-            return filePath;
-        }
-        if (filePath.endsWith(".csv")) {
-            return filePath.replace(".csv", "_" + fileIndex + ".csv");
-        }
-        return filePath + "_" + fileIndex + ".csv";
-    }
-
     private void createCSVFile() throws IOException {
-        String currentFilePath = getCurrentFilePath();
+        String currentFilePath = fileIndex == 1 ? filePath : (filePath.endsWith(".csv") ? filePath.replace(".csv", "_" + fileIndex + ".csv") : filePath + "_" + fileIndex + ".csv");
         File file = new File(currentFilePath);
         File parentDir = file.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
@@ -71,16 +47,18 @@ public class CsvWriteHelper implements AutoCloseable {
     }
 
     public void writeToFile(List<String> rowData) throws IOException {
-        if (csvPrinter == null || (rowLimit > 0 && rowCount >= rowLimit)) {
-            close();
-            if (rowLimit > 0 && rowCount >= rowLimit) {
-                fileIndex++;
-                rowCount = 0;
-            }
+        if (csvPrinter == null) {
             createCSVFile();
         }
         csvPrinter.printRecord(rowData);
         rowCount++;
+
+        if (rowLimit > 0 && rowCount >= rowLimit) {
+            close();
+            fileIndex++;
+            rowCount = 0;
+            createCSVFile();
+        }
     }
 
     @Override
