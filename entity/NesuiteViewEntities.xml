@@ -19,10 +19,10 @@
                 <date-filter/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="OID2" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+        <member-entity entity-alias="SHOPIFY_OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
             <key-map field-name="orderId"/>
             <entity-condition>
-                <econdition entity-alias="OID2" field-name="orderIdentificationTypeId" value="SHOPIFY_ORD_ID"/>
+                <econdition entity-alias="SHOPIFY_OID" field-name="orderIdentificationTypeId" value="SHOPIFY_ORD_ID"/>
                 <date-filter/>
             </entity-condition>
         </member-entity>
@@ -46,12 +46,12 @@
         </member-entity>
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
-            <econdition entity-alias="OID" field-name="orderId" operator="equals" value=""/>
-            <econdition entity-alias="INVORD" field-name="orderId" operator="equals" value=""/>
-            <econdition entity-alias="OID2" field-name="idValue" operator="not-equals" value=""/>
+            <econdition entity-alias="OID" field-name="orderId" operator="is-null"/>
+            <econdition entity-alias="INVORD" field-name="orderId" operator="is-null"/>
+            <econdition entity-alias="SHOPIFY_OID" field-name="idValue" operator="is-not-null"/>
         </entity-condition>
         <alias name="partyId" entity-alias="PID"/>
-        <alias name="shopifyOrderId" entity-alias="OID2" field="idValue"/>
+        <alias name="shopifyOrderId" entity-alias="SHOPIFY_OID" field="idValue"/>
         <alias name="netsuiteCustomerId" entity-alias="PID" field="idValue"/>
         <alias name="orderId" entity-alias="OH"/>
         <alias name="orderDate" entity-alias="OH"/>
