@@ -628,39 +628,34 @@
             <set field="baseFile" value="runtime://datamanager/netsuite/FulfillmentFeed/fulfilledOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
             <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
             <set field="sendPath" from="'/home/${sftpUsername}/netsuite/salesorder/update/'"/>
-            <set field="headers" from="['lineId', 'internalId', 'item', 'quantity', 'location', 'tags', 'closed', 'addressee', 'address1', 'address2', 'city', 'state', 'country', 'zip', 'shippingMethod']"/>
+            <set field="headers" from="['lineId', 'internalId', 'item', 'quantity', 'location', 'tags']"/>
             <script>
-                import co.hotwax.util.CsvWriteHelper
-                import org.moqui.sftp.SftpClient
                 fulfilledOrderItemsFind = ec.entity.find("co.hotwax.netsuite.warehouse.FulfilledOrderItems")
-                if(orderId) netsuiteOrders_find.condition("orderId", orderId)
-                if(orderItemSeqId) netsuiteOrders_find.condition("orderItemSeqId", orderItemSeqId)
+                if(orderId) fulfilledOrderItemsFind.condition("orderId", orderId)
+                if(orderItemSeqId) fulfilledOrderItemsFind.condition("orderItemSeqId", orderItemSeqId)
 
                 //If no eligible orders, then don't generate the file
                 long netsuiteOrdersCount = fulfilledOrderItemsFind.count()
                 if (netsuiteOrdersCount == 0) {
                     ec.message.addMessage("No eligible orders for Fulfilled Order and Items Feed at ${nowTimestamp}, not generating the HotWax Feed file.")
-                return
+                    return
                 }
+
+                import co.hotwax.util.CsvWriteHelper
                 try (fulfilledOrderItemsItr = fulfilledOrderItemsFind.iterator();
                     CsvWriteHelper CsvWriteHelper = new CsvWriteHelper(baseFilePath, headers, fulfilledOrdersCountPerFeed)) {
             </script>
             <iterate list="fulfilledOrderItemsItr" entry="fulfilledOrderItem">
-                <set field="fulfilledOrderItemList" from="[fulfilledOrderItem.netsuiteItemLineId, fulfilledOrderItem.netsuiteOrderId, '', fulfilledOrderItem.quantity, fulfilledOrderItem.facilityExternalId, 'hotwax-fulfilled', '', '', '', '', '', '', '', '', '']"/>
+                <set field="fulfilledOrderItemList" from="[fulfilledOrderItem.netsuiteItemLineId, fulfilledOrderItem.netsuiteOrderId, '', fulfilledOrderItem.quantity, fulfilledOrderItem.facilityExternalId, 'hotwax-fulfilled']"/>
                 <script>CsvWriteHelper.writeToFile(fulfilledOrderItemList)</script>
                 <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledOrderItem.orderId,
                     orderItemSeqId:fulfilledOrderItem.orderItemSeqId, comments:'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate:nowTimestamp, externalFulfillmentId:'_NA_']"/>
             </iterate>
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
-            <script>
-                    CsvWriteHelper.getGeneratedFilePaths().each { generatedFilePath ->
-                        System.out.println("Generated file: ${generatedFilePath}")
-                        ec.service.sync().name("co.hotwax.helper.HelperServices.put#FileOnSftp")
-                            .parameters([systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]).call()
-
-                    }
-                }
-            </script>
+            <iterate list="CsvWriteHelper.getGeneratedFilePaths()" entry="generatedFilePath">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
+            </iterate>
+            <script>}</script>
         </actions>
     </service>
     <service verb="get" noun="BrokeredOrders" authenticate="anonymous-all" transaction-timeout="7200">
