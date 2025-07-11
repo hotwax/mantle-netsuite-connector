@@ -14,8 +14,6 @@ class NetSuiteMappingWorker {
      * @return The mapped value or null if not found
      */
     static String getIntegrationMappingValue(ExecutionContext ec, String integrationTypeId, String mappingKey) {
-        if (!integrationTypeId || !mappingKey) return null
-
         EntityValue mapping = ec.entity.find("co.hotwax.integration.IntegrationTypeMapping")
             .condition([integrationTypeId: integrationTypeId, mappingKey: mappingKey])
             .useCache(true)
@@ -30,7 +28,6 @@ class NetSuiteMappingWorker {
      * @return The NetSuite product ID or null if not found
      */
     static String getProductId(ExecutionContext ec, String hcProductId) {
-        if (!hcProductId) return null
         EntityList gid = ec.entity.find("org.apache.ofbiz.product.product.GoodIdentification")
             .condition([productId: hcProductId, goodIdentificationTypeEnumId: "NETSUITE_PRODUCT_ID"])
             .list()
@@ -76,8 +73,6 @@ class NetSuiteMappingWorker {
      * @return The identification value or null if not found
      */
     static String getFacilityIdentifications(ExecutionContext ec, String facilityId, String facilityIdenTypeId) {
-        if (!facilityId || !facilityIdenTypeId) return null
-
         EntityList identifications = ec.entity.find("co.hotwax.facility.FacilityIdentification")
             .condition("facilityId", facilityId)
             .condition("facilityIdenTypeId", facilityIdenTypeId)
@@ -112,8 +107,6 @@ class NetSuiteMappingWorker {
      * @return The total gift card payment amount as BigDecimal, or 0 if none found
      */
     static BigDecimal getGiftCardPaymentTotal(ExecutionContext ec, String orderId) {
-        if (!orderId) return null
-
         def giftCardPayment = ec.entity.find("co.hotwax.netsuite.order.NonRefundedGiftCardPayment")
             .condition("orderId", orderId)
             .useCache(true).list()
@@ -141,7 +134,7 @@ class NetSuiteMappingWorker {
             return selectedMethod ? getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD', selectedMethod) : null
         } else {
             // For non-mixed cart orders, use the first valid shipping method
-            return getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD', orderItems[0].shipmentMethodTypeId)
+            return getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', orderItems[0].shipmentMethodTypeId)
         }
     }
 
@@ -156,10 +149,10 @@ class NetSuiteMappingWorker {
         def shippingTaxAdjustments = ec.entity.find("org.apache.ofbiz.order.order.OrderAdjustment")
                 .condition("orderId", orderId)
                 .condition("orderAdjustmentTypeId", "SHIPPING_SALES_TAX")
-                .list()
+                .count()
 
-        if (shippingTaxAdjustments && !shippingTaxAdjustments.isEmpty()) {
-            return getIntegrationMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT')
+        if (shippingTaxAdjustments > 0) {
+            return getIntegrationTypeMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT')
         }
         return "-Not Taxable-"
     }
@@ -176,7 +169,7 @@ class NetSuiteMappingWorker {
 
         // If item has tax adjustments, use the default tax code
         if (item.taxAdjustments && !item.taxAdjustments.isEmpty()) {
-            taxCode = getIntegrationMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT') ?: taxCode
+            taxCode = getIntegrationTypeMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT') ?: taxCode
         }
 
         return taxCode
@@ -203,7 +196,7 @@ class NetSuiteMappingWorker {
      * @return The price level or null if not found
      */
     static String getPriceLevel(ExecutionContext ec) {
-        return getIntegrationMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')
+        return getIntegrationTypeMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')
     }
 
     /**
@@ -238,7 +231,7 @@ class NetSuiteMappingWorker {
      * @param orderDetails Map containing order details including 'orderItems' key
      * @return List of processed order items with order details merged in
      */
-    static List<Map<String, Object>> mergeOrderDataIntoItem(Map orderDetails) {
+    static List<Map<String, Object>> prepareNetSuiteOrderItemList(Map orderDetails) {
         if (!orderDetails) return [] as List<Map<String, Object>>
 
         List<Map<String, Object>> netsuiteOrderItemList = []
