@@ -91,7 +91,7 @@
 
             <script>
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
-                try (ordersItr = netsuiteOrdersFind.iterator(); CsvWriteHelper validFileCsvHelper = new CsvWriteHelper(csvFilePath); CsvWriteHelper invalidFileCsvHelper = new CsvWriteHelper(invalidFilePath)) {
+                try (ordersItr = netsuiteOrdersFind.iterator(); CsvWriteHelper validFileCsvHelper = new CsvWriteHelper(csvFilePath, null, 0); CsvWriteHelper invalidFileCsvHelper = new CsvWriteHelper(invalidFilePath, null, 0)) {
             </script>
 
             <iterate list="ordersItr" entry="order">
@@ -126,7 +126,7 @@
 
                     <set field="taxCode" from="NetSuiteMappingWorker.getTaxCode(ec, orderItem)"/>
                     <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
-                    <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
+                    <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationTypeMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
                     <set field="department" from="NetSuiteMappingWorker.getDepartment(ec, orderItem)" type="String"/>
 
                     <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, orderLineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:orderItem.orderFacilityExternalId, itemLocation:orderItem.facilityExternalId, taxCode:taxCode]"/>
@@ -143,7 +143,7 @@
                     <set field="orderDetails" from="scriptResult.orderData"/>
                     <set field="requiredFields" from="requiredFields + scriptResult.customRequiredFileds"/>
                 </if>
-                <set field="netsuiteOrderMap" from="NetSuiteMappingWorker.mergeOrderDataIntoItem(orderDetails)"/>
+                <set field="netsuiteOrderMap" from="NetSuiteMappingWorker.prepareNetSuiteOrderItemList(orderDetails)"/>
                 <script>
                     if (!csvHeaders) {
                         csvHeaders = netsuiteOrderMap[0].keySet().collect { it as String }
@@ -179,11 +179,11 @@
                 }
             </script>
             <if condition="!isFileEmpty">
-                <service-call name="co.hotwax.helper.HelperServices.send#FileOnSftp"
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
                     in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:csvFilePath, sendPath:sendPath]"/>
             </if>
             <if condition="!isReqFieldMissFileEmpty">
-                <service-call name="co.hotwax.helper.HelperServices.send#FileOnSftp"
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
                     in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidFilePath, sendPath:invalidSendPath]"/>
             </if>
             <return message="Generated Order Items Feed file  ${csvFilePath} and missing file response in ${invalidFilePath}"/>
