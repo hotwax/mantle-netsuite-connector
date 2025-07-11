@@ -13,7 +13,7 @@ class NetSuiteMappingWorker {
      * @param mappingKey The key to look up in the mapping
      * @return The mapped value or null if not found
      */
-    static String getIntegrationMappingValue(ExecutionContext ec, String integrationTypeId, String mappingKey) {
+    static String getIntegrationTypeMappingValue(ExecutionContext ec, String integrationTypeId, String mappingKey) {
         EntityValue mapping = ec.entity.find("co.hotwax.integration.IntegrationTypeMapping")
             .condition([integrationTypeId: integrationTypeId, mappingKey: mappingKey])
             .useCache(true)
@@ -131,7 +131,7 @@ class NetSuiteMappingWorker {
 
             // Get the first shipping method if available
             def selectedMethod = shippingMethods ? shippingMethods.first() : null
-            return selectedMethod ? getIntegrationMappingValue(ec, 'NETSUITE_SHP_MTHD', selectedMethod) : null
+            return selectedMethod ? getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', selectedMethod) : null
         } else {
             // For non-mixed cart orders, use the first valid shipping method
             return getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', orderItems[0].shipmentMethodTypeId)
