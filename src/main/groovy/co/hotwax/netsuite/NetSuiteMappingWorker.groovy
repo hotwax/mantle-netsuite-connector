@@ -36,36 +36,6 @@ class NetSuiteMappingWorker {
     }
 
     /**
-     * Gets the NetSuite order type for the given facility.
-     * @param ec ExecutionContext
-     * @param facilityId The facility ID
-     * @return The NetSuite order type or null if not found
-     */
-    static String getOrderType(ExecutionContext ec, String facilityId) {
-        return getFacilityIdentifications(ec, facilityId, "NETSUITE_ORDR_TYPE")
-    }
-
-    /**
-     * Gets the sales channel for the given facility.
-     * @param ec ExecutionContext
-     * @param facilityId The facility ID
-     * @return The sales channel or null if not found
-     */
-    static String getFacilitySalesChannel(ExecutionContext ec, String facilityId) {
-        return getFacilityIdentifications(ec, facilityId, "ORDR_ORGN_SLS_CHNL")
-    }
-
-    /**
-     * Gets the default customer ID for the given facility.
-     * @param ec ExecutionContext
-     * @param facilityId The facility ID
-     * @return The default customer ID or null if not found
-     */
-    static String getFacilityDefaultCustomer(ExecutionContext ec, String facilityId) {
-        return getFacilityIdentifications(ec, facilityId, "FAC_BLKT_CUST")
-    }
-
-    /**
      * Gets facility identification value for the given facility and identification type.
      * @param ec ExecutionContext
      * @param facilityId The facility ID
@@ -76,6 +46,7 @@ class NetSuiteMappingWorker {
         EntityList identifications = ec.entity.find("co.hotwax.facility.FacilityIdentification")
             .condition("facilityId", facilityId)
             .condition("facilityIdenTypeId", facilityIdenTypeId)
+            .useCache(true)
             .list()
             .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
         return (identifications && !identifications.isEmpty()) ? identifications.first().idValue : null
@@ -97,7 +68,7 @@ class NetSuiteMappingWorker {
                 grandTotal = grandTotal.add(price * quantity)
             }
         }
-        return grandTotal
+        return grandTotal.setScale(2, java.math.RoundingMode.HALF_UP)
     }
 
     /**
@@ -127,11 +98,10 @@ class NetSuiteMappingWorker {
             // For mixed cart orders, find all unique shipping methods excluding POS_COMPLETED and STOREPICKUP
             def shippingMethods = orderItems.collect { it.shipmentMethodTypeId }
                     .findAll { it && it != 'POS_COMPLETED' && it != 'STOREPICKUP' }
-                    .toSet()
 
             // Get the first shipping method if available
             def selectedMethod = shippingMethods ? shippingMethods.first() : null
-            return selectedMethod ? getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', selectedMethod) : null
+            return selectedMethod ? getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', (String) selectedMethod) : null
         } else {
             // For non-mixed cart orders, use the first valid shipping method
             return getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', orderItems[0].shipmentMethodTypeId)
@@ -171,23 +141,7 @@ class NetSuiteMappingWorker {
         if (item.taxAdjustments && !item.taxAdjustments.isEmpty()) {
             taxCode = getIntegrationTypeMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT') ?: taxCode
         }
-
         return taxCode
-    }
-
-    /**
-     * Gets the department for an item.
-     * @param ec ExecutionContext
-     * @param item The item to get the department for
-     * @return The department or null if not found
-     */
-    static String getDepartment(ExecutionContext ec, Map item) {
-        // Get department from facility
-        if (item.orderFacilityId) {
-            String department = getFacilityIdentifications(ec, item.orderFacilityId, "ORDR_ORGN_DPT")
-            return department
-        }
-        return null
     }
 
     /**
