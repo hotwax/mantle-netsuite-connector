@@ -249,6 +249,7 @@
     - Keeping the data fetching logic in this view simplifies the implementation of the service and maintains separation of concerns between data retrieval and business logic.
     -->
     <view-entity entity-name="OrderItemsDetails" package="co.hotwax.netsuite.order">
+
         <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem"/>
         <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OI">
             <key-map field-name="orderId"/>
@@ -264,6 +265,12 @@
             <key-map field-name="facilityId"/>
             <entity-condition>
                 <econdition field-name="parentTypeId" entity-alias="F" operator="not-equals" value="VIRTUAL_FACILITY"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="FGM" entity-name="org.apache.ofbiz.product.facility.FacilityGroupMember" join-from-alias="F" join-optional="true">
+            <key-map field-name="facilityId"/>
+            <entity-condition>
+                <date-filter/>
             </entity-condition>
         </member-entity>
         <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI" join-optional="true">
@@ -288,6 +295,9 @@
         <alias name="netsuiteProductId" field="idValue" entity-alias="GID"/>
         <alias name="orderFacilityExternalId" field="externalId" entity-alias="ORDF"/>
         <alias name="facilityExternalId" field="externalId" entity-alias="F"/>
+        <entity-condition>
+            <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="NETSUITE_FULFILLMENT"/>
+        </entity-condition>
     </view-entity>
     <view-entity entity-name="InvalidOrders" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
