@@ -177,7 +177,7 @@ class NetSuiteMappingWorker {
             .condition("orderId", orderId)
             .condition("orderItemSeqId", orderItem.orderItemSeqId)
             .condition("orderAdjustmentTypeId", "EXT_PROMO_ADJUSTMENT")
-            .condition("attrName", EntityCondition.ComparisonOperator.IS_NOT_NULL)
+            .condition("attrName", EntityCondition.IS_NOT_NULL)
             .list()
         if (orderAdjustmentList) {
             BigDecimal totalPromotionAmount = orderAdjustmentList.collect { it.amount ?: 0 }.sum() as BigDecimal
@@ -187,7 +187,7 @@ class NetSuiteMappingWorker {
                 discountRow.isDiscountRow = true
             }
         }
-        return discountRow
+        return didscountRow
     }
 
     /**
