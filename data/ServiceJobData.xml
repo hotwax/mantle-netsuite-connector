@@ -56,7 +56,7 @@
              primaryProductCategoryId="ORDER_SYS_JOB"/>
     <Product productId="NS_EXP_CASH_SALE" productTypeId="SERVICE" internalName="NS_EXP_CASH_SALE"
              productName="NetSuite Export Cash Sale Order Job" description="NetSuite Export Cash Sale Order Job"
-                           if (!csvHeaders) {      primaryProductCategoryId="ORDER_SYS_JOB"/>
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
     <Product productId="NS_EXP_CUSTOMER" productTypeId="SERVICE" internalName="NS_EXP_CUSTOMER"
              productName="NetSuite Export Customer Job" description="NetSuite Export Customer Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
