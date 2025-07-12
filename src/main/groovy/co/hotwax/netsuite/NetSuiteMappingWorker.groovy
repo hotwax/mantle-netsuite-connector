@@ -1,5 +1,6 @@
 package co.hotwax.netsuite
-import org.moqui.impl.context.ExecutionContextImpl;
+
+import org.moqui.context.ExecutionContext
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.impl.entity.EntityListImpl
@@ -15,12 +16,12 @@ class NetSuiteMappingWorker {
         'orderFacilityId']
     /**
      * Gets the mapped value from IntegrationTypeMapping for the given integration type and key.
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @param integrationTypeId The integration type ID (e.g., 'NETSUITE_SHP_MTHD')
      * @param mappingKey The key to look up in the mapping
      * @return The mapped value or null if not found
      */
-    static String getIntegrationTypeMappingValue(ExecutionContextImpl ec, String integrationTypeId, String mappingKey) {
+    static String getIntegrationTypeMappingValue(ExecutionContext ec, String integrationTypeId, String mappingKey) {
         EntityValue mapping = ec.entity.find("co.hotwax.integration.IntegrationTypeMapping")
             .condition([integrationTypeId: integrationTypeId, mappingKey: mappingKey])
             .useCache(true)
@@ -30,11 +31,11 @@ class NetSuiteMappingWorker {
 
     /**
      * Gets the NetSuite product ID for the given HotWax product ID.
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @param hcProductId The HotWax Commerce product ID
      * @return The NetSuite product ID or null if not found
      */
-    static String getProductId(ExecutionContextImpl ec, String hcProductId) {
+    static String getProductId(ExecutionContext ec, String hcProductId) {
         EntityList gid = ec.entity.find("org.apache.ofbiz.product.product.GoodIdentification")
             .condition([productId: hcProductId, goodIdentificationTypeEnumId: "NETSUITE_PRODUCT_ID"])
             .list()
@@ -44,12 +45,12 @@ class NetSuiteMappingWorker {
 
     /**
      * Gets facility identification value for the given facility and identification type.
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @param facilityId The facility ID
      * @param facilityIdenTypeId The identification type (e.g., 'ORDR_ORGN_SLS_CHNL')
      * @return The identification value or null if not found
      */
-    static String getFacilityIdentifications(ExecutionContextImpl ec, String facilityId, String facilityIdenTypeId) {
+    static String getFacilityIdentifications(ExecutionContext ec, String facilityId, String facilityIdenTypeId) {
         EntityList identifications = ec.entity.find("co.hotwax.facility.FacilityIdentification")
             .condition("facilityId", facilityId)
             .condition("facilityIdenTypeId", facilityIdenTypeId)
@@ -80,11 +81,11 @@ class NetSuiteMappingWorker {
 
     /**
      * Gets the total gift card payment amount for an order
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @param orderId The order ID to get gift card payments for
      * @return The total gift card payment amount as BigDecimal, or 0 if none found
      */
-    static BigDecimal getGiftCardPaymentTotal(ExecutionContextImpl ec, String orderId) {
+    static BigDecimal getGiftCardPaymentTotal(ExecutionContext ec, String orderId) {
         def giftCardPayment = ec.entity.find("co.hotwax.netsuite.order.NonRefundedGiftCardPayment")
             .condition("orderId", orderId)
             .useCache(true).list()
@@ -94,12 +95,12 @@ class NetSuiteMappingWorker {
 
     /**
      * Gets the shipping method for an order.
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @param isMixCartOrder 'Y' if it's a mixed cart order, 'N' otherwise
      * @param orderItems List of order items
      * @return The mapped shipping method or null if not found
      */
-    static String getShippingMethod(ExecutionContextImpl ec, String isMixCartOrder, List<Map> orderItems) {
+    static String getShippingMethod(ExecutionContext ec, String isMixCartOrder, List<Map> orderItems) {
 
         if ("Y".equals(isMixCartOrder)) {
             // For mixed cart orders, find all unique shipping methods excluding POS_COMPLETED and STOREPICKUP
@@ -117,11 +118,11 @@ class NetSuiteMappingWorker {
 
     /**
      * Gets the shipping tax code for an order.
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @param orderId The order ID
      * @return The shipping tax code, defaults to "-Not Taxable-"
      */
-    static String getShippingTaxCode(ExecutionContextImpl ec, String orderId) {
+    static String getShippingTaxCode(ExecutionContext ec, String orderId) {
         // Check for shipping tax adjustments
         def shippingTaxAdjustments = ec.entity.find("org.apache.ofbiz.order.order.OrderAdjustment")
                 .condition("orderId", orderId)
@@ -136,11 +137,11 @@ class NetSuiteMappingWorker {
 
     /**
      * Gets the tax code for an item.
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @param item The item to get the tax code for
      * @return The tax code, defaults to "-Not Taxable-"
      */
-    static String getTaxCode(ExecutionContextImpl ec, Map item) {
+    static String getTaxCode(ExecutionContext ec, Map item) {
         // Default to not taxable
         String taxCode = "-Not Taxable-"
 
@@ -153,21 +154,21 @@ class NetSuiteMappingWorker {
 
     /**
      * Gets the price level.
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @return The price level or null if not found
      */
-    static String getPriceLevel(ExecutionContextImpl ec) {
+    static String getPriceLevel(ExecutionContext ec) {
         return getIntegrationTypeMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')
     }
 
     /**
      * Gets discount items for an order item.
-     * @param ec ExecutionContextImpl
+     * @param ec ExecutionContext
      * @param orderId The order ID
      * @param orderItem The order item to get discounts for
      * @return List of discount items
      */
-    static  Map<String, Object> getDiscountItem(ExecutionContextImpl ec, String orderId, HashMap orderItem) {
+    static  Map<String, Object> getDiscountItem(ExecutionContext ec, String orderId, HashMap orderItem) {
         Map<String, Object> discountRow;
         // Get promotion adjustments for this item
         def orderAdjustmentList = ec.entity.find("co.hotwax.order.OrderItemAdjustmentAndAttribute")
