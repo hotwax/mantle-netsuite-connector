@@ -79,8 +79,8 @@
                 }
             </script>
 
-            <set field="csvFilePathRef" value="runtime://datamanager/netsuite/${filePathPattern}/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
-            <set field="invalidFilePathRef" value="runtime://datamanager/netsuite/${filePathPattern}/required_fields_missing/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="csvFilePathRef" value="runtime://datamanager/${filePathPattern}/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="invalidFilePathRef" value="runtime://datamanager/${filePathPattern}/required_fields_missing/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
             <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
 
