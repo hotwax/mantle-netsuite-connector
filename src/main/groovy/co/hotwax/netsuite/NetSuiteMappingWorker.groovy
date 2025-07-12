@@ -4,6 +4,8 @@ import org.moqui.context.ExecutionContext
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.impl.entity.EntityListImpl
+import org.moqui.entity.EntityCondition
+
 
 class NetSuiteMappingWorker {
     private static final List<String> fieldsToRemove = [
