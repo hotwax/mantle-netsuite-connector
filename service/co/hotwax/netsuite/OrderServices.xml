@@ -150,17 +150,20 @@
                         def missingFields = requiredFields.findAll { !record[it] || record[it].toString().trim() == '' }
 
                         if (missingFields) {
-                            record.add("Missing required fields: ${missingFields.join(', ')}")
+                            record.put("Missing Required Fields", missingFields.join(', '))
                             invalidFileCsvHelper.writeToFile(record)
                             isReqFieldMissFileEmpty = false
                         } else {
-                            validFileCsvHelper.writeToFile(orderedRecord)
+                            validFileCsvHelper.writeToFile(record)
                             isFileEmpty = false
                         }
                     }
                     orderDetails = null
                 </script>
             </iterate>
+            <script>
+                }
+            </script>
             <if condition="!isFileEmpty">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
                     in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:csvFilePath, sendPath:sendPath]"/>
@@ -333,7 +336,7 @@
                     location:fulfilledOrderItem.facilityExternalId,
                     tags:'hotwax-fulfilled'
                 ]"/>
-                <script>csvHelper.writeToFile(fulfilledOrderItemMap)</script>
+                <script>CsvWriteHelper.writeToFile(fulfilledOrderItemMap)</script>
                 <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledOrderItem.orderId,
                     orderItemSeqId:fulfilledOrderItem.orderItemSeqId, comments:'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate:nowTimestamp, externalFulfillmentId:'_NA_']"/>
             </iterate>
