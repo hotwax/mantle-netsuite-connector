@@ -2,10 +2,12 @@ package co.hotwax.util;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +37,7 @@ public class CsvWriteHelper implements AutoCloseable {
         if (parentDir != null && !parentDir.exists()) {
             parentDir.mkdirs();
         }
-        this.writer = new BufferedWriter(new FileWriter(file));
+        this.writer = Files.newBufferedWriter(Paths.get(currentFilePath), StandardCharsets.UTF_8);
         this.csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(headers.toArray(new String[0])).withRecordSeparator("\n").withIgnoreEmptyLines(true));
 
         generatedFilePaths.add(currentFilePath);
