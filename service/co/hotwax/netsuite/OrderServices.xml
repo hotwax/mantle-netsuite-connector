@@ -654,7 +654,7 @@
                     location:fulfilledOrderItem.facilityExternalId,
                     tags:'hotwax-fulfilled'
                 ]"/>
-                <script>csvHelper.writeToFile(fulfilledOrderItemMap)</script>
+                <script>CsvWriteHelper.writeToFile(fulfilledOrderItemMap)</script>
                 <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledOrderItem.orderId,
                     orderItemSeqId:fulfilledOrderItem.orderItemSeqId, comments:'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate:nowTimestamp, externalFulfillmentId:'_NA_']"/>
             </iterate>
