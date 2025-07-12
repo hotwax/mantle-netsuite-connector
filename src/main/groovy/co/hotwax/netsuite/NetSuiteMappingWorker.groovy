@@ -4,6 +4,7 @@ import org.moqui.context.ExecutionContext
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.impl.entity.EntityListImpl
+import org.moqui.entity.EntityCondition
 
 class NetSuiteMappingWorker {
     private static final List<String> fieldsToRemove = [
@@ -23,9 +24,9 @@ class NetSuiteMappingWorker {
      */
     static String getIntegrationTypeMappingValue(ExecutionContext ec, String integrationTypeId, String mappingKey) {
         EntityValue mapping = ec.entity.find("co.hotwax.integration.IntegrationTypeMapping")
-            .condition([integrationTypeId: integrationTypeId, mappingKey: mappingKey])
-            .useCache(true)
-            .one()
+                .condition([integrationTypeId: integrationTypeId, mappingKey: mappingKey])
+                .useCache(true)
+                .one()
         return mapping?.mappingValue
     }
 
@@ -37,9 +38,9 @@ class NetSuiteMappingWorker {
      */
     static String getProductId(ExecutionContext ec, String hcProductId) {
         EntityList gid = ec.entity.find("org.apache.ofbiz.product.product.GoodIdentification")
-            .condition([productId: hcProductId, goodIdentificationTypeEnumId: "NETSUITE_PRODUCT_ID"])
-            .list()
-            .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
+                .condition([productId: hcProductId, goodIdentificationTypeEnumId: "NETSUITE_PRODUCT_ID"])
+                .list()
+                .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
         return gid?.first?.idValue
     }
 
@@ -52,11 +53,11 @@ class NetSuiteMappingWorker {
      */
     static String getFacilityIdentifications(ExecutionContext ec, String facilityId, String facilityIdenTypeId) {
         EntityList identifications = ec.entity.find("co.hotwax.facility.FacilityIdentification")
-            .condition("facilityId", facilityId)
-            .condition("facilityIdenTypeId", facilityIdenTypeId)
-            .useCache(true)
-            .list()
-            .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
+                .condition("facilityId", facilityId)
+                .condition("facilityIdenTypeId", facilityIdenTypeId)
+                .useCache(true)
+                .list()
+                .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
         return (identifications && !identifications.isEmpty()) ? identifications.first().idValue : null
     }
 
@@ -87,8 +88,8 @@ class NetSuiteMappingWorker {
      */
     static BigDecimal getGiftCardPaymentTotal(ExecutionContext ec, String orderId) {
         def giftCardPayment = ec.entity.find("co.hotwax.netsuite.order.NonRefundedGiftCardPayment")
-            .condition("orderId", orderId)
-            .useCache(true).list()
+                .condition("orderId", orderId)
+                .useCache(true).list()
 
         return giftCardPayment ? giftCardPayment[0].giftCardPaymentTotal : null
     }
@@ -175,7 +176,7 @@ class NetSuiteMappingWorker {
             .condition("orderId", orderId)
             .condition("orderItemSeqId", orderItem.orderItemSeqId)
             .condition("orderAdjustmentTypeId", "EXT_PROMO_ADJUSTMENT")
-            .condition("attrName", "")
+            .condition("attrName", EntityCondition.IS_NOT_NULL, null)
             .list()
         if (orderAdjustmentList) {
             BigDecimal totalPromotionAmount = orderAdjustmentList.collect { it.amount ?: 0 }.sum() as BigDecimal
