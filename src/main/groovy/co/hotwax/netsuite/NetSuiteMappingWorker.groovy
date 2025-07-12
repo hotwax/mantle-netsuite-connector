@@ -10,7 +10,8 @@ import org.moqui.entity.EntityCondition
 class NetSuiteMappingWorker {
     private static final List<String> fieldsToRemove = [
         'productStoreExternalId', 'shippingContactMechId', 'orderSalesChannelCode', '_entity',
-        'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProductId',
+        'billingCountryCode', 'shipmentMethodTypeId', 'billingContactNumber', 'netsuiteProdu
+        ctId',
         'orderItemSeqId', 'orderSalesChannelDescription', 'productId', 'adjustmentTotalAmount',
         'orderExternalId', 'netsuiteCustomerId', 'shippingContactNumber', 'billingContactMechId',
         'itemStatus', 'orderName', 'facilityId', 'shippingCountryCode', 'isDiscountRow',
@@ -187,7 +188,7 @@ class NetSuiteMappingWorker {
                 discountRow.isDiscountRow = true
             }
         }
-        return didscountRow
+        return discountRow
     }
 
     /**
