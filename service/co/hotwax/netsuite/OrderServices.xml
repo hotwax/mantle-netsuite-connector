@@ -44,6 +44,7 @@
                     Path to the groovy script which will be used to generate the Feed File.
                 </description>
             </parameter>
+            <parameter name="OrdersCountPerFeed" type="Integer" default-value="500"/>
         </in-parameters>
         <actions>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
@@ -68,6 +69,7 @@
 
                 findNetSuiteOrders.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
                 findNetSuiteOrders.distinct(true)
+                findNetSuiteOrders.limit(OrdersCountPerFeed)
 
                 //If no eligible orders, then don't generate the file
                 long netsuiteOrdersCount = findNetSuiteOrders.count()
