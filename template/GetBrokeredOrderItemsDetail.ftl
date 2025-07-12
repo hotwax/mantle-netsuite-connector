@@ -22,21 +22,20 @@
     .list()!>
 
 {
-  "Line Id": "${brokerOrderItem.netsuiteItemLineId!''}",
-  "External Id": "${brokerOrderItem.orderId!''}",
-  <#if orderIdentifications?has_content> "Internal Id": "${orderIdentifications[0].idValue!}", </#if>
-  <#if goodIdentificationList?has_content> "Item": "${goodIdentificationList[0].idValue!}", </#if>
-  "Closed": "",
-  "Quantity": "${brokerOrderItem.orderItemQuantity!''}",
-  "Location": "${brokerOrderItem.facilityExternalId!''}",
+  "lineId": "${brokerOrderItem.netsuiteItemLineId!''}",
+  <#if orderIdentifications?has_content> "internalId": "${orderIdentifications[0].idValue!}", </#if>
+  <#if goodIdentificationList?has_content> "item": "${goodIdentificationList[0].idValue!}", </#if>
+  "closed": "",
+  "quantity": "${brokerOrderItem.orderItemQuantity!''}",
+  "location": "${brokerOrderItem.facilityExternalId!''}",
   <#if shippingAddress?has_content>
-      "Addressee": "${shippingAddress.toName!''}",
-      "Address 1": "${shippingAddress.address1!''}",
-      "Address 2": "${shippingAddress.address2!''}",
-      "City": "${shippingAddress.city!''}",
-      "State": "${shippingAddress.stateProvinceGeoId!''}",
-      "Country": "${shippingAddress.countryGeoId!''}",
-      "Zip": "${shippingAddress.postalCode!''}",
+      "addressee": "${shippingAddress.toName!''}",
+      "address1": "${shippingAddress.address1!''}",
+      "address2": "${shippingAddress.address2!''}",
+      "city": "${shippingAddress.city!''}",
+      "state": "${shippingAddress.stateProvinceGeoName!''}",
+      "country": "${shippingAddress.countryGeoCode!''}",
+      "zip": "${shippingAddress.postalCode!''}",
   </#if>
-  "Shipping Method": <#if shippingMethodMapping?has_content>"${shippingMethodMapping[0].mappingValue!''}"<#else>"${brokerOrderItem.shipmentMethodTypeId!''}" </#if>
+  "shippingMethod": <#if shippingMethodMapping?has_content>"${shippingMethodMapping[0].mappingValue!''}"<#else>"${brokerOrderItem.shipmentMethodTypeId!''}" </#if>
 }
