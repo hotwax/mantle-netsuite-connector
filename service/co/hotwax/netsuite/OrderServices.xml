@@ -100,7 +100,7 @@
                 <entity-find-one entity-name="co.hotwax.netsuite.order.OrderDetails" value-field="orderDetails">
                     <field-map field-name="orderId" from="order.orderId"/>
                 </entity-find-one>
-                <set field="orderDetails" from="orderDetails.getPlainValueMap(0)"/>
+                <set field="orderDetails" from="orderDetails.getMap()"/>
 
                 <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
                 <set field="orderDetails.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
@@ -124,7 +124,7 @@
                 <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getShippingMethod(ec, order.isMixCartOrder, orderItemsList)"/>
                 <set field="grandTotal" from="NetSuiteMappingWorker.getGrandTotal(orderDetails.adjustmentTotalAmount ?: 0, orderItemsList)" type="BigDecimal"/>
                 <iterate list="orderItemsList" entry="orderItem">
-                    <set field="orderItem" from="orderItem.getPlainValueMap(0)"/>
+                    <set field="orderItem" from="orderItem.getMap()"/>
 
                     <set field="taxCode" from="NetSuiteMappingWorker.getTaxCode(ec, orderItem)"/>
                     <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
