@@ -125,7 +125,7 @@
                     <entity-find-one entity-name="moqui.service.message.SystemMessageTypeParameter" value-field="groovyFileResource">
                         <field-map field-name="systemMessageTypeId" from="systemMessageTypeId"/>
                         <field-map field-name="parameterName" value="resourcePath"/>
-                    </entity-find-one>
+                </entity-find-one>
                     <!-- Check if the Groovy file resource is available. -->
                     <if condition="groovyFileResource &amp;&amp; groovyFileResource.parameterValue">
                         <!-- Set the scriptPath using the retrieved parameterValue from the entity find operation. -->
@@ -144,9 +144,9 @@
                     <if condition="schemaPath">
                         <set field="schemaLocation" from="schemaPath.parameterValue" type="String"/>
                         <else><set field="schemaLocation" value="component://mantle-netsuite-connector/schemas/DefaultOrderSchema.json"/></else>
-                    </if>
+                </if>
 
-                    <script>
+                <script>
 
                         def order = context.get("result")
                         def orderItems = order.remove("orderItems")
@@ -173,7 +173,7 @@
                             invalidCsvPrinter.printRecord(csvHeaders)
                         }
 
-                        // Check for required fields and separate valid/invalid orders
+                    // Check for required fields and separate valid/invalid orders
                         flattenedOrders.each { record ->
                             try {
                                 def schemaValidation = new co.hotwax.common.SchemaValidation(ec.ecfi ,ec)
@@ -186,10 +186,10 @@
                                 def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
                                 orderedRecord.add(e.message)
                                 invalidCsvPrinter.printRecord(orderedRecord)
-                                isReqFieldMissFileEmpty = false
+                            isReqFieldMissFileEmpty = false
                             }
                         }
-                    </script>
+                </script>
                 </if>
             </iterate>
             <script>
@@ -659,10 +659,12 @@
                     orderItemSeqId:fulfilledOrderItem.orderItemSeqId, comments:'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate:nowTimestamp, externalFulfillmentId:'_NA_']"/>
             </iterate>
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
-            <iterate list="CsvWriteHelper.getGeneratedFilePaths()" entry="generatedFilePath">
+            <set field="generatedFilePaths" from="CsvWriteHelper.getGeneratedFilePaths()"/>
+            <script>}</script>
+            <iterate list="generatedFilePaths" entry="generatedFilePath">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
             </iterate>
-            <script>}</script>
+            <return message=" Created the Fulfilled Order Items Feed file with orders count ${netsuiteOrdersCount} at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
     <service verb="get" noun="BrokeredOrders" authenticate="anonymous-all" transaction-timeout="7200">
