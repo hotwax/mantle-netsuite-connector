@@ -79,8 +79,8 @@
                 }
             </script>
 
-            <set field="csvFilePathRef" value="runtime://datamanager/netsuite/${filePathPattern}/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
-            <set field="invalidFilePathRef" value="runtime://datamanager/netsuite/${filePathPattern}/required_fields_missing/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="csvFilePathRef" value="runtime://datamanager/${filePathPattern}/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="invalidFilePathRef" value="runtime://datamanager/${filePathPattern}/required_fields_missing/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
             <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
 
@@ -371,8 +371,8 @@
             long fulfilledOrdersCount = fulfilledOrdersItems.count()
             if (fulfilledOrdersCount == 0) {
                 ec.message.addMessage("No eligible orders for Fulfilled Order and Items Feed at ${nowDate}, not generating the HotWax Feed file.")
-                return
-            }
+                    return
+                }
 
             try (fulfilledOrdersItemsItr = fulfilledOrdersItems.iterator()) {
             </script>
@@ -430,7 +430,7 @@
                 <iterate list="fulfilledOrderItem" entry="item">
                     <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory"
                         in-map="[orderId:item.orderId, orderItemSeqId:item.orderItemSeqId, comments:'Order Item sent as part of Fulfilled Items Feed', createdDate:nowDate, externalFulfillmentId:'_NA_']"/>
-                </iterate>
+            </iterate>
 
                 <script>
                     objectMapper.writerWithDefaultPrettyPrinter().writeValue(jGenerator, fulfilledOrderItemMap)
