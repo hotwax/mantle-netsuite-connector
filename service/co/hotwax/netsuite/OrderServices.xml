@@ -77,8 +77,8 @@
                 }
             </script>
 
-            <set field="csvFilePathRef" value="runtime://datamanager/netsuite/${filePathPattern}/NewOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
-            <set field="invalidFilePathRef" value="runtime://datamanager/netsuite/${filePathPattern}/required_fields_missing/NewOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="csvFilePathRef" value="runtime://datamanager/netsuite/${filePathPattern}/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="invalidFilePathRef" value="runtime://datamanager/netsuite/${filePathPattern}/required_fields_missing/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
             <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
             <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
 
@@ -143,23 +143,15 @@
                     <set field="orderDetails" from="scriptResult.orderData"/>
                     <set field="requiredFields" from="requiredFields + scriptResult.customRequiredFileds"/>
                 </if>
-                <set field="netsuiteOrderMap" from="NetSuiteMappingWorker.prepareNetSuiteOrderItemList(orderDetails)"/>
+                <set field="netsuiteOrderItemList" from="NetSuiteMappingWorker.prepareNetSuiteOrderItemList(orderDetails)"/>
                 <script>
-                    if (!csvHeaders) {
-                        csvHeaders = netsuiteOrderMap[0].keySet().collect { it as String }
-                        validFileCsvHelper.setHeaders(csvHeaders)
-                        invalidFileCsvHelper.setHeaders(csvHeaders)
-                    }
-
                     // Check for required fields and separate valid/invalid orders
-                    netsuiteOrderMap.each { record ->
-                        def orderedRecord = csvHeaders.collect { key -> record[key] != null ? record[key] : "" }
+                    netsuiteOrderItemList.each { record ->
                         def missingFields = requiredFields.findAll { !record[it] || record[it].toString().trim() == '' }
 
                         if (missingFields) {
-                            // Add to invalid CSV with error message
-                            orderedRecord.add("Missing required fields: ${missingFields.join(', ')}")
-                            invalidFileCsvHelper.writeToFile(orderedRecord)
+                            record.add("Missing required fields: ${missingFields.join(', ')}")
+                            invalidFileCsvHelper.writeToFile(record)
                             isReqFieldMissFileEmpty = false
                         } else {
                             validFileCsvHelper.writeToFile(orderedRecord)
@@ -169,15 +161,6 @@
                     orderDetails = null
                 </script>
             </iterate>
-            <script>
-                    if (isReqFieldMissFileEmpty) {
-                        invalidFile.delete()
-                    }
-                    if (isFileEmpty) {
-                    invalidFile.delete()
-                    }
-                }
-            </script>
             <if condition="!isFileEmpty">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
                     in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:csvFilePath, sendPath:sendPath]"/>
