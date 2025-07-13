@@ -321,9 +321,9 @@
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CRT_CD_CR"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateCustomerDepositAndRefund" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
-    <moqui.service.job.ServiceJob jobName="HC_SC_CreateCustomerDeposit" description="Create Customer Deposit" instanceOfProductId="NS_CREATE_CD"
+    <moqui.service.job.ServiceJob jobName="HC_MR_CreateCustomerDeposit" description="Create Customer Deposit" instanceOfProductId="NS_CREATE_CD"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CREATE_CD"/>
-    <moqui.service.job.ServiceJobParameter jobName="HC_SC_CreateCustomerDeposit" parameterName="scriptType" parameterValue="SCHEDULED"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_MR_CreateCustomerDeposit" parameterName="scriptType" parameterValue="MAP_REDUCE"/>
 
     <moqui.service.job.ServiceJob jobName="HC_SC_CreateSalesOrderInvoice" description="Create Sales Order Invoice" instanceOfProductId="NS_CREATE_INVOICE"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_CREATE_INVOICE"/>
