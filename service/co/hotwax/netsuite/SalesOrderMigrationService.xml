@@ -56,7 +56,7 @@
                 import co.hotwax.netsuite.NetSuiteMappingWorker
                 import co.hotwax.util.CsvWriteHelper
 
-                findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
+                findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.SalesOrderMigrationOrders")
                 if(orderId) findNetSuiteOrders.condition("orderId", orderId)
                 if(fromOrderDate) findNetSuiteOrders.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
                 if(thruOrderDate) findNetSuiteOrders.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
