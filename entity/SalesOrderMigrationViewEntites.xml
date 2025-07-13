@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <view-entity entity-name="SalesOrderMigrationOrders" package="co.hotwax.netsuite.order">
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH" join-optional="true">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="SHOPIFY_OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="SHOPIFY_OID" field-name="orderIdentificationTypeId" value="SHOPIFY_ORD_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="ODR" entity-name="org.apache.ofbiz.order.order.OrderRole" join-from-alias="OH" join-optional="true">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="ODR" field-name="roleTypeId" operator="equals" value="BILL_TO_CUSTOMER"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="PID" entity-name="org.apache.ofbiz.party.party.PartyIdentification" join-from-alias="ODR">
+            <key-map field-name="partyId"/>
+            <entity-condition>
+                <econdition entity-alias="PID" field-name="partyIdentificationTypeId" value="NETSUITE_CUSTOMER_ID"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemAndShipGroup" sub-select="non-lateral" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrders" sub-select="non-lateral" join-from-alias="OH" join-optional="true">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <entity-condition>
+            <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
+            <econdition entity-alias="INVORD" field-name="orderId" operator="is-null"/>
+            <econdition entity-alias="SHOPIFY_OID" field-name="idValue" operator="is-not-null"/>
+        </entity-condition>
+        <alias name="partyId" entity-alias="PID"/>
+        <alias name="shopifyOrderId" entity-alias="SHOPIFY_OID" field="idValue"/>
+        <alias name="netsuiteCustomerId" entity-alias="PID" field="idValue"/>
+        <alias name="orderId" entity-alias="OH"/>
+        <alias name="orderDate" entity-alias="OH"/>
+        <alias name="shipmentMethodTypeId" entity-alias="OIV"/>
+        <alias name="isMixCartOrder" type="text-indicator">
+            <case>
+                <when expression="(SELECT COUNT(DISTINCT OISG.shipment_Method_Type_Id)
+                           FROM Order_Item_Ship_Group OISG
+                           WHERE OISG.ORDER_ID = OH.ORDER_ID) = 1">
+                    <complex-alias expression="'N'" />
+                </when>
+                <else>
+                    <complex-alias expression="'Y'" />
+                </else>
+            </case>
+        </alias>
+    </view-entity>
+</entities>
