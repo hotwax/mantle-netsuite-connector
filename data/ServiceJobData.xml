@@ -35,7 +35,6 @@
     <moqui.basic.Enumeration enumId="GEN_CRT_ORD_FD" enumCode="GEN_CRT_ORD_FD" description="Generate create orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CUST_DEP_FD" enumCode="GEN_CUST_DEP_FD" description="Generate Customer Deposit Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_CRT_CUST_FD" enumCode="GEN_CRT_CUST_FD" description="Generate HotWax Create Customer Feed for Netsuite" enumTypeId="ORDER_SYS_JOB"/>
-    <moqui.basic.Enumeration enumId="POL_FLFLD_ITM_FRM_NS" enumCode="POL_FLFLD_ITM_FRM_NS" description="Poll Fufilled Order Items From NetSuite Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_BRKR_ORD_FD_NS" enumCode="GEN_BRKR_ORD_FD_NS" description="Generate Brokerd Order Items feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_FLFLD_ORD_FD_NS" enumCode="GEN_FLFLD_ORD_FD_NS" description="Generate Fulfilled Order Items feed for NetSuite" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <!-- NetSuite Transfer Order v2 Job Enum Data -->
@@ -116,10 +115,6 @@
     <Product productId="GEN_CRT_CUST_FD" productTypeId="SERVICE" internalName="GEN_CRT_CUST_FD" 
              productName="Generate HotWax Create Customer Feed for Netsuite Job" description="Generate HotWax Create Customer Feed for Netsuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-    <Product productId="POL_FLFLD_ITM_FRM_NS" productTypeId="SERVICE" internalName="POL_FLFLD_ITM_FRM_NS" 
-             productName="Poll Fufilled Order Items From NetSuite Job" description="Poll Fufilled Order Items From NetSuite Job"
-             primaryProductCategoryId="ORDER_SYS_JOB"/>
-    
     <Product productId="NS_EXP_INV_ADJ" productTypeId="SERVICE" internalName="NS_EXP_INV_ADJ"
              productName="NetSuite Export Inventory Adjustment Job" description="NetSuite Export Inventory Adjustment Job"
              primaryProductCategoryId="INVENTORY_SYS_JOB"/>
@@ -193,7 +188,6 @@
     <ProductCategoryMember productId="NS_UPDATE_SO" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPLOAD_INV" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPLOAD_PROD" productCategoryId="PRODUCT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="POL_FLFLD_ITM_FRM_NS" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_INV_ADJ" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_CRT_CD_CR" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_STORE_TO_IF" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -213,7 +207,6 @@
     <ProductCategoryMember productId="NS_IMP_SALES_ORDER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_TO_IR" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPDATE_SO" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    <ProductCategoryMember productId="POL_FLFLD_ITM_FRM_NS" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_INV_ADJ" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_CRT_CD_CR" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_TO_IF" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -281,14 +274,6 @@
         <parameters parameterName="systemMessageTypeId" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
         <parameters parameterName="partyId" parameterValue=""/>
-    </moqui.service.job.ServiceJob>
-
-    <!-- ServiceJob data for polling csv file from sftp location -->
-    <moqui.service.job.ServiceJob jobName="poll_fulfilledItemsNetsuiteToHotwax"
-            description="Poll Csv file from sftp location of fulfilled order items feed netsuite to hotwax" instanceOfProductId="POL_FLFLD_ITM_FRM_NS" jobTypeEnumId="POL_FLFLD_ITM_FRM_NS"
-            serviceName="co.hotwax.ofbiz.SystemMessageServices.poll#SystemMessageFileSftp" cronExpression="0 0 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId" parameterValue="FulfilledOrderItemsFeedNetsuiteToHotwax"/>
-        <parameters parameterName="systemMessageRemoteId" parameterValue="RemoteSftp"/>
     </moqui.service.job.ServiceJob>
 
     <!-- NetSuite SuiteScripts Job data-->
