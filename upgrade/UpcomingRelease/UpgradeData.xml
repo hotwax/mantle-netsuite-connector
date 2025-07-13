@@ -11,7 +11,7 @@
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
         <parameters parameterName="scriptPath" parameterValue=""/>
-        <parameter parameterName="OrdersCountPerFeed" parameterValue="500"/>
+        <parameter parameterName="ordersCountPerFeed" parameterValue="500"/>
     </moqui.service.job.ServiceJob>
 
     <moqui.basic.Enumeration enumId="GEN_CRT_POS_ORD_FD" enumCode="GEN_CRT_POS_ORD_FD" description="Generate create POS orders feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
@@ -35,7 +35,8 @@
         <parameters parameterName="includeSalesChannel" parameterValue=""/>
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
         <parameters parameterName="scriptPath" parameterValue=""/>
-        <parameter parameterName="OrdersCountPerFeed" parameterValue="500"/>
+        <parameter parameterName="ordersCountPerFeed" parameterValue="500"/>
     </moqui.service.job.ServiceJob>
+    <moqui.service.job.ServiceJob jobName="generate_FulfilledOrderItemsFeed_Netsuite" serviceName="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"/>
 
 </entity-facade-xml>

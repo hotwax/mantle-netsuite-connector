@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<entity-facade-xml type="ext-upgrade">
-  <moqui.service.job.ServiceJob jobName="generate_FulfilledOrderItemsFeed_Netsuite" serviceName="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"/>
-</entity-facade-xml>

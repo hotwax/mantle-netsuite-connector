@@ -44,7 +44,7 @@
                     Path to the groovy script which will be used to generate the Feed File.
                 </description>
             </parameter>
-            <parameter name="OrdersCountPerFeed" type="Integer" default-value="500"/>
+            <parameter name="ordersCountPerFeed" type="Integer" default-value="500"/>
         </in-parameters>
         <actions>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
@@ -69,7 +69,7 @@
 
                 findNetSuiteOrders.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
                 findNetSuiteOrders.distinct(true)
-                findNetSuiteOrders.limit(OrdersCountPerFeed)
+                findNetSuiteOrders.limit(ordersCountPerFeed)
 
                 //If no eligible orders, then don't generate the file
                 long netsuiteOrdersCount = findNetSuiteOrders.count()
@@ -175,29 +175,6 @@
                     in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidFilePath, sendPath:invalidSendPath]"/>
             </if>
             <return message="Generated Order Items Feed file  ${csvFilePath} and missing file response in ${invalidFilePath}"/>
-        </actions>
-    </service>
-
-    <service verb="get" noun="FulfilledOrders" authenticate="anonymous-all" transaction-timeout="7200">
-        <in-parameters>
-            <parameter name="fulfilledOrdersCountPerFeed" type="Integer"/>
-            <parameter name="orderId"/>
-            <parameter name="orderItemSeqId"/>
-            <parameter name="orderStatusId"/>
-            <parameter name="systemMessageTypeId" required="true"/>
-            <parameter name="systemMessageRemoteId" required="true"/>
-            <parameter name="parentFacilityTypeIds" type="List"/>
-            <parameter name="productTypeIds" type="List"/>
-            <parameter name="productStoreIds" type="List"/>
-        </in-parameters>
-        <actions>
-            <set field="isFirstFeed" from="true"/>
-            <while condition="isFirstFeed || (fulfilledOrdersCount != null &amp;&amp; fulfilledOrdersCount > 0 &amp;&amp; fulfilledOrdersCount == fulfilledOrdersCountPerFeed)">
-                <service-call name="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"
-                              in-map="context" out-map="fulfilledFeedOut" transaction="force-new"/>
-                <set field="fulfilledOrdersCount" from="fulfilledFeedOut?.fulfilledFeedOrdersCount"/>
-                <set field="isFirstFeed" from="false"/>
-            </while>
         </actions>
     </service>
     <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
