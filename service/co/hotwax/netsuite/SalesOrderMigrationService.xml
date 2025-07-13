@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="generate" noun="NewOrdersSyncFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="orderId">
+                <description>Parameter to fetch Order details for a specific orderId.</description>
+            </parameter>
+            <parameter name="filePathPattern" default-value="testing-netsuite/salesorder/pos" required="true"/>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote Id for generating the Orders Feed for Netsuite.</description>
+            </parameter>
+            <parameter name="fromOrderDate">
+                <description>Parameter to fetch Order details after specific order date</description>
+            </parameter>
+            <parameter name="thruOrderDate">
+                <description>Parameter to fetch Order details after specific order date</description>
+            </parameter>
+            <parameter name="includeShipmentMethod" type="List">
+                <description>
+                    Parameter to fetch Order details for specific shipment method or a list of shipping method
+                    like: POS_COMPLETED,STORE_PICKUP
+                </description>
+            </parameter>
+            <parameter name="excludeShipmentMethod" type="List">
+                <description>Parameter to exclude the Orders from the specific shipment method or a list of shipping method
+                    like: POS_COMPLETED,STORE_PICKUP
+                </description>
+            </parameter>
+            <parameter name="includeSalesChannel" type="List">
+                <description>Parameter to fetch Order details for specific sales channel or a list of sales channel.</description>
+            </parameter>
+            <parameter name="excludeSalesChannel" type="List">
+                <description>Parameter to exclude the Orders from the specific sales channel or a list of sales channel.</description>
+            </parameter>
+            <parameter name="isMixCartOrder">
+                <description>
+                    Parameter to include or exclude the orders which have multiple shipping methods.
+                    Example: Y to include the order with multiple shipping methods.
+                    N to not include the order with multiple shipping methods.
+                </description>
+            </parameter>
+            <parameter name="scriptPath">
+                <description>
+                    Path to the groovy script which will be used to generate the Feed File.
+                </description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <log message="Generating Order Feed file for Order ${orderId} at time ${nowTimestamp}"/>
+            <script>
+                import java.nio.file.Files
+                import java.nio.file.Paths
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+                import co.hotwax.netsuite.NetSuiteMappingWorker
+                import co.hotwax.util.CsvWriteHelper
+
+                findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.SalesOrderMigrationOrders")
+                if(orderId) findNetSuiteOrders.condition("orderId", orderId)
+                if(fromOrderDate) findNetSuiteOrders.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
+                if(thruOrderDate) findNetSuiteOrders.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
+                if(includeShipmentMethod) findNetSuiteOrders.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.IN, includeShipmentMethod)
+                if(excludeShipmentMethod) findNetSuiteOrders.condition("shipmentMethodTypeId",EntityCondition.ComparisonOperator.NOT_IN, excludeShipmentMethod)
+                if(includeSalesChannel) findNetSuiteOrders.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.IN, includeSalesChannel)
+                if(excludeSalesChannel) findNetSuiteOrders.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.NOT_IN, excludeSalesChannel)
+                if(isMixCartOrder) findNetSuiteOrders.condition("isMixCartOrder", isMixCartOrder)
+
+                findNetSuiteOrders.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
+                findNetSuiteOrders.distinct(true)
+
+                //If no eligible orders, then don't generate the file
+                long netsuiteOrdersCount = findNetSuiteOrders.count()
+                if (netsuiteOrdersCount == 0) {
+                ec.message.addMessage("No eligible orders at ${nowTimestamp}, not generating the HotWax Feed file for Netsuite.")
+                return
+                }
+            </script>
+
+            <set field="csvFilePathRef" value="runtime://datamanager/${filePathPattern}/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="invalidFilePathRef" value="runtime://datamanager/${filePathPattern}/required_fields_missing/CreateOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="csvFilePath" from="ec.resource.getLocationReference(csvFilePathRef).getUri().getPath()"/>
+            <set field="invalidFilePath" from="ec.resource.getLocationReference(invalidFilePathRef).getUri().getPath()"/>
+
+            <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
+            <set field="invalidSendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/required_fields_missing/'"/>
+
+            <set field="isFileEmpty" from="true"/>
+            <set field="isReqFieldMissFileEmpty" from="true"/>
+            <set field="csvHeaders" from="null"/>
+
+            <script>
+                // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
+                try (ordersItr = findNetSuiteOrders.iterator(); CsvWriteHelper validFileCsvHelper = new CsvWriteHelper(csvFilePath, null, 0); CsvWriteHelper invalidFileCsvHelper = new CsvWriteHelper(invalidFilePath, null, 0)) {
+            </script>
+
+            <iterate list="ordersItr" entry="order">
+                <entity-find-one entity-name="co.hotwax.netsuite.order.OrderDetails" value-field="orderDetails">
+                    <field-map field-name="orderId" from="order.orderId"/>
+                </entity-find-one>
+                <set field="orderDetails" from="orderDetails.getMap()"/>
+
+                <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
+                <set field="orderDetails.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
+
+                <set field="orderDetails.billingPhone" from="((orderDetails.billingCountryCode?:'') || (orderDetails.billingAreaCode?:'') || (orderDetails.billingContactNumber?:'')) ? ((orderDetails.billingCountryCode ?:'') + ' ' + (orderDetails.billingAreaCode ?:'') + ' ' + (orderDetails.billingContactNumber ?:'')) : ''" />
+                <set field="orderDetails.phone" from="((orderDetails.shippingCountryCode?:'') || (orderDetails.shippingAreaCode?:'') || (orderDetails.shippingContactNumber?:'')) ? ((orderDetails.shippingCountryCode ?:'') + ' ' + (orderDetails.shippingAreaCode ?:'') + ' ' + (orderDetails.shippingContactNumber ?:'')) : ''" />
+
+                <if condition="(!orderDetails.billingContactMechId &amp;&amp; orderDetails.shippingContactMechId)">
+                    <set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip, billingAddressee:orderDetails.addressee]"/>
+                </if>
+
+                <set field="shippingTaxCode" from="NetSuiteMappingWorker.getShippingTaxCode(ec, order.orderId)"/>
+                <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getGiftCardPaymentTotal(ec, order.orderId)"/>
+                <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
+                    HCShopifySalesOrderId:order.shopifyOrderId, externalId: orderDetails.orderExternalId, shippingTaxCode:shippingTaxCode]"/>
+
+                <set field="orderItems" from="[]"/>
+                <entity-find entity-name="co.hotwax.netsuite.order.OrderItemsDetails" list="orderItemsList">
+                    <econdition field-name="orderId" operator="equals" from="order.orderId"/>
+                </entity-find>
+                <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getShippingMethod(ec, order.isMixCartOrder, orderItemsList)"/>
+                <set field="grandTotal" from="NetSuiteMappingWorker.getGrandTotal(orderDetails.adjustmentTotalAmount ?: 0, orderItemsList)" type="BigDecimal"/>
+                <iterate list="orderItemsList" entry="orderItem">
+                    <set field="orderItem" from="orderItem.getMap()"/>
+
+                    <set field="taxCode" from="NetSuiteMappingWorker.getTaxCode(ec, orderItem)"/>
+                    <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
+                    <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationTypeMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
+                    <set field="department" from="NetSuiteMappingWorker.getFacilityIdentifications(ec, orderItem.orderFacilityId, 'ORDR_ORGN_DPT')" type="String"/>
+
+                    <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, orderLineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:orderItem.orderFacilityExternalId, itemLocation:orderItem.facilityExternalId, taxCode:taxCode]"/>
+                    <script>orderItems.add(orderItem)</script>
+
+                    <set field="discountItems" from="NetSuiteMappingWorker.getDiscountItem(ec, order.orderId, orderItem)"/>
+                    <if condition="discountItems"><script>orderItems.addAll(discountItems)</script></if>
+
+                </iterate>
+                <set field="orderDetails" from="orderDetails + [HCOrderTotal:grandTotal, orderItems:orderItems]"/>
+                <set field="requiredFields" from="['date', 'country', 'customer']"/>
+                <if condition="scriptPath">
+                    <set field="scriptResult" from="ec.resource.script(scriptPath, null)"/>
+                    <set field="orderDetails" from="scriptResult.orderData"/>
+                    <set field="requiredFields" from="requiredFields + scriptResult.customRequiredFileds"/>
+                </if>
+                <set field="netsuiteOrderItemList" from="NetSuiteMappingWorker.prepareNetSuiteOrderItemList(orderDetails)"/>
+                <script>
+                    // Check for required fields and separate valid/invalid orders
+                    netsuiteOrderItemList.each { record ->
+                    def missingFields = requiredFields.findAll { !record[it] || record[it].toString().trim() == '' }
+
+                    if (missingFields) {
+                        record.put("Missing Required Fields", missingFields.join(', '))
+                        invalidFileCsvHelper.writeToFile(record)
+                        isReqFieldMissFileEmpty = false
+                    } else {
+                        validFileCsvHelper.writeToFile(record)
+                        isFileEmpty = false
+                    }
+                    }
+                    orderDetails = null
+                </script>
+            </iterate>
+            <script>
+                }
+            </script>
+            <if condition="!isFileEmpty">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
+                              in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:csvFilePath, sendPath:sendPath]"/>
+            </if>
+            <if condition="!isReqFieldMissFileEmpty">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
+                              in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidFilePath, sendPath:invalidSendPath]"/>
+            </if>
+            <return message="Generated Order Items Feed file  ${csvFilePath} and missing file response in ${invalidFilePath}"/>
+        </actions>
+    </service>
+</services>
