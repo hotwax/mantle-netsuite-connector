@@ -110,4 +110,37 @@
             <set field="savedFilePath" from="expandedFilePath"/>
         </actions>
     </service>
+
+    <service verb="put" noun="FileOnSftp">
+        <in-parameters>
+            <parameter name="systemMessageRemoteId"/>
+            <parameter name="receivePath"/>
+            <parameter name="sendPath"/>
+        </in-parameters>
+        <actions>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
+            <if condition="!systemMessageRemote"><return error="true" message="System message ${systemMessageId} has no SystemMessageRemote, not sending."/></if>
+            <if condition="!systemMessageRemote.sendUrl"><return error="true" message="No sendUrl on SystemMessageRemote ${systemMessageRemote.systemMessageRemoteId}, not sending."/></if>
+            <if condition="!systemMessageRemote.username"><return error="true" message="No username on SystemMessageRemote ${systemMessageRemote.systemMessageRemoteId}, not sending."/></if>
+            <set field="sendPath" from="ec.resource.expand(sendPath, null, [sftpUsername:systemMessageRemote.username], false)"/>
+            <set field="filename" from="receivePath.substring(receivePath.lastIndexOf('/') + 1)"/>
+            <set field="fileRef" from="ec.resource.getLocationReference(receivePath)"/>
+            <if condition="!fileRef"><return error="true" message="File not found at path: ${receivePath}"/></if>
+
+            <script>
+                import org.moqui.sftp.SftpClient
+                try ( InputStream inputStream = fileRef.openStream();
+                SftpClient sftpClient = new SftpClient((String) systemMessageRemote.sendUrl, (String) systemMessageRemote.username)) {
+
+                if (systemMessageRemote.privateKey) sftpClient.publicKeyPkcs8((String) systemMessageRemote.privateKey, (String) systemMessageRemote.publicKey)
+                else sftpClient.password((String) systemMessageRemote.password)
+
+                if (systemMessageRemote.remoteAttributes == 'N') sftpClient.preserveAttributes(false)
+
+                sftpClient.connect()
+                sftpClient.put(sendPath, filename, (InputStream) inputStream)
+                }
+            </script>
+        </actions>
+    </service>
 </services>

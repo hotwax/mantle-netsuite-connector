@@ -21,28 +21,6 @@
     <moqui.service.message.SystemMessageTypeParameter systemMessageTypeId="CreateNetsuiteCustomerFeed"
        parameterName="resourcePath" parameterValue="" systemMessageRemoteId=""/>
 
-    <moqui.service.message.SystemMessageType systemMessageTypeId="FulfilledOrderItemsFeedNetsuiteToHotwax"
-       description="Fetch Fulfilled Order Items feed Netsuite to Hotwax"
-       parentTypeId="LocalFeedFile"
-       receiveResponseEnumId="MsgRrMove"
-       sendPath="${contentRoot}/Netsuite/FulfilledOrderItems"
-       receivePath="/home/${sftpUsername}/netsuite/salesorder/import/fulfillment-nifi"
-       receiveMovePath="/home/${sftpUsername}/netsuite/salesorder/import/fulfillment-nifi/archive"
-       consumeServiceName="co.hotwax.netsuite.OrderServices.consume#FulfilledOrderItemFeed">
-       <parameters parameterName="sendSmrId" parameterValue="RemoteSftp" systemMessageRemoteId=""/>
-    </moqui.service.message.SystemMessageType>
-
-    <moqui.service.message.SystemMessageType systemMessageTypeId="SendFulfilledOrderItemsFeed"
-      description="Send Fulfilled Order Items feed Netsuite to Hotwax"
-      parentTypeId="LocalFeedFile"
-      receivePath="${contentRoot}/Netsuite/Fulfillment/fulfilledOrderItemFeed-${dateTime}.json"
-      sendPath="/home/${sftpUsername}/netsuite/salesorder/import/fulfillment/FulfilledOrderItemsFeed-${systemMessageId}-${dateTime}.json"
-      sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"/>
-
-     <!-- Enumeration to create relation between FulfilledOrderItemsFeedNetsuiteToHotwax and SendFulfilledOrderItemsFeed SystemMessageType(s) -->
-     <moqui.basic.Enumeration description="Send fulfilledOrderItem Feed" enumId="SendFulfilledOrderItemsFeed" enumTypeId="NetsuiteMessageTypeEnum"/>
-     <moqui.basic.Enumeration description="Product Updates Feed" enumId="FulfilledOrderItemsFeedNetsuiteToHotwax" enumTypeId="ShopifyMessageTypeEnum" relatedEnumId="SendFulfilledOrderItemsFeed" relatedEnumTypeId="NetsuiteMessageTypeEnum"/>
-
      <moqui.service.message.SystemMessageRemote
         systemMessageRemoteId="GITLAB_PROJECT_CONFIG"
         authHeaderName="PRIVATE-TOKEN"
@@ -144,18 +122,6 @@
             sendPath="/home/${sftpUsername}/netsuite/transferorderv2/export/oms-fulfillment/TransferOrderShipmentFeed-${dateTime}-${systemMessageId}.json"
             sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
             receivePath="${contentRoot}/netsuite/TransferOrderShipmentFeed/TransferOrderShipmentFeed-${dateTime}.json"/>
-
-    <!-- System Message Type for Fulfilled Order Items Feed -->
-    <moqui.service.message.SystemMessageType
-           systemMessageTypeId="FulfilledOrderItemsFeedNS"
-           description="Generate HotWax Fulfilled Order Items Feed for Netsuite"
-           parentTypeId="LocalFeedFile"
-           sendPath="/home/${sftpUsername}/netsuite/fulfilledsalesorder/export${productStoreId}-FulfilledOrderItemsFeed-${systemMessageId}-${dateTime}.json"
-           sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
-           receivePath="${contentRoot}/hotwax/FulfilledOrderItemsFeed/${productStoreId}-HotWaxFulfilledOrderItemsFeed-${dateTime}.json">
-           <parameters parameterName="resourcePath" parameterValue="component://mantle-netsuite-connector/template/FulfilledOrderItemsFeedDetail.ftl" systemMessageRemoteId=""/>
-    </moqui.service.message.SystemMessageType>
-
     <!-- System Message Type for Brokered Order Items Feed -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="BrokeredOrderItemsFeedForNS"
           description="Generate HotWax Brokered Order Items Feed for Netsuite"
