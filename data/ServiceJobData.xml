@@ -408,18 +408,12 @@
     <!-- Template Service Job to generate the Fulfilled Order Items Feed from HotWax -->
     <moqui.service.job.ServiceJob jobName="generate_FulfilledOrderItemsFeed_Netsuite" instanceOfProductId="GEN_FLFLD_ORD_FD_NS" jobTypeEnumId="GEN_FLFLD_ORD_FD_NS"
         description="Template Service Job to generate the Fulfilled Order Items Feed from HotWax"
-        serviceName="co.hotwax.netsuite.OrderServices.get#FulfilledOrders"
+        serviceName="co.hotwax.netsuite.OrderServices.generate#FulfilledOrderItemsFeed"
         cronExpression="0 0 0 * * ?" paused="Y">
         <parameters parameterName="fulfilledOrdersCountPerFeed"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="orderItemSeqId"/>
-        <parameters parameterName="systemMessageTypeId"/>
         <parameters parameterName="systemMessageRemoteId"/>
-        <parameters parameterName="parentFacilityTypeIds"/>
-        <parameters parameterName="productStoreIds"/>
-        <parameters parameterName="productTypeIds"/>
-        <parameters parameterName="orderStatusId"/>
-        <parameters parameterName="orderTypeId"/>
     </moqui.service.job.ServiceJob>
 
      <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
