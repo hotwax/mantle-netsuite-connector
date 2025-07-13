@@ -176,7 +176,6 @@ class NetSuiteMappingWorker {
             .condition("orderId", orderId)
             .condition("orderItemSeqId", orderItem.orderItemSeqId)
             .condition("orderAdjustmentTypeId", "EXT_PROMO_ADJUSTMENT")
-            .condition("attrName", EntityCondition.IS_NOT_NULL, null)
             .list()
         if (orderAdjustmentList) {
             BigDecimal totalPromotionAmount = orderAdjustmentList.collect { it.amount ?: 0 }.sum() as BigDecimal
