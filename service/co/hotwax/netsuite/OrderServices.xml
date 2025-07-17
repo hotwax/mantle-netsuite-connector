@@ -253,7 +253,7 @@
         <actions>
 
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
-            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/fulfilledOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/brokeredOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
             <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
             <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
             <script>
