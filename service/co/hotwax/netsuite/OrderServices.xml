@@ -241,9 +241,6 @@
             <parameter name="orderItemSeqId"/>
             <parameter name="filePathPattern" required="true"/>
             <parameter name="systemMessageRemoteId" required="true"/>
-            <parameter name="parentFacilityTypeIds" type="List"/>
-            <parameter name="facilityGroupIds" type="List"/>
-            <parameter name="productStoreIds" type="List"/>
             <parameter name="templatePath" default-value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl">
                 <description>
                     Path to the ftl template which will be used to generate the Feed File.
@@ -262,11 +259,8 @@
                 import org.moqui.entity.EntityCondition
 
                 brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed").distinct(true)
-                brokeredOrderItemFind.condition("itemStatusId", "ITEM_APPROVED")
                 if(orderId) brokeredOrderItemFind.condition("orderId", orderId)
                 if(orderItemSeqId) brokeredOrderItemFind.condition("orderItemSeqId", orderItemSeqId)
-                if(facilityGroupIds) brokeredOrderItemFind.condition("facilityGroupId", EntityCondition.ComparisonOperator.IN, facilityGroupIds)
-                if(productStoreIds) brokeredOrderItemFind.condition("productStoreId", EntityCondition.ComparisonOperator.IN, productStoreIds)
                     .selectField("orderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
                     .orderBy("entryDate")
 
