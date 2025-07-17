@@ -1,0 +1,1 @@
+DELETE from system_message_type where system_message_type_id = 'BrokeredOrderItemsFeedForNS';

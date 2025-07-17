@@ -21,7 +21,7 @@
     .condition("mappingKey",brokerOrderItem.shipmentMethodTypeId)
     .list()!>
 
-{
+[{
   "lineId": "${brokerOrderItem.netsuiteItemLineId!''}",
   <#if orderIdentifications?has_content> "internalId": "${orderIdentifications[0].idValue!}", </#if>
   <#if goodIdentificationList?has_content> "item": "${goodIdentificationList[0].idValue!}", </#if>
@@ -38,4 +38,4 @@
       "zip": "${shippingAddress.postalCode!''}",
   </#if>
   "shippingMethod": <#if shippingMethodMapping?has_content>"${shippingMethodMapping[0].mappingValue!''}"<#else>"${brokerOrderItem.shipmentMethodTypeId!''}" </#if>
-}
+}]
