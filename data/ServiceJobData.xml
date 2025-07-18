@@ -453,9 +453,6 @@
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="orderItemSeqId"/>
-        <parameters parameterName="facilityGroupIds"/>
-        <parameters parameterName="parentFacilityTypeIds"/>
-        <parameters parameterName="productStoreIds"/>
         <parameters parameterName="templatePath"/>
     </moqui.service.job.ServiceJob>
 
