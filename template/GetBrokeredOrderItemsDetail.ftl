@@ -4,27 +4,14 @@
     .useCache(true)
     .one()!>
 
-<#-- Fetching the Good Identification related to the product -->
-<#assign goodIdentificationList = ec.entity.find("org.apache.ofbiz.product.product.GoodIdentification")
-    .condition("productId", brokerOrderItem.productId)
-    .condition("goodIdentificationTypeId", "NETSUITE_PRODUCT_ID")
-    .useCache(true)
-    .list()!>
-
-<#assign orderIdentifications = ec.entity.find("co.hotwax.order.OrderIdentification")
-    .condition("orderId", brokerOrderItem.orderId)
-    .condition("orderIdentificationTypeId", "NETSUITE_ORDER_ID")
-    .list()!>
-
-<#assign shippingMethodMapping =  ec.entity.find("co.hotwax.integration.IntegrationTypeMapping")
-    .condition("integrationTypeId","NETSUITE_SHP_MTHD")
-    .condition("mappingKey",brokerOrderItem.shipmentMethodTypeId)
-    .list()!>
+<#assign netsuiteProductId = Static["co.hotwax.netsuite.NetSuiteMappingWorker"].getProductId(ec, brokerOrderItem.productId)!>
+<#assign netsuiteOrderId = Static["co.hotwax.netsuite.NetSuiteMappingWorker"].getOrderId(ec, brokerOrderItem.orderId)!>
+<#assign netsuiteShipmentMethod = Static["co.hotwax.netsuite.NetSuiteMappingWorker"].getIntegrationTypeMappingValue(ec,'NETSUITE_SHP_MTHD', brokerOrderItem.shipmentMethodTypeId)!>
 
 [{
   "lineId": "${brokerOrderItem.netsuiteItemLineId!''}",
-  <#if orderIdentifications?has_content> "internalId": "${orderIdentifications[0].idValue!}", </#if>
-  <#if goodIdentificationList?has_content> "item": "${goodIdentificationList[0].idValue!}", </#if>
+  <#if netsuiteOrderId?has_content> "internalId": "${netsuiteOrderId!}", </#if>
+  <#if netsuiteProductId?has_content> "item": "${netsuiteProductId!}", </#if>
   "closed": "",
   "quantity": "${brokerOrderItem.orderItemQuantity!''}",
   "location": "${brokerOrderItem.facilityExternalId!''}",
@@ -37,5 +24,5 @@
       "country": "${shippingAddress.countryGeoCode!''}",
       "zip": "${shippingAddress.postalCode!''}",
   </#if>
-  "shippingMethod": <#if shippingMethodMapping?has_content>"${shippingMethodMapping[0].mappingValue!''}"<#else>"${brokerOrderItem.shipmentMethodTypeId!''}" </#if>
+  "shippingMethod": <#if netsuiteShipmentMethod?has_content>"${netsuiteShipmentMethod!''}"<#else>"${brokerOrderItem.shipmentMethodTypeId!''}" </#if>
 }]

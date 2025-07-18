@@ -533,10 +533,10 @@
                 <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
                 <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
                 <econdition entity-alias="FT" field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
-                <econditions combine="or">
-                    <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value="REJECT"/>
-                    <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value=""/>
-                </econditions>
+<!--                <econditions combine="or">-->
+<!--                    <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value="REJECT"/>-->
+<!--                    <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value=""/>-->
+<!--                </econditions>-->
             </econditions>
             <order-by field-name="entryDate"/>
         </entity-condition>
