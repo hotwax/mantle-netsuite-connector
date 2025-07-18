@@ -446,16 +446,14 @@
      <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
     <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" instanceOfProductId="GEN_BRKR_ORD_FD_NS" jobTypeEnumId="GEN_BRKR_ORD_FD_NS"
             description="Template Service Job to generate the Brokered Order Items Feed from HotWax"
-            serviceName="co.hotwax.netsuite.OrderServices.get#BrokeredOrders"
+            serviceName="co.hotwax.netsuite.OrderServices.generate#BrokeredOrderItemsFeed"
             cronExpression="0 0 0 * * ?" paused="Y">
         <parameters parameterName="brokeredOrdersCountPerFeed"/>
-        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="filePathPattern"/>
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="orderItemSeqId"/>
-        <parameters parameterName="facilityGroupIds"/>
-        <parameters parameterName="parentFacilityTypeIds"/>
-        <parameters parameterName="productStoreIds"/>
+        <parameters parameterName="templatePath"/>
     </moqui.service.job.ServiceJob>
 
     <!-- NetSuite Transfer Order v2 SuiteScripts Job data-->

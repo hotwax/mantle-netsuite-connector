@@ -208,4 +208,20 @@ class NetSuiteMappingWorker {
         }
         return netsuiteOrderItemList
     }
+
+    /**
+     * Gets the NetSuite order ID for the given HotWax order ID.
+     * @param ec ExecutionContext
+     * @param hcOrderId The HotWax Commerce order ID
+     * @return The NetSuite order ID or null if not found
+     */
+    static String getOrderId(ExecutionContext ec, String hcorderId) {
+        EntityList oid = ec.entity.find("co.hotwax.order.OrderIdentification")
+                .condition([orderId: hcorderId, orderIdentificationTypeEnumId: "NETSUITE_ORDER_ID"])
+                .useCache(true)
+                .list()
+                .filterByDate("fromDate", "thruDate", ec.user.nowTimestamp)
+        return oid?.first?.idValue
+    }
+
 }
