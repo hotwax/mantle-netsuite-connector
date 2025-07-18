@@ -68,6 +68,7 @@
                 if(isMixCartOrder) findNetSuiteOrders.condition("isMixCartOrder", isMixCartOrder)
 
                 findNetSuiteOrders.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
+                findNetSuiteOrders.useClone(true)
                 findNetSuiteOrders.distinct(true)
                 findNetSuiteOrders.limit(ordersCountPerFeed)
 
