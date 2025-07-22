@@ -2,9 +2,6 @@
 <!-- No copyright or license for configuration file, details here are not considered a creative work. -->
 <moqui-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-3.xsd">
 
-    <cache-list warm-on-start="false">
-        <cache name="json.validation.schema" value-type="Map"/>
-    </cache-list>
     <service-facade>
         <service-type name="netsuite-rest" runner-class="co.hotwax.impl.service.runner.NetSuiteRestServiceRunner"/>
     </service-facade>
