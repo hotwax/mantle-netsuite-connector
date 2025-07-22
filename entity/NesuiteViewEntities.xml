@@ -10,12 +10,19 @@
         3. The customer should be synced with Netsuite
         4. A date filter can be applied in `OrderIdentification` to fetch the eligible identification.
     -->
-    <view-entity entity-name="EligibleOrdersForNetSuiteView" package="co.hotwax.order">
+    <view-entity entity-name="EligibleOrders" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
         <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
             <entity-condition>
                 <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="SHOPIFY_OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="SHOPIFY_OID" field-name="orderIdentificationTypeId" value="SHOPIFY_ORD_ID"/>
                 <date-filter/>
             </entity-condition>
         </member-entity>
@@ -31,20 +38,24 @@
                 <econdition entity-alias="PID" field-name="partyIdentificationTypeId" value="NETSUITE_CUSTOMER_ID"/>
             </entity-condition>
         </member-entity>
-        <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemsForNetSuiteView" sub-select="true" join-from-alias="OH">
+        <member-entity entity-alias="OIV" entity-name="co.hotwax.order.OrderItemAndShipGroup" sub-select="non-lateral" join-from-alias="OH">
             <key-map field-name="orderId"/>
         </member-entity>
-        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrdersForNetsuite" sub-select="true" join-from-alias="OH" join-optional="true">
+        <member-entity entity-alias="INVORD" entity-name="co.hotwax.netsuite.order.InvalidOrders" sub-select="non-lateral" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
         </member-entity>
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
-            <econdition entity-alias="OID" field-name="orderId" operator="equals" value=""/>
-            <econdition entity-alias="INVORD" field-name="orderId" operator="equals" value=""/>
+            <econdition entity-alias="OID" field-name="orderId" operator="is-null"/>
+            <econdition entity-alias="INVORD" field-name="orderId" operator="is-null"/>
+            <econdition entity-alias="SHOPIFY_OID" field-name="idValue" operator="is-not-null"/>
         </entity-condition>
         <alias name="partyId" entity-alias="PID"/>
-        <alias-all entity-alias="OH"/>
-        <alias-all entity-alias="OIV"/>
+        <alias name="shopifyOrderId" entity-alias="SHOPIFY_OID" field="idValue"/>
+        <alias name="netsuiteCustomerId" entity-alias="PID" field="idValue"/>
+        <alias name="orderId" entity-alias="OH"/>
+        <alias name="orderDate" entity-alias="OH"/>
+        <alias name="shipmentMethodTypeId" entity-alias="OIV"/>
         <alias name="isMixCartOrder" type="text-indicator">
             <case>
                 <when expression="(SELECT COUNT(DISTINCT OISG.shipment_Method_Type_Id)
@@ -57,7 +68,6 @@
                 </else>
             </case>
         </alias>
-
     </view-entity>
     <!--Purpose of this view:
     - The primary purpose of this view-entity is to fetch the order-related data required by the service to prepare the order feed from Hotwax to NetSuite.
@@ -97,10 +107,13 @@
     - Each alias (e.g., `shippingAddress1`, `billingEmail`, `ShippingCost`) maps to a specific field that is directly used in the service.
     - This minimizes the size of the result set
     -->
-    <view-entity entity-name="OrderDetailsForNetSuiteView" package="co.hotwax.order">
+    <view-entity entity-name="OrderDetails" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
         <member-entity entity-alias="SCENM" entity-name="moqui.basic.Enumeration" join-from-alias="OH" join-optional="true">
             <key-map field-name="salesChannelEnumId" related="enumId"/>
+        </member-entity>
+        <member-entity entity-alias="PS" entity-name="org.apache.ofbiz.product.store.ProductStore" join-from-alias="OH">
+            <key-map field-name="productStoreId"/>
         </member-entity>
         <member-entity entity-alias="ODR" entity-name="org.apache.ofbiz.order.order.OrderRole" join-from-alias="OH" join-optional="true">
             <key-map field-name="orderId"/>
@@ -180,11 +193,17 @@
                 <econdition field-name="orderAdjustmentTypeId" value="SHIPPING_CHARGES"/>
             </entity-condition>
         </member-entity>
+        <member-entity entity-alias="TOTALOADJ" entity-name="org.apache.ofbiz.order.order.OrderAdjustment" join-from-alias="OH" join-optional="true">
+            <key-map field-name="orderId"/>
+        </member-entity>
         <alias name="orderName" field="orderName" entity-alias="OH"/>
         <alias name="orderId" field="orderId" entity-alias="OH"/>
         <alias name="date" field="orderDate" entity-alias="OH"/>
-        <alias name="customer" field="idValue" entity-alias="PID"/>
-        <alias name="salesChannel" field="description" entity-alias="SCENM"/>
+        <alias name="orderExternalId" field="externalId" entity-alias="OH"/>
+        <alias name="netsuiteCustomerId" field="idValue" entity-alias="PID"/>
+        <alias entity-alias="SCENM" field="enumCode" name="orderSalesChannelCode"/>
+        <alias entity-alias="SCENM" field="description" name="orderSalesChannelDescription"/>
+        <alias entity-alias="PS" field="externalId" name="productStoreExternalId"/>
         <alias name="shippingContactMechId" field="contactMechId" entity-alias="PAS"/>
         <alias name="addressee" field="toName" entity-alias="PAS"/>
         <alias name="address1" field="address1" entity-alias="PAS"/>
@@ -210,6 +229,7 @@
         <alias name="billingEmail" field="infoString" entity-alias="CMBE"/>
         <alias name="email" field="infoString" entity-alias="CMSE"/>
         <alias name="shippingCost" field="amount" entity-alias="OADJ"/>
+        <alias name="adjustmentTotalAmount" field="amount" entity-alias="TOTALOADJ" function="sum"/>
     </view-entity>
     <!--
     Purpose of this view:
@@ -228,11 +248,33 @@
     - However, scenarios like the one described above must be handled at the service level or through a separate mechanism to ensure that excluded items (such as custom gift cards) are appropriately processed or flagged.
     - Keeping the data fetching logic in this view simplifies the implementation of the service and maintains separation of concerns between data retrieval and business logic.
     -->
-    <view-entity entity-name="OrderItemsForNetSuiteView" package="co.hotwax.order">
+    <view-entity entity-name="OrderItemsDetails" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem"/>
         <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OI">
             <key-map field-name="orderId"/>
             <key-map field-name="shipGroupSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="ORDF" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true" sub-select="non-lateral">
+            <key-map field-name="orderFacilityId" related="facilityId"/>
+            <entity-condition>
+                <econdition field-name="parentTypeId" entity-alias="ORDF" operator="not-equals" value="VIRTUAL_FACILITY"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="F" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true" sub-select="non-lateral">
+            <key-map field-name="facilityId"/>
+            <entity-condition>
+                <econdition field-name="parentTypeId" entity-alias="F" operator="not-equals" value="VIRTUAL_FACILITY"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI" join-optional="true">
+            <key-map field-name="productId"/>
+        </member-entity>
+        <member-entity entity-alias="GID" entity-name="org.apache.ofbiz.product.product.GoodIdentification" join-from-alias="OI" join-optional="true">
+            <key-map field-name="productId"/>
+            <entity-condition>
+                <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                <date-filter/>
+            </entity-condition>
         </member-entity>
         <alias name="orderItemSeqId" field="orderItemSeqId" entity-alias="OI"/>
         <alias name="orderId" field="orderId" entity-alias="OI"/>
@@ -241,10 +283,13 @@
         <alias name="itemStatus" field="statusId" entity-alias="OI"/>
         <alias name="productId" field="productId" entity-alias="OI"/>
         <alias name="shipmentMethodTypeId" entity-alias="OISG"/>
-        <alias name="location" field="facilityId" entity-alias="OISG"/>
+        <alias name="facilityId" field="facilityId" entity-alias="OISG"/>
         <alias name="orderFacilityId" entity-alias="OISG"/>
+        <alias name="netsuiteProductId" field="idValue" entity-alias="GID"/>
+        <alias name="orderFacilityExternalId" field="externalId" entity-alias="ORDF"/>
+        <alias name="facilityExternalId" field="externalId" entity-alias="F"/>
     </view-entity>
-    <view-entity entity-name="InvalidOrdersForNetsuite" package="co.hotwax.netsuite.order">
+    <view-entity entity-name="InvalidOrders" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
         <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
             <key-map field-name="orderId"/>
@@ -373,4 +418,149 @@
         <alias name="areaCode" field="areaCode" function="max" entity-alias="TELECOM"/>
         <alias name="contactNumber" field="contactNumber" function="max" entity-alias="TELECOM"/>
     </view-entity>
+
+    <!-- This view is used for fetching the Fulfilled Order Item details.-->
+    <view-entity entity-name="FulfilledOrderItems" package="co.hotwax.netsuite.warehouse">
+        <description>View to get details for the Order Item.</description>
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="OIA" entity-name="org.apache.ofbiz.order.order.OrderItemAttribute" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <entity-condition>
+                <econdition entity-alias="OIA" field-name="attrName" value="NetsuiteItemLineId"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="shipGroupSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="OFH" entity-name="co.hotwax.integration.order.OrderFulfillmentHistory" join-from-alias="OI" join-optional="true">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="F" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG">
+            <key-map field-name="facilityId"/>
+        </member-entity>
+        <member-entity entity-alias="FGM" entity-name="org.apache.ofbiz.product.facility.FacilityGroupMember" join-from-alias="F" join-optional="true">
+            <key-map field-name="facilityId"/>
+            <entity-condition>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <alias entity-alias="OIA" field="attrValue" name="netsuiteItemLineId"/>
+        <alias entity-alias="OH" name="orderId"/>
+        <alias entity-alias="OH" name="orderDate"/>
+        <alias entity-alias="OH" name="entryDate"/>
+        <alias entity-alias="OI" name="orderItemSeqId"/>
+        <alias entity-alias="OI"  name="quantity"/>
+        <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
+        <alias entity-alias="FGM" name="facilityGroupId"/>
+        <alias entity-alias="OID" name="netsuiteOrderId" field="idValue"/>
+        <entity-condition>
+            <econditions>
+                <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
+                <econdition entity-alias="OI" field-name="statusId" operator="equals" value="ITEM_COMPLETED"/>
+                <econdition entity-alias="OFH" field-name="orderId" operator="equals" value=""/>
+                <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="OMS_FULFILLMENT"/>
+                <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
+                <econdition entity-alias="OISG" field-name="shipmentMethodTypeId" operator="not-equals" value="POS_COMPLETED"/>
+            </econditions>
+            <order-by field-name="entryDate"/>
+        </entity-condition>
+    </view-entity>
+
+    <!-- View created for brokered order feed -->
+    <view-entity entity-name="BrokeredOrderItemsFeed" package="co.hotwax.netsuite.warehouse">
+        <description> View to get details for the brokered orders Items.</description>
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="OIA" entity-name="org.apache.ofbiz.order.order.OrderItemAttribute" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <entity-condition>
+                <econdition entity-alias="OIA" field-name="attrName" value="NetsuiteItemLineId"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="shipGroupSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="EFO" entity-name="co.hotwax.integration.order.ExternalFulfillmentOrderItem" join-from-alias="OI" join-optional="true">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <key-map field-name="shipGroupSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="F" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG">
+            <key-map field-name="facilityId"/>
+        </member-entity>
+        <member-entity entity-alias="FT"  entity-name="org.apache.ofbiz.product.facility.FacilityType" join-from-alias="F">
+            <key-map field-name="facilityTypeId"/>
+        </member-entity>
+        <member-entity entity-alias="FGM" entity-name="org.apache.ofbiz.product.facility.FacilityGroupMember" join-from-alias="F" join-optional="true">
+            <key-map field-name="facilityId"/>
+            <entity-condition>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
+        <alias entity-alias="OH" name="productStoreId"/>
+        <alias entity-alias="OIA" field="attrValue" name="netsuiteItemLineId"/>
+        <alias entity-alias="OH" field="orderId" name="orderId"/>
+        <alias entity-alias="OI" field="orderItemSeqId" name="orderItemSeqId"/>
+        <alias entity-alias="OI" field="quantity" name="orderItemQuantity"/>
+        <alias entity-alias="OI" field="productId" name="productId"/>
+        <alias entity-alias="OI" field="statusId" name="itemStatusId"/>
+        <alias entity-alias="OISG" name="shipmentMethodTypeId"/>
+        <alias entity-alias="OISG" field="shipGroupSeqId" name="shipGroupSeqId"/>
+        <alias entity-alias="OH" name="entryDate"/>
+        <alias entity-alias="F" field="externalId" name="facilityExternalId"/>
+        <alias entity-alias="FGM" field="facilityGroupId" name="facilityGroupId"/>
+        <alias entity-alias="OISG" field="contactMechId" name="postalContactMechId"/>
+        <alias entity-alias="EFO" name="externalFulfillmentOrderItemId"/>
+        <entity-condition>
+            <econditions combine="and">
+                <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>
+                <econdition entity-alias="OI" field-name="statusId" operator="equals" value="ITEM_APPROVED"/>
+                <econdition entity-alias="OIA" field-name="attrValue" operator="not-equals" value=""/>
+                <econdition entity-alias="FT" field-name="parentTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
+                <econditions combine="or">
+                    <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value="REJECT"/>
+                    <econdition entity-alias="EFO" field-name="fulfillmentStatus" operator="equals" value=""/>
+                </econditions>
+                <econdition entity-alias="FGM" field-name="facilityGroupId" operator="equals" value="NETSUITE_FULFILLMENT"/>
+            </econditions>
+            <order-by field-name="entryDate"/>
+        </entity-condition>
+    </view-entity>
+
+    <view-entity entity-name="NonRefundedGiftCardPayment" package="co.hotwax.netsuite.order">
+        <member-entity entity-alias="OPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference"/>
+        <member-entity entity-alias="OPP2" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-optional="true" join-from-alias="OPP">
+            <key-map field-name="manualRefNum" related="parentRefNum"/>
+        </member-entity>
+
+        <alias name="statusId" entity-alias="OPP"/>
+        <alias name="paymentMethodTypeId" entity-alias="OPP"/>
+        <alias name="giftCardPaymentTotal" entity-alias="OPP" function="sum" field="maxAmount"/>
+        <alias name="orderId" entity-alias="OPP" field="orderId"/>
+        <alias name="refundedOrderPaymentPreferenceId" entity-alias="OPP2" field="orderPaymentPreferenceId"/>
+
+        <entity-condition>
+            <econdition field-name="statusId" operator="equals" value="PAYMENT_SETTLED"/>
+            <econdition field-name="refundedOrderPaymentPreferenceId" operator="equals" value=""/>
+            <econdition field-name="paymentMethodTypeId" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
+        </entity-condition>
+    </view-entity>
+
 </entities>

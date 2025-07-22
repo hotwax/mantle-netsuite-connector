@@ -5,7 +5,7 @@
             <parameter name="orderId">
                 <description>Parameter to fetch Order details for a specific orderId.</description>
             </parameter>
-            <parameter name="filePathPattern" required="true"/>
+            <parameter name="filePathPattern" default-value="testing-netsuite/salesorder/pos" required="true"/>
             <parameter name="systemMessageRemoteId" required="true">
                 <description>The System Message Remote Id for generating the Orders Feed for Netsuite.</description>
             </parameter>
@@ -44,7 +44,6 @@
                     Path to the groovy script which will be used to generate the Feed File.
                 </description>
             </parameter>
-            <parameter name="ordersCountPerFeed" type="Integer" default-value="500"/>
         </in-parameters>
         <actions>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
@@ -57,7 +56,7 @@
                 import co.hotwax.netsuite.NetSuiteMappingWorker
                 import co.hotwax.util.CsvWriteHelper
 
-                findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
+                findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.SalesOrderMigrationOrders")
                 if(orderId) findNetSuiteOrders.condition("orderId", orderId)
                 if(fromOrderDate) findNetSuiteOrders.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
                 if(thruOrderDate) findNetSuiteOrders.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
@@ -68,15 +67,13 @@
                 if(isMixCartOrder) findNetSuiteOrders.condition("isMixCartOrder", isMixCartOrder)
 
                 findNetSuiteOrders.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
-                findNetSuiteOrders.useClone(true)
                 findNetSuiteOrders.distinct(true)
-                findNetSuiteOrders.limit(ordersCountPerFeed)
 
                 //If no eligible orders, then don't generate the file
                 long netsuiteOrdersCount = findNetSuiteOrders.count()
                 if (netsuiteOrdersCount == 0) {
-                    ec.message.addMessage("No eligible orders at ${nowTimestamp}, not generating the HotWax Feed file for Netsuite.")
-                    return
+                ec.message.addMessage("No eligible orders at ${nowTimestamp}, not generating the HotWax Feed file for Netsuite.")
+                return
                 }
             </script>
 
@@ -150,16 +147,16 @@
                 <script>
                     // Check for required fields and separate valid/invalid orders
                     netsuiteOrderItemList.each { record ->
-                        def missingFields = requiredFields.findAll { !record[it] || record[it].toString().trim() == '' }
+                    def missingFields = requiredFields.findAll { !record[it] || record[it].toString().trim() == '' }
 
-                        if (missingFields) {
-                            record.put("Missing Required Fields", missingFields.join(', '))
-                            invalidFileCsvHelper.writeToFile(record)
-                            isReqFieldMissFileEmpty = false
-                        } else {
-                            validFileCsvHelper.writeToFile(record)
-                            isFileEmpty = false
-                        }
+                    if (missingFields) {
+                        record.put("Missing Required Fields", missingFields.join(', '))
+                        invalidFileCsvHelper.writeToFile(record)
+                        isReqFieldMissFileEmpty = false
+                    } else {
+                        validFileCsvHelper.writeToFile(record)
+                        isFileEmpty = false
+                    }
                     }
                     orderDetails = null
                 </script>
@@ -169,64 +166,13 @@
             </script>
             <if condition="!isFileEmpty">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
-                    in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:csvFilePath, sendPath:sendPath]"/>
+                              in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:csvFilePath, sendPath:sendPath]"/>
             </if>
             <if condition="!isReqFieldMissFileEmpty">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
-                    in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidFilePath, sendPath:invalidSendPath]"/>
+                              in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidFilePath, sendPath:invalidSendPath]"/>
             </if>
             <return message="Generated Order Items Feed file  ${csvFilePath} and missing file response in ${invalidFilePath}"/>
-        </actions>
-    </service>
-    <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
-        <in-parameters>
-            <parameter name="systemMessageRemoteId" required="true"/>
-            <parameter name="fulfilledOrdersCountPerFeed" type="Integer" default-value="2500"/>
-            <parameter name="orderId"/>
-            <parameter name="orderItemSeqId"/>
-        </in-parameters>
-        <actions>
-            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
-            <set field="baseFile" value="runtime://datamanager/netsuite/FulfillmentFeed/fulfilledOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
-            <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
-            <set field="sendPath" from="'/home/${sftpUsername}/netsuite/salesorder/update/'"/>
-            <set field="headers" from="['lineId', 'internalId', 'item', 'quantity', 'location', 'tags']"/>
-            <script>
-                fulfilledOrderItemsFind = ec.entity.find("co.hotwax.netsuite.warehouse.FulfilledOrderItems")
-                if(orderId) fulfilledOrderItemsFind.condition("orderId", orderId)
-                if(orderItemSeqId) fulfilledOrderItemsFind.condition("orderItemSeqId", orderItemSeqId)
-
-                //If no eligible orders, then don't generate the file
-                long netsuiteOrdersCount = fulfilledOrderItemsFind.count()
-                if (netsuiteOrdersCount == 0) {
-                    ec.message.addMessage("No eligible orders for Fulfilled Order and Items Feed at ${nowTimestamp}, not generating the HotWax Feed file.")
-                    return
-                }
-
-                import co.hotwax.util.CsvWriteHelper
-                try (fulfilledOrderItemsItr = fulfilledOrderItemsFind.iterator();
-                    CsvWriteHelper CsvWriteHelper = new CsvWriteHelper(baseFilePath, headers, fulfilledOrdersCountPerFeed)) {
-            </script>
-            <iterate list="fulfilledOrderItemsItr" entry="fulfilledOrderItem">
-                <set field="fulfilledOrderItemMap" from="[
-                    lineId:fulfilledOrderItem.netsuiteItemLineId,
-                    internalId:fulfilledOrderItem.netsuiteOrderId,
-                    item:'',
-                    quantity:fulfilledOrderItem.quantity,
-                    location:fulfilledOrderItem.facilityExternalId,
-                    tags:'hotwax-fulfilled'
-                ]"/>
-                <script>CsvWriteHelper.writeToFile(fulfilledOrderItemMap)</script>
-                <service-call name="create#co.hotwax.integration.order.OrderFulfillmentHistory" in-map="[orderId:fulfilledOrderItem.orderId,
-                    orderItemSeqId:fulfilledOrderItem.orderItemSeqId, comments:'Order Item sent as part of OMS to NetSuite Fulfilled Items Feed', createdDate:nowTimestamp, externalFulfillmentId:'_NA_']"/>
-            </iterate>
-            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
-            <set field="generatedFilePaths" from="CsvWriteHelper.getGeneratedFilePaths()"/>
-            <script>}</script>
-            <iterate list="generatedFilePaths" entry="generatedFilePath">
-                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
-            </iterate>
-            <return message=" Created the Fulfilled Order Items Feed file with orders count ${netsuiteOrdersCount} at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
     <service verb="generate" noun="BrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
@@ -240,9 +186,11 @@
             <parameter name="brokeredOrdersCountPerFeed" type="Integer" default-value="0"/>
             <parameter name="orderId"/>
             <parameter name="orderItemSeqId"/>
-            <parameter name="filePathPattern" required="true"/>
+            <parameter name="fromOrderDate"/>
+            <parameter name="thruOrderDate"/>
+            <parameter name="filePathPattern" required="true" default-value="testing-netsuite/salesorder/update"/>
             <parameter name="systemMessageRemoteId" required="true"/>
-            <parameter name="templatePath" default-value="component://mantle-netsuite-connector/template/GetBrokeredOrderItemsDetail.ftl">
+            <parameter name="templatePath" default-value="" required="true">
                 <description>
                     Path to the ftl template which will be used to generate the Feed File.
                 </description>
@@ -259,18 +207,13 @@
                 import co.hotwax.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
-                brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed").distinct(true)
+                brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeedMigration").distinct(true)
                 if(orderId) brokeredOrderItemFind.condition("orderId", orderId)
                 if(orderItemSeqId) brokeredOrderItemFind.condition("orderItemSeqId", orderItemSeqId)
-                    .selectField("orderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
-                    .orderBy("entryDate")
-
-                //If no eligible orders, then don't generate the file
-                long netsuiteBrokeredOrdersCount = brokeredOrderItemFind.count()
-                if (netsuiteBrokeredOrdersCount == 0) {
-                    ec.message.addMessage("No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file.")
-                    return
-                }
+                if(fromOrderDate) brokeredOrderItemFind.condition("entryDate", EntityCondition.GreaterThan, fromOrderDate)
+                if(thruOrderDate) brokeredOrderItemFind.condition("entryDate", EntityCondition.LessThan, thruOrderDate)
+                .selectField("orderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
+                .orderBy("entryDate")
 
                 try (brokeredOrderItemsItr = brokeredOrderItemFind.iterator();
                 CsvWriteHelper CsvWriteHelper = new CsvWriteHelper(baseFilePath, null, brokeredOrdersCountPerFeed)) {

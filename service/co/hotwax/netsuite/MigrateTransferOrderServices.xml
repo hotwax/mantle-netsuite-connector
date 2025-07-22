@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+    <!-- Run as part of v1.5.1 if required, else the jobs can be set as paused = 'Y' -->
+    <service verb="delete" noun="TransferOrderV1Jobs" authenticate="anonymous-all" transaction-timeout="1800">
+        <in-parameters>
+            <parameter name="jobNames" type="List" default-value="HC_MR_ExportedStoreTOFulfillmentCSV,HC_MR_ExportedStoreTransferOrderCSV,HC_MR_ExportedWHTOFulfillmentCSV,HC_SC_ImportTOFulfillmentReceipts,HC_SC_ImportTOItemFulfillment" required="true"/>
+        </in-parameters>
+        <actions>
+            <entity-delete-by-condition entity-name="moqui.service.job.ServiceJobRunLock">
+                <econdition field-name="jobName" operator="in" from="jobNames"/>
+            </entity-delete-by-condition>
+
+            <entity-delete-by-condition entity-name="moqui.service.job.ServiceJobRun">
+                <econdition field-name="jobName" operator="in" from="jobNames"/>
+            </entity-delete-by-condition>
+
+            <entity-delete-by-condition entity-name="moqui.service.job.ServiceJobParameter">
+                <econdition field-name="jobName" operator="in" from="jobNames"/>
+            </entity-delete-by-condition>
+
+            <entity-delete-by-condition entity-name="moqui.service.job.ServiceJob">
+                <econdition field-name="jobName" operator="in" from="jobNames"/>
+            </entity-delete-by-condition>
+        </actions>
+    </service>
+</services>
