@@ -56,6 +56,7 @@
                 import org.moqui.entity.EntityCondition
                 import co.hotwax.netsuite.NetSuiteMappingWorker
                 import co.hotwax.util.CsvWriteHelper
+                import co.hotwax.util.PhoneValidationUtil
 
                 findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
                 if(orderId) findNetSuiteOrders.condition("orderId", orderId)
@@ -106,8 +107,23 @@
                 <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
                 <set field="orderDetails.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
 
-                <set field="orderDetails.billingPhone" from="((orderDetails.billingCountryCode?:'') || (orderDetails.billingAreaCode?:'') || (orderDetails.billingContactNumber?:'')) ? ((orderDetails.billingCountryCode ?:'') + ' ' + (orderDetails.billingAreaCode ?:'') + ' ' + (orderDetails.billingContactNumber ?:'')) : ''" />
-                <set field="orderDetails.phone" from="((orderDetails.shippingCountryCode?:'') || (orderDetails.shippingAreaCode?:'') || (orderDetails.shippingContactNumber?:'')) ? ((orderDetails.shippingCountryCode ?:'') + ' ' + (orderDetails.shippingAreaCode ?:'') + ' ' + (orderDetails.shippingContactNumber ?:'')) : ''" />
+                <set field="billingValid" from="PhoneValidationUtil.isValidPhoneNumber(orderDetails.billingCountryCode, orderDetails.billingAreaCode, orderDetails.billingContactNumber, ec)"/>
+                <if condition="billingValid">
+                    <set field="formattedBillingPhone" from="PhoneValidationUtil.getFormattedPhoneNumber(orderDetails.billingCountryCode, orderDetails.billingAreaCode, orderDetails.billingContactNumber)"/>
+                    <set field="orderDetails.billingPhone" from="formattedBillingPhone"/>
+                    <else>
+                        <set field="orderDetails.billingPhone" from="'0000000000'"/>
+                    </else>
+                </if>
+
+                <set field="shippingValid" from="PhoneValidationUtil.isValidPhoneNumber(orderDetails.shippingCountryCode, orderDetails.shippingAreaCode, orderDetails.shippingContactNumber, ec)"/>
+                <if condition="shippingValid">
+                    <set field="formattedShippingPhone" from="PhoneValidationUtil.getFormattedPhoneNumber(orderDetails.shippingCountryCode, orderDetails.shippingAreaCode, orderDetails.shippingContactNumber)"/>
+                    <set field="orderDetails.phone" from="formattedShippingPhone"/>
+                    <else>
+                        <set field="orderDetails.phone" from="'0000000000'"/>
+                    </else>
+                </if>
 
                 <if condition="(!orderDetails.billingContactMechId &amp;&amp; orderDetails.shippingContactMechId)">
                     <set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip, billingAddressee:orderDetails.addressee]"/>
