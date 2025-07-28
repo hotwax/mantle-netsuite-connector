@@ -430,4 +430,82 @@
                 remote ${systemMessageRemoteId} saved response in messages ${shipmentFeedSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
+
+    <service verb="generate" noun="TransferOrderSyncAckFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>Service to generate a feed file to netsuite to acknowledge the transfer order is sync successfully in netsuite.</description>
+        <in-parameters>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="filePathPattern" required="true" default-value="netsuite/transferorderv2/update"/>
+            <parameter name="orderId"/>
+            <parameter name="sinceDate">
+                <description>Parameter to fetch Order details after specific order date</description>
+            </parameter>
+            <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
+            <parameter name="jobName">
+                <description>The name of the scheduled job to fetch the last run time for preparing the Inventory Delta Feed.</description>
+            </parameter>
+            <parameter name="skipLastRunTimeUpdate" type="Boolean" default="false">
+                <description>skip the LastRunTime update,mainly used while debugging</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <log message="Generating Transfer Order Sync Ack Feed file at time ${nowTimestamp}"/>
+
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/TransferOrderSyncAckFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
+            <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
+
+            <!-- We can use last run time to fetch the records updated after the last service job run -->
+            <!-- Check the parameter used for storing the last inventory feed run time -->
+            <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="lastRunParam">
+                <field-map field-name="jobName"/>
+                <field-map field-name="parameterName" value="lastRunTime"/>
+            </entity-find-one>
+
+            <!-- Set sinceDate using the lastRunTime, if it is set, fetch records from
+                   that time, else it will be null -->
+            <if condition="!sinceDate">
+                <set field="sinceDate" from="lastRunParam?.parameterValue"/>
+            </if>
+
+            <script>
+                import groovy.json.JsonSlurper
+                import co.hotwax.util.CsvWriteHelper
+                import org.moqui.entity.EntityCondition
+
+                orderHeaderFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
+                orderHeaderFind.condition("orderTypeId", "TRANSFER_ORDER")
+                if(orderId) orderHeaderFind.condition("orderId", orderId)
+                if(sinceDate) orderHeaderFind.condition("entryDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceDate)
+                .selectField("orderId,externalId")
+                .orderBy("entryDate")
+
+                //If no eligible orders, then don't generate the file
+                long transferOrdersCount = orderHeaderFind.count()
+                if (transferOrdersCount == 0) {
+                    ec.message.addMessage("No eligible transfer orders for Feed at ${nowTimestamp}, not generating the HotWax Feed file.")
+                    return
+                }
+                try (orderHeaderItr = orderHeaderFind.iterator();
+                CsvWriteHelper CsvWriteHelper = new CsvWriteHelper(baseFilePath, null, recordLimitPerFeed)) {
+            </script>
+            <iterate list="orderHeaderItr" entry="order">
+                <set field="orderMap" from="[internalId:order.externalId, hcOrderId:order.orderId]"/>
+                <script>CsvWriteHelper.writeToFile(orderMap)</script>
+            </iterate>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
+            <set field="generatedFilePaths" from="CsvWriteHelper.getGeneratedFilePaths()"/>
+            <script>}</script>
+            <iterate list="generatedFilePaths" entry="generatedFilePath">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
+            </iterate>
+            <if condition="!skipLastRunTimeUpdate">
+                <!-- Set the current timestamp as the last run time for next run -->
+                <service-call name="update#moqui.service.job.ServiceJobParameter"
+                    in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName, parameterValue:nowTimestamp]"/>
+            </if>
+            <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
+        </actions>
+    </service>
 </services>

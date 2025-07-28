@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="ext-upgrade">
+
+    <moqui.basic.Enumeration enumId="GEN_TO_ACK_FD" enumCode="GEN_TO_ACK_FD" description="Generate Transfer Order Acknowledgement Feed" enumTypeId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_TO_ACK_FD" productTypeId="SERVICE" internalName="GEN_TO_ACK_FD"
+        productName="Generate Transfer Order Acknowledgement Feed" description="Generate Transfer Order Acknowledgement Feed"
+        primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <ProductCategoryMember productId="GEN_TO_ACK_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_ACK_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
+    <moqui.service.job.ServiceJob jobName="generate_transfer_order_sync_ack_feed" instanceOfProductId="GEN_TO_ACK_FD" jobTypeEnumId="GEN_TO_ACK_FD"
+            description="Service to generate a feed file to netsuite to acknowledge the transfer order is sync successfully in netsuite."
+            serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderSyncAckFeed"
+            cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="recordLimitPerFeed"/>
+        <parameters parameterName="filePathPattern"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="sinceDate"/>
+        <parameters parameterName="jobName"/>
+        <parameters parameterName="skipLastRunTimeUpdate"/>
+    </moqui.service.job.ServiceJob>
+</entity-facade-xml>
