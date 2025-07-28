@@ -442,7 +442,7 @@
             </parameter>
             <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
             <parameter name="jobName">
-                <description>The name of the scheduled job to fetch the last run time for preparing the Inventory Delta Feed.</description>
+                <description>The name of the scheduled job to fetch the last run time for preparing the Feed.</description>
             </parameter>
             <parameter name="skipLastRunTimeUpdate" type="Boolean" default="false">
                 <description>skip the LastRunTime update,mainly used while debugging</description>
@@ -457,7 +457,7 @@
             <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
 
             <!-- We can use last run time to fetch the records updated after the last service job run -->
-            <!-- Check the parameter used for storing the last inventory feed run time -->
+            <!-- Check the parameter used for storing the last feed run time -->
             <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="lastRunParam">
                 <field-map field-name="jobName"/>
                 <field-map field-name="parameterName" value="lastRunTime"/>
