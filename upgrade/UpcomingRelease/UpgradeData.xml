@@ -19,5 +19,6 @@
         <parameters parameterName="sinceDate"/>
         <parameters parameterName="jobName"/>
         <parameters parameterName="skipLastRunTimeUpdate"/>
+        <parameters parameterName="lastRunTime"/>
     </moqui.service.job.ServiceJob>
 </entity-facade-xml>
