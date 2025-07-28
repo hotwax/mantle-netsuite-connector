@@ -5,12 +5,11 @@
     .one()!>
 
 <#assign netsuiteProductId = Static["co.hotwax.netsuite.NetSuiteMappingWorker"].getProductId(ec, brokerOrderItem.productId)!>
-<#assign netsuiteOrderId = Static["co.hotwax.netsuite.NetSuiteMappingWorker"].getOrderId(ec, brokerOrderItem.orderId)!>
 <#assign netsuiteShipmentMethod = Static["co.hotwax.netsuite.NetSuiteMappingWorker"].getIntegrationTypeMappingValue(ec,'NETSUITE_SHP_MTHD', brokerOrderItem.shipmentMethodTypeId)!>
 
 [{
   "lineId": "${brokerOrderItem.netsuiteItemLineId!''}",
-  <#if netsuiteOrderId?has_content> "internalId": "${netsuiteOrderId!}", </#if>
+  "internalId": "${brokerOrderItem.netsuiteOrderId!}",
   <#if netsuiteProductId?has_content> "item": "${netsuiteProductId!}", </#if>
   "closed": "",
   "quantity": "${brokerOrderItem.orderItemQuantity!''}",
