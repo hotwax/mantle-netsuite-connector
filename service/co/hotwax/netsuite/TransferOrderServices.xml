@@ -432,7 +432,7 @@
     </service>
 
     <service verb="generate" noun="TransferOrderSyncAckFeed" authenticate="anonymous-all" transaction-timeout="7200">
-        <description>Service to generate a feed file to netsuite to acknowledge the transfer order is sync successfully in netsuite.</description>
+        <description>Service to generate feed file for NetSuite to acknowledge the Transfer Order is created successfully in OMS</description>
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true"/>
             <parameter name="filePathPattern" required="true" default-value="netsuite/transferorderv2/update"/>
@@ -470,7 +470,6 @@
             </if>
 
             <script>
-                import groovy.json.JsonSlurper
                 import co.hotwax.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
