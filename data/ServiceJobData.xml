@@ -445,8 +445,8 @@
 
      <!-- Template Service Job to generate the Brokered Order Items Feed from HotWax -->
     <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" instanceOfProductId="GEN_BRKR_ORD_FD_NS" jobTypeEnumId="GEN_BRKR_ORD_FD_NS"
-            description="Template Service Job to generate the Brokered Order Items Feed from HotWax"
-            serviceName="co.hotwax.netsuite.OrderServices.generate#BrokeredOrderItemsFeed"
+            description="Template Service Job to generate the Brokered Order Items Feed from HotWax to Netsuite"
+            serviceName="co.hotwax.netsuite.OrderServices.generate#NetsuiteBrokeredOrderItemsFeed"
             cronExpression="0 0 0 * * ?" paused="Y">
         <parameters parameterName="brokeredOrdersCountPerFeed"/>
         <parameters parameterName="filePathPattern"/>

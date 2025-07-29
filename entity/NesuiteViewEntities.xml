@@ -480,7 +480,7 @@
     </view-entity>
 
     <!-- View created for brokered order feed -->
-    <view-entity entity-name="BrokeredOrderItemsFeed" package="co.hotwax.netsuite.warehouse">
+    <view-entity entity-name="NetsuiteBrokeredOrderItemsFeed" package="co.hotwax.netsuite.warehouse">
         <description> View to get details for the brokered orders Items.</description>
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
         <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">

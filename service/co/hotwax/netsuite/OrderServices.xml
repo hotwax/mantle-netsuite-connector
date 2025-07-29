@@ -245,7 +245,7 @@
             <return message=" Created the Fulfilled Order Items Feed file with orders count ${netsuiteOrdersCount} at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
-    <service verb="generate" noun="BrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <service verb="generate" noun="NetsuiteBrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>
             Service to generate Brokered Order Items Feed for the new order sync flow with added check for NetsuiteItemLineId and takes count per feed which can take in a limit parameter
             to include a specific number of records in the Feed File.
@@ -275,7 +275,7 @@
                 import co.hotwax.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
-                brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed").distinct(true)
+                brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.NetsuiteBrokeredOrderItemsFeed").distinct(true)
                 if(orderId) brokeredOrderItemFind.condition("orderId", orderId)
                 if(orderItemSeqId) brokeredOrderItemFind.condition("orderItemSeqId", orderItemSeqId)
                     .selectField("orderId,netsuiteOrderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")

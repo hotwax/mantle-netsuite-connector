@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="ext-upgrade">
+    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite" description="Template Service Job to generate the Brokered Order Items Feed from HotWax to Netsuite"
+        serviceName="co.hotwax.netsuite.OrderServices.generate#NetsuiteBrokeredOrderItemsFeed"/>
+</entity-facade-xml>
