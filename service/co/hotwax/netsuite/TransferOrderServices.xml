@@ -437,7 +437,7 @@
             <parameter name="systemMessageRemoteId" required="true"/>
             <parameter name="filePathPattern" required="true" default-value="netsuite/transferorderv2/update"/>
             <parameter name="orderId"/>
-            <parameter name="sinceDate">
+            <parameter name="sinceEntryDate">
                 <description>Parameter to fetch Order details after specific entryDate of OrderHeader.</description>
             </parameter>
             <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
@@ -463,10 +463,10 @@
                 <field-map field-name="parameterName" value="lastRunTime"/>
             </entity-find-one>
 
-            <!-- Set sinceDate using the lastRunTime, if it is set, fetch records from
+            <!-- Set sinceEntryDate using the lastRunTime, if it is set, fetch records from
                    that time, else it will be null -->
-            <if condition="!sinceDate">
-                <set field="sinceDate" from="lastRunParam?.parameterValue"/>
+            <if condition="!sinceEntryDate">
+                <set field="sinceEntryDate" from="lastRunParam?.parameterValue"/>
             </if>
 
             <script>
@@ -476,7 +476,7 @@
                 orderHeaderFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
                 orderHeaderFind.condition("orderTypeId", "TRANSFER_ORDER")
                 if(orderId) orderHeaderFind.condition("orderId", orderId)
-                if(sinceDate) orderHeaderFind.condition("entryDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceDate)
+                if(sinceEntryDate) orderHeaderFind.condition("entryDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceEntryDate)
                 .selectField("orderId,externalId")
                 .orderBy("entryDate")
 

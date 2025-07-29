@@ -500,7 +500,7 @@
         <parameters parameterName="filePathPattern"/>
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="orderId"/>
-        <parameters parameterName="sinceDate"/>
+        <parameters parameterName="sinceEntryDate"/>
         <parameters parameterName="jobName"/>
         <parameters parameterName="skipLastRunTimeUpdate"/>
         <parameters parameterName="lastRunTime"/>
