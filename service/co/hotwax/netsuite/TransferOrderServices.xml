@@ -452,7 +452,7 @@
             <log message="Generating Transfer Order Sync Ack Feed file at time ${nowTimestamp}"/>
 
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
-            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/TransferOrderSyncAckFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/TransferOrderSyncAckFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')}.csv"/>
             <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
             <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
 
@@ -488,14 +488,13 @@
                     return
                 }
                 try (orderHeaderItr = orderHeaderFind.iterator();
-                CsvWriteHelper CsvWriteHelper = new CsvWriteHelper(baseFilePath, null, recordLimitPerFeed)) {
+                CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, null, recordLimitPerFeed)) {
             </script>
             <iterate list="orderHeaderItr" entry="order">
-                <set field="orderMap" from="[internalId:order.externalId, hcOrderId:order.orderId]"/>
-                <script>CsvWriteHelper.writeToFile(orderMap)</script>
+                <script>csvWriteHelper.writeToFile([internalId:order.externalId, hcOrderId:order.orderId])</script>
             </iterate>
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
-            <set field="generatedFilePaths" from="CsvWriteHelper.getGeneratedFilePaths()"/>
+            <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
             <script>}</script>
             <iterate list="generatedFilePaths" entry="generatedFilePath">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
