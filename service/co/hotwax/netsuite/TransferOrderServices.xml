@@ -432,13 +432,13 @@
     </service>
 
     <service verb="generate" noun="TransferOrderSyncAckFeed" authenticate="anonymous-all" transaction-timeout="7200">
-        <description>Service to generate a feed file to netsuite to acknowledge the transfer order is sync successfully in netsuite.</description>
+        <description>Service to generate feed file for NetSuite to acknowledge the Transfer Order is created successfully in OMS</description>
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true"/>
             <parameter name="filePathPattern" required="true" default-value="netsuite/transferorderv2/update"/>
             <parameter name="orderId"/>
-            <parameter name="sinceDate">
-                <description>Parameter to fetch Order details after specific order date</description>
+            <parameter name="sinceEntryDate">
+                <description>Parameter to fetch Order details after specific entryDate of OrderHeader.</description>
             </parameter>
             <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
             <parameter name="jobName">
@@ -463,21 +463,20 @@
                 <field-map field-name="parameterName" value="lastRunTime"/>
             </entity-find-one>
 
-            <!-- Set sinceDate using the lastRunTime, if it is set, fetch records from
+            <!-- Set sinceEntryDate using the lastRunTime, if it is set, fetch records from
                    that time, else it will be null -->
-            <if condition="!sinceDate">
-                <set field="sinceDate" from="lastRunParam?.parameterValue"/>
+            <if condition="!sinceEntryDate">
+                <set field="sinceEntryDate" from="lastRunParam?.parameterValue"/>
             </if>
 
             <script>
-                import groovy.json.JsonSlurper
                 import co.hotwax.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
                 orderHeaderFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
                 orderHeaderFind.condition("orderTypeId", "TRANSFER_ORDER")
                 if(orderId) orderHeaderFind.condition("orderId", orderId)
-                if(sinceDate) orderHeaderFind.condition("entryDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceDate)
+                if(sinceEntryDate) orderHeaderFind.condition("entryDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceEntryDate)
                 .selectField("orderId,externalId")
                 .orderBy("entryDate")
 
@@ -496,14 +495,17 @@
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
             <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
             <script>}</script>
+            
             <iterate list="generatedFilePaths" entry="generatedFilePath">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
             </iterate>
+            
             <if condition="!skipLastRunTimeUpdate">
                 <!-- Set the current timestamp as the last run time for next run -->
                 <service-call name="update#moqui.service.job.ServiceJobParameter"
                     in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName, parameterValue:nowTimestamp]"/>
             </if>
+            
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
