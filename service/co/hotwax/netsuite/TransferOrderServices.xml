@@ -438,7 +438,7 @@
             <parameter name="filePathPattern" required="true" default-value="netsuite/transferorderv2/update"/>
             <parameter name="orderId"/>
             <parameter name="sinceDate">
-                <description>Parameter to fetch Order details after specific order date</description>
+                <description>Parameter to fetch Order details after specific entryDate of OrderHeader.</description>
             </parameter>
             <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
             <parameter name="jobName">
@@ -496,14 +496,17 @@
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
             <set field="generatedFilePaths" from="CsvWriteHelper.getGeneratedFilePaths()"/>
             <script>}</script>
+            
             <iterate list="generatedFilePaths" entry="generatedFilePath">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
             </iterate>
+            
             <if condition="!skipLastRunTimeUpdate">
                 <!-- Set the current timestamp as the last run time for next run -->
                 <service-call name="update#moqui.service.job.ServiceJobParameter"
                     in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName, parameterValue:nowTimestamp]"/>
             </if>
+            
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
