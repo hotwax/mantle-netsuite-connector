@@ -44,7 +44,8 @@
     <moqui.basic.Enumeration enumId="NS_EXP_TO_S2S" enumCode="NS_EXP_TO_S2S" description="NetSuite Export Store to Store Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_EXP_TO_S2W" enumCode="NS_EXP_TO_S2W" description="NetSuite Export Store to Warehouse Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_EXP_TO_W2S" enumCode="NS_EXP_TO_W2S" description="NetSuite Export Warehouse to Store Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
-    
+    <moqui.basic.Enumeration enumId="NS_UPDATE_TO" enumCode="NS_UPDATE_TO" description="NetSuite Import Update Transfer Order Job" enumTypeId="ORDER_SYS_JOB"/>
+
     <!-- NetSuite Job Product Data -->
     <Product productId="NS_CREATE_CD" productTypeId="SERVICE" internalName="NS_CREATE_CD"
              productName="NetSuite Create Customer Deposit Job" description="NetSuite Create Customer Deposit Job"
@@ -169,6 +170,9 @@
     <Product productId="NS_EXP_TO_W2S" productTypeId="SERVICE" internalName="NS_EXP_TO_W2S"
              productName="NetSuite Export Warehouse to Store Transfer Order Job" description="NetSuite Export Warehouse to Store Transfer Order Job"
              primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <Product productId="NS_UPDATE_TO" productTypeId="SERVICE" internalName="NS_UPDATE_TO"
+             productName="NetSuite Import Update Transfer Order Job" description="NetSuite Import Update Transfer Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
 
 
     <!-- Job Product Category Members -->
@@ -210,6 +214,7 @@
     <ProductCategoryMember productId="GEN_BRKR_ORD_FD_NS" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_FLFLD_ORD_FD_NS" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_ACK_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="NS_UPDATE_TO" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
     <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -223,7 +228,8 @@
     <ProductCategoryMember productId="NS_IMP_TO_IF" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_TO_FULFILLMNT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="POL_WH_FULFILLMNT_FD" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
-    
+    <ProductCategoryMember productId="NS_UPDATE_TO" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
     <ProductCategoryMember productId="NS_EXP_CASH_SALE" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_CUSTOMER" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_INV_TRANS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -505,4 +511,9 @@
         <parameters parameterName="skipLastRunTimeUpdate"/>
         <parameters parameterName="lastRunTime"/>
     </moqui.service.job.ServiceJob>
+
+    <moqui.service.job.ServiceJob jobName="HC_SC_UpdateTransferOrders" description="Import Update Transfer Order CSV" instanceOfProductId="NS_UPDATE_TO"
+                                  serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPDATE_TO"/>
+    <moqui.service.job.ServiceJobParameter jobName="HC_SC_UpdateTransferOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
 </entity-facade-xml>
