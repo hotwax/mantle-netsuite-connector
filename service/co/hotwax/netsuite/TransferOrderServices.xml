@@ -59,23 +59,24 @@
                 <date-filter/>
             </entity-find>
             <set field="payload.orderId" from="orderIdentificationList?.first?.orderId"/>
-            
-            <iterate list="payload.packages[0].items" entry="item">
-                <!-- Get HC Product ID -->
-                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
-                    <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
-                    <econdition field-name="idValue" from="item.remove('productIdValue')"/>
-                    <date-filter/>
-                    <order-by field-name="-fromDate"/>
-                </entity-find>
-                <set field="item.productId" from="goodIdentifications?.first?.productId"/>
+            <iterate list="payload.packages" entry="package">
+                <iterate list="package.items" entry="item">
+                    <!-- Get HC Product ID -->
+                    <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
+                        <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
+                        <econdition field-name="idValue" from="item.remove('productIdValue')"/>
+                        <date-filter/>
+                        <order-by field-name="-fromDate"/>
+                    </entity-find>
+                    <set field="item.productId" from="goodIdentifications?.first?.productId"/>
 
-                <!-- Get Order Item Seq ID and Ship Group Seq ID -->
-                <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
-                    <econdition field-name="orderId" from="payload.orderId"/>
-                    <econdition field-name="externalId" from="item.remove('itemExternalId')"/>
-                </entity-find>
-                <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
+                    <!-- Get Order Item Seq ID and Ship Group Seq ID -->
+                    <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
+                        <econdition field-name="orderId" from="payload.orderId"/>
+                        <econdition field-name="externalId" from="item.remove('itemExternalId')"/>
+                    </entity-find>
+                    <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
+                </iterate>
             </iterate>
         </actions>
     </service>
