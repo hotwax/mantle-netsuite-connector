@@ -11,14 +11,18 @@
                 <description>The Transfer Order Fulfillment map from NetSuite to be mapped as per Shipment in OMS.</description>
                 <parameter name="transferOrderId"/>
                 <parameter name="externalId"/>
-                <parameter name="trackingNumber"/>
-                <parameter name="items" type="List">
-                    <parameter name="itemMap" type="Map">
-                        <parameter name="externalId"/>
-                        <parameter name="itemExternalId"/>
-                        <parameter name="productIdType"/>
-                        <parameter name="productIdValue"/>
-                        <parameter name="quantity" type="Integer"/>
+                <parameter name="packages" type="List">
+                    <parameter name="packageMap" type="Map">
+                        <parameter name="trackingNumber"/>
+                        <parameter name="items" type="List">
+                            <parameter name="itemMap" type="Map">
+                                <parameter name="externalId"/>
+                                <parameter name="itemExternalId"/>
+                                <parameter name="productIdType"/>
+                                <parameter name="productIdValue"/>
+                                <parameter name="quantity" type="Integer"/>
+                            </parameter>
+                        </parameter>
                     </parameter>
                 </parameter>
             </parameter>
@@ -28,15 +32,18 @@
                 <description>The Shipment map with mapped fields for OMS.</description>
                 <parameter name="orderId"/>
                 <parameter name="externalId"/>
-                <parameter name="trackingNumber"/>
                 <parameter name="shipmentStatusId"/>
-                <parameter name="items" type="List">
-                    <parameter name="itemMap" type="Map">
-                        <parameter name="orderItemSeqId"/>
-                        <parameter name="shipGroupSeqId"/>
-                        <parameter name="externalId"/>
-                        <parameter name="productId"/>
-                        <parameter name="quantity" type="Integer"/>
+                <parameter name="packages" type="List">
+                        <parameter name="packageMap" type="Map">
+                        <parameter name="trackingNumber"/>
+                        <parameter name="items" type="List">
+                            <parameter name="itemMap" type="Map">
+                                <parameter name="orderItemSeqId"/>
+                                <parameter name="externalId"/>
+                                <parameter name="productId"/>
+                                <parameter name="quantity" type="Integer"/>
+                            </parameter>
+                        </parameter>
                     </parameter>
                 </parameter>
             </parameter>
@@ -52,24 +59,24 @@
                 <date-filter/>
             </entity-find>
             <set field="payload.orderId" from="orderIdentificationList?.first?.orderId"/>
-            
-            <iterate list="payload.items" entry="item">
-                <!-- Get HC Product ID -->
-                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
-                    <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
-                    <econdition field-name="idValue" from="item.remove('productIdValue')"/>
-                    <date-filter/>
-                    <order-by field-name="-fromDate"/>
-                </entity-find>
-                <set field="item.productId" from="goodIdentifications?.first?.productId"/>
+            <iterate list="payload.packages" entry="package">
+                <iterate list="package.items" entry="item">
+                    <!-- Get HC Product ID -->
+                    <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
+                        <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
+                        <econdition field-name="idValue" from="item.remove('productIdValue')"/>
+                        <date-filter/>
+                        <order-by field-name="-fromDate"/>
+                    </entity-find>
+                    <set field="item.productId" from="goodIdentifications?.first?.productId"/>
 
-                <!-- Get Order Item Seq ID and Ship Group Seq ID -->
-                <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
-                    <econdition field-name="orderId" from="payload.orderId"/>
-                    <econdition field-name="externalId" from="item.remove('itemExternalId')"/>
-                </entity-find>
-                <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
-                <set field="item.shipGroupSeqId" from="orderItemList?.first?.shipGroupSeqId"/>
+                    <!-- Get Order Item Seq ID and Ship Group Seq ID -->
+                    <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
+                        <econdition field-name="orderId" from="payload.orderId"/>
+                        <econdition field-name="externalId" from="item.remove('itemExternalId')"/>
+                    </entity-find>
+                    <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
+                </iterate>
             </iterate>
         </actions>
     </service>
