@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="ext-upgrade">
+  <moqui.service.message.SystemMessageRemote
+           systemMessageRemoteId="GITLAB_PROJECT_CONFIG"
+           authHeaderName="PRIVATE-TOKEN"
+           privateKey=""
+           receiveUrl="https://git.hotwax.co/api/v4/projects/${projectName}/repository/files/${fileName}"
+           description="Remote repository configuration for fetching and managing project files from GitLab, including Groovy scripts, templates, and schema files."/>
+
+    <moqui.service.message.SystemMessageType systemMessageTypeId="GITLAB_FILE_SYNC"
+            description="System message to save file content fetched from GitLab in file system."
+            consumeServiceName="co.hotwax.helper.HelperServices.save#FileInFileSystem"/>
+</entity-facade-xml>

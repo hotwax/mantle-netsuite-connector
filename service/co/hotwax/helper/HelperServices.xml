@@ -62,11 +62,33 @@
             ]]></script>
         </actions>
     </service>
+
+    <!--
+    Purpose:
+        This service updates (or adds) a file in the local Moqui runtime file system,
+        typically from a remote repository (e.g., GitLab) based on the given parameters.
+    Parameters:
+        - Overwrite: true
+            →  true means you are 100% sure you want to replace the existing file.
+        - Branch: main
+            → Specifies the Git branch from which to fetch the file.
+        - System Message Remote ID: GITLAB_PROJECT_CONFIG
+            → Identifier for the remote repository configuration.
+        - Project Name: commerce/deliveries/krewe
+            → GitLab project path containing the desired file.
+        - File Path: Schema/PosOrderSchema.json
+            → Path of the file inside the Git project to fetch.
+        - Target File Path: runtime://datamanager/netsuite/schema
+            → Local destination path in Moqui runtime where the file will be stored.
+    -->
     <service verb="update" noun="FileInFileSystem">
         <description>Fetches a file from GitLab and stores it in the file system.</description>
         <in-parameters>
+            <parameter name="overwrite" type="Boolean" default="false">
+                <description>true means you are 100% sure you want to replace the existing file</description>
+            </parameter>
             <parameter name="branch" default-value="main"/>
-            <parameter name="systemMessageRemoteId"/>
+            <parameter name="systemMessageRemoteId" default-value="GITLAB_PROJECT_CONFIG"/>
             <parameter name="projectName"/>
             <parameter name="filePath"/>
             <parameter name="targetFilePath"/>
@@ -77,24 +99,38 @@
             <parameter name="savedFilePath"/>
         </out-parameters>
         <actions>
-            <!-- Step 1: Fetch file content from GitLab -->
-            <service-call name="co.hotwax.helper.HelperServices.call#GitLabApi" in-map="context" out-map="apiResponse"/>
-            <set field="success" value="false" type="Boolean"/>
-            <set field="errorText"/>
-            <set field="savedFilePath"/>
+            <script>import java.nio.charset.StandardCharsets</script>
+            <if condition="overwrite">
+                <!-- Step 1: Fetch file content from GitLab -->
+                <service-call name="co.hotwax.helper.HelperServices.get#FileContentFromGitLab" in-map="context" out-map="apiResponse"/>
+                <set field="success" value="false" type="Boolean"/>
+                <set field="errorText"/>
 
-            <if condition="!apiResponse.success">
-                <set field="errorText" value="Failed to fetch file from GitLab: ${apiResponse.errorText}"/>
-                <return/>
+                <if condition="!apiResponse.success">
+                    <set field="errorText" value="Failed to fetch file from GitLab: ${apiResponse.errorText}"/>
+                    <return/>
+                </if>
+                <set field="fileName" from="filePath.substring(filePath.lastIndexOf('/') + 1)"/>
+                <set field="targetFilePath" from="targetFilePath + (targetFilePath.endsWith('/') ? '' : '/') + fileName"/>
+                <service-call name="org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage" in-map="[systemMessageTypeId:'GITLAB_FILE_SYNC',
+                    messageText:apiResponse.fileContent, remoteMessageId:targetFilePath]"/>
+
+                <set field="success" value="true" type="Boolean"/>
             </if>
-
+        </actions>
+    </service>
+    <service verb="save" noun="FileInFileSystem">
+        <description>service to consume the system messaga and save the file content in file system.</description>
+        <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>
+        <actions>
+            <entity-find-one entity-name="moqui.service.message.SystemMessage" value-field="systemMessage"/>
             <script><![CDATA[
                 import java.nio.file.Files
                 import java.nio.file.Paths
                 import java.nio.charset.StandardCharsets
 
                 // Expand the file path dynamically
-                def expandedFilePathRef = ec.resource.expand(targetFilePath, null, [:], false)
+                def expandedFilePathRef = ec.resource.expand(systemMessage.remoteMessageId, null, [:], false)
                 def expandedFilePath = ec.resource.getLocationReference(expandedFilePathRef).getUri().getPath()
 
                 // Create directories if they do not exist
@@ -102,12 +138,10 @@
                 if (!file.parentFile.exists()) file.parentFile.mkdirs()
 
                 // Write content to file
-                Files.write(Paths.get(expandedFilePath), apiResponse.fileContent.getBytes(StandardCharsets.UTF_8))
+                Files.write(file.toPath(), systemMessage.messageText.getBytes(StandardCharsets.UTF_8))
 
                 logger.info("File successfully written to: ${expandedFilePath}")
-            ]]></script>
-            <set field="success" value="true" type="Boolean"/>
-            <set field="savedFilePath" from="expandedFilePath"/>
+                ]]></script>
         </actions>
     </service>
 
