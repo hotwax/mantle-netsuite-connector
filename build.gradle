@@ -36,6 +36,7 @@ tasks.withType(GroovyCompile) { options.compilerArgs << "-proc:none" }
 
 dependencies {
     implementation project(':framework')
+    implementation 'com.googlecode.libphonenumber:libphonenumber:8.12.57'
 }
 
 // by default the Java plugin runs test on build, change to not do that (only run test if explicit task)

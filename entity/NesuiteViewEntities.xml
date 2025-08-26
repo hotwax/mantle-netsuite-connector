@@ -480,9 +480,16 @@
     </view-entity>
 
     <!-- View created for brokered order feed -->
-    <view-entity entity-name="BrokeredOrderItemsFeed" package="co.hotwax.netsuite.warehouse">
+    <view-entity entity-name="NetsuiteBrokeredOrderItemsFeed" package="co.hotwax.netsuite.warehouse">
         <description> View to get details for the brokered orders Items.</description>
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                <date-filter/>
+            </entity-condition>
+        </member-entity>
         <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
             <key-map field-name="orderId"/>
         </member-entity>
@@ -528,6 +535,7 @@
         <alias entity-alias="FGM" field="facilityGroupId" name="facilityGroupId"/>
         <alias entity-alias="OISG" field="contactMechId" name="postalContactMechId"/>
         <alias entity-alias="EFO" name="externalFulfillmentOrderItemId"/>
+        <alias entity-alias="OID" name="netsuiteOrderId" field="idValue"/>
         <entity-condition>
             <econditions combine="and">
                 <econdition entity-alias="OH" field-name="orderTypeId" operator="equals" value="SALES_ORDER"/>

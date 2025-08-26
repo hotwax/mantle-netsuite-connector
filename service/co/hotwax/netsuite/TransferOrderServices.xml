@@ -11,14 +11,18 @@
                 <description>The Transfer Order Fulfillment map from NetSuite to be mapped as per Shipment in OMS.</description>
                 <parameter name="transferOrderId"/>
                 <parameter name="externalId"/>
-                <parameter name="trackingNumber"/>
-                <parameter name="items" type="List">
-                    <parameter name="itemMap" type="Map">
-                        <parameter name="externalId"/>
-                        <parameter name="itemExternalId"/>
-                        <parameter name="productIdType"/>
-                        <parameter name="productIdValue"/>
-                        <parameter name="quantity" type="Integer"/>
+                <parameter name="packages" type="List">
+                    <parameter name="packageMap" type="Map">
+                        <parameter name="trackingNumber"/>
+                        <parameter name="items" type="List">
+                            <parameter name="itemMap" type="Map">
+                                <parameter name="externalId"/>
+                                <parameter name="itemExternalId"/>
+                                <parameter name="productIdType"/>
+                                <parameter name="productIdValue"/>
+                                <parameter name="quantity" type="Integer"/>
+                            </parameter>
+                        </parameter>
                     </parameter>
                 </parameter>
             </parameter>
@@ -28,15 +32,18 @@
                 <description>The Shipment map with mapped fields for OMS.</description>
                 <parameter name="orderId"/>
                 <parameter name="externalId"/>
-                <parameter name="trackingNumber"/>
                 <parameter name="shipmentStatusId"/>
-                <parameter name="items" type="List">
-                    <parameter name="itemMap" type="Map">
-                        <parameter name="orderItemSeqId"/>
-                        <parameter name="shipGroupSeqId"/>
-                        <parameter name="externalId"/>
-                        <parameter name="productId"/>
-                        <parameter name="quantity" type="Integer"/>
+                <parameter name="packages" type="List">
+                        <parameter name="packageMap" type="Map">
+                        <parameter name="trackingNumber"/>
+                        <parameter name="items" type="List">
+                            <parameter name="itemMap" type="Map">
+                                <parameter name="orderItemSeqId"/>
+                                <parameter name="externalId"/>
+                                <parameter name="productId"/>
+                                <parameter name="quantity" type="Integer"/>
+                            </parameter>
+                        </parameter>
                     </parameter>
                 </parameter>
             </parameter>
@@ -52,24 +59,24 @@
                 <date-filter/>
             </entity-find>
             <set field="payload.orderId" from="orderIdentificationList?.first?.orderId"/>
-            
-            <iterate list="payload.items" entry="item">
-                <!-- Get HC Product ID -->
-                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
-                    <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
-                    <econdition field-name="idValue" from="item.remove('productIdValue')"/>
-                    <date-filter/>
-                    <order-by field-name="-fromDate"/>
-                </entity-find>
-                <set field="item.productId" from="goodIdentifications?.first?.productId"/>
+            <iterate list="payload.packages" entry="shipmentPackage">
+                <iterate list="shipmentPackage.items" entry="item">
+                    <!-- Get HC Product ID -->
+                    <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
+                        <econdition field-name="goodIdentificationTypeId" from="item.remove('productIdType')"/>
+                        <econdition field-name="idValue" from="item.remove('productIdValue')"/>
+                        <date-filter/>
+                        <order-by field-name="-fromDate"/>
+                    </entity-find>
+                    <set field="item.productId" from="goodIdentifications?.first?.productId"/>
 
-                <!-- Get Order Item Seq ID and Ship Group Seq ID -->
-                <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
-                    <econdition field-name="orderId" from="payload.orderId"/>
-                    <econdition field-name="externalId" from="item.remove('itemExternalId')"/>
-                </entity-find>
-                <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
-                <set field="item.shipGroupSeqId" from="orderItemList?.first?.shipGroupSeqId"/>
+                    <!-- Get Order Item Seq ID and Ship Group Seq ID -->
+                    <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
+                        <econdition field-name="orderId" from="payload.orderId"/>
+                        <econdition field-name="externalId" from="item.remove('itemExternalId')"/>
+                    </entity-find>
+                    <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
+                </iterate>
             </iterate>
         </actions>
     </service>
@@ -428,6 +435,85 @@
 
             <return message="Completed Transfer Order Shipment Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${shipmentFeedSysMsgOut?.systemMessageId}"/>
+        </actions>
+    </service>
+
+    <service verb="generate" noun="TransferOrderSyncAckFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>Service to generate feed file for NetSuite to acknowledge the Transfer Order is created successfully in OMS</description>
+        <in-parameters>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="filePathPattern" required="true" default-value="netsuite/transferorderv2/update"/>
+            <parameter name="orderId"/>
+            <parameter name="sinceEntryDate">
+                <description>Parameter to fetch Order details after specific entryDate of OrderHeader.</description>
+            </parameter>
+            <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
+            <parameter name="jobName">
+                <description>The name of the scheduled job to fetch the last run time for preparing the Feed.</description>
+            </parameter>
+            <parameter name="skipLastRunTimeUpdate" type="Boolean" default="false">
+                <description>skip the LastRunTime update,mainly used while debugging</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <log message="Generating Transfer Order Sync Ack Feed file at time ${nowTimestamp}"/>
+
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/TransferOrderSyncAckFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')}.csv"/>
+            <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
+            <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
+
+            <!-- We can use last run time to fetch the records updated after the last service job run -->
+            <!-- Check the parameter used for storing the last feed run time -->
+            <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="lastRunParam">
+                <field-map field-name="jobName"/>
+                <field-map field-name="parameterName" value="lastRunTime"/>
+            </entity-find-one>
+
+            <!-- Set sinceEntryDate using the lastRunTime, if it is set, fetch records from
+                   that time, else it will be null -->
+            <if condition="!sinceEntryDate">
+                <set field="sinceEntryDate" from="lastRunParam?.parameterValue"/>
+            </if>
+
+            <script>
+                import co.hotwax.util.CsvWriteHelper
+                import org.moqui.entity.EntityCondition
+
+                orderHeaderFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
+                orderHeaderFind.condition("orderTypeId", "TRANSFER_ORDER")
+                if(orderId) orderHeaderFind.condition("orderId", orderId)
+                if(sinceEntryDate) orderHeaderFind.condition("entryDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceEntryDate)
+                .selectField("orderId,externalId")
+                .orderBy("entryDate")
+
+                //If no eligible orders, then don't generate the file
+                long transferOrdersCount = orderHeaderFind.count()
+                if (transferOrdersCount == 0) {
+                    ec.message.addMessage("No eligible transfer orders for Feed at ${nowTimestamp}, not generating the HotWax Feed file.")
+                    return
+                }
+                try (orderHeaderItr = orderHeaderFind.iterator();
+                CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, null, recordLimitPerFeed)) {
+            </script>
+            <iterate list="orderHeaderItr" entry="order">
+                <script>csvWriteHelper.writeToFile([internalId:order.externalId, hcOrderId:order.orderId])</script>
+            </iterate>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
+            <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
+            <script>}</script>
+            
+            <iterate list="generatedFilePaths" entry="generatedFilePath">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
+            </iterate>
+            
+            <if condition="!skipLastRunTimeUpdate">
+                <!-- Set the current timestamp as the last run time for next run -->
+                <service-call name="update#moqui.service.job.ServiceJobParameter"
+                    in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName, parameterValue:nowTimestamp]"/>
+            </if>
+            
+            <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
 </services>

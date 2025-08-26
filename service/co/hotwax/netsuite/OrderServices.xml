@@ -56,6 +56,7 @@
                 import org.moqui.entity.EntityCondition
                 import co.hotwax.netsuite.NetSuiteMappingWorker
                 import co.hotwax.util.CsvWriteHelper
+                import co.hotwax.util.PhoneValidationUtil
 
                 findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
                 if(orderId) findNetSuiteOrders.condition("orderId", orderId)
@@ -106,8 +107,23 @@
                 <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
                 <set field="orderDetails.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
 
-                <set field="orderDetails.billingPhone" from="((orderDetails.billingCountryCode?:'') || (orderDetails.billingAreaCode?:'') || (orderDetails.billingContactNumber?:'')) ? ((orderDetails.billingCountryCode ?:'') + ' ' + (orderDetails.billingAreaCode ?:'') + ' ' + (orderDetails.billingContactNumber ?:'')) : ''" />
-                <set field="orderDetails.phone" from="((orderDetails.shippingCountryCode?:'') || (orderDetails.shippingAreaCode?:'') || (orderDetails.shippingContactNumber?:'')) ? ((orderDetails.shippingCountryCode ?:'') + ' ' + (orderDetails.shippingAreaCode ?:'') + ' ' + (orderDetails.shippingContactNumber ?:'')) : ''" />
+                <set field="billingValid" from="PhoneValidationUtil.isValidPhoneNumber(orderDetails.billingCountryCode, orderDetails.billingAreaCode, orderDetails.billingContactNumber, ec)"/>
+                <if condition="billingValid">
+                    <set field="formattedBillingPhone" from="PhoneValidationUtil.getFormattedPhoneNumber(orderDetails.billingCountryCode, orderDetails.billingAreaCode, orderDetails.billingContactNumber)"/>
+                    <set field="orderDetails.billingPhone" from="formattedBillingPhone"/>
+                    <else>
+                        <set field="orderDetails.billingPhone" value=""/>
+                    </else>
+                </if>
+
+                <set field="shippingValid" from="PhoneValidationUtil.isValidPhoneNumber(orderDetails.shippingCountryCode, orderDetails.shippingAreaCode, orderDetails.shippingContactNumber, ec)"/>
+                <if condition="shippingValid">
+                    <set field="formattedShippingPhone" from="PhoneValidationUtil.getFormattedPhoneNumber(orderDetails.shippingCountryCode, orderDetails.shippingAreaCode, orderDetails.shippingContactNumber)"/>
+                    <set field="orderDetails.phone" from="formattedShippingPhone"/>
+                    <else>
+                        <set field="orderDetails.phone" value=""/>
+                    </else>
+                </if>
 
                 <if condition="(!orderDetails.billingContactMechId &amp;&amp; orderDetails.shippingContactMechId)">
                     <set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip, billingAddressee:orderDetails.addressee]"/>
@@ -229,7 +245,7 @@
             <return message=" Created the Fulfilled Order Items Feed file with orders count ${netsuiteOrdersCount} at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
-    <service verb="generate" noun="BrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <service verb="generate" noun="NetsuiteBrokeredOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>
             Service to generate Brokered Order Items Feed for the new order sync flow with added check for NetsuiteItemLineId and takes count per feed which can take in a limit parameter
             to include a specific number of records in the Feed File.
@@ -259,16 +275,16 @@
                 import co.hotwax.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
-                brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeed").distinct(true)
+                brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.NetsuiteBrokeredOrderItemsFeed").distinct(true)
                 if(orderId) brokeredOrderItemFind.condition("orderId", orderId)
                 if(orderItemSeqId) brokeredOrderItemFind.condition("orderItemSeqId", orderItemSeqId)
-                    .selectField("orderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
+                    .selectField("orderId,netsuiteOrderId,entryDate,netsuiteItemLineId,orderItemSeqId,productStoreId,productId,shipmentMethodTypeId,facilityExternalId,postalContactMechId,itemStatusId,externalFulfillmentOrderItemId,shipGroupSeqId,orderItemQuantity")
                     .orderBy("entryDate")
 
                 //If no eligible orders, then don't generate the file
                 long netsuiteBrokeredOrdersCount = brokeredOrderItemFind.count()
                 if (netsuiteBrokeredOrdersCount == 0) {
-                    ec.message.addMessage("No eligible orders for Brokered Order and Items Feed at ${nowDate}, not generating the HotWax Feed file.")
+                    ec.message.addMessage("No eligible orders for Brokered Order and Items Feed at ${nowTimestamp}, not generating the HotWax Feed file.")
                     return
                 }
 
@@ -291,7 +307,7 @@
                 </then><else>
                     <service-call name="create#co.hotwax.integration.order.ExternalFulfillmentOrderItem" in-map="[orderId:brokerOrderItem.orderId,
                         orderItemSeqId:brokerOrderItem.orderItemSeqId, shipGroupSeqId:brokerOrderItem.shipGroupSeqId,
-                        fulfillmentStatus:'Sent', createdDate:nowDate, quantity:brokerOrderItem.orderItemQuantity]"/>
+                        fulfillmentStatus:'Sent', createdDate:nowTimestamp, quantity:brokerOrderItem.orderItemQuantity]"/>
                 </else></if>
             </iterate>
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
