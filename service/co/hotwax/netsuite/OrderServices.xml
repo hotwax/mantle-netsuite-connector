@@ -130,7 +130,12 @@
                 </if>
 
                 <set field="shippingTaxCode" from="NetSuiteMappingWorker.getShippingTaxCode(ec, order.orderId)"/>
-                <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getGiftCardPaymentTotal(ec, order.orderId)"/>
+                <!-- Scenario of Exchange Order Gift Card Payment -->
+                <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getExchOrderGiftCardPaymentTotal(ec, order.orderId)"/>
+                <!-- If nothing received, check for Gift Card Payment for original order -->
+                <if condition="!orderDetails.giftCardPaymentTotal">
+                    <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getGiftCardPaymentTotal(ec, order.orderId)"/>
+                </if>
                 <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
                     HCShopifySalesOrderId:order.shopifyOrderId, externalId: orderDetails.orderExternalId, shippingTaxCode:shippingTaxCode]"/>
 
