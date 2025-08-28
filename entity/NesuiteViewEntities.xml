@@ -571,4 +571,27 @@
         </entity-condition>
     </view-entity>
 
+    <view-entity entity-name="ExchOrderGiftCardPayment" package="co.hotwax.netsuite.order">
+        <description>View to get Gift Card Payment Total for Exchange Orders</description>
+        <member-entity entity-alias="EXCOPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference"/>
+        <member-entity entity-alias="ORIGOPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-optional="true" join-from-alias="EXCOPP">
+            <key-map field-name="parentRefNum" related="manualRefNum"/>
+        </member-entity>
+        <member-entity entity-alias="ORIGOPPGC" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-optional="true" join-from-alias="ORIGOPP">
+            <key-map field-name="parentRefNum" related="manualRefNum"/>
+        </member-entity>
+
+        <alias entity-alias="EXCOPP" name="statusId" />
+        <alias entity-alias="EXCOPP" name="paymentMethodTypeId"/>
+        <alias entity-alias="EXCOPP" name="orderId"/>
+        <alias entity-alias="ORIGOPPGC" name="giftCardPaymentTotal" field="maxAmount" function="sum"/>
+        <alias entity-alias="ORIGOPPGC" field="paymentMethodTypeId" name="originalPaymentMethodTypeId"/>
+
+        <entity-condition>
+            <econdition field-name="paymentMethodTypeId" value="EXCHANGE_PAYMENT"/>
+            <econdition field-name="statusId" value="PAYMENT_SETTLED"/>
+            <econdition field-name="originalPaymentMethodTypeId" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
+        </entity-condition>
+    </view-entity>
+
 </entities>

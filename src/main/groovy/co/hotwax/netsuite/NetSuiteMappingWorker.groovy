@@ -95,6 +95,20 @@ class NetSuiteMappingWorker {
     }
 
     /**
+     * Gets the total gift card payment amount for an exchange order
+     * @param ec ExecutionContext
+     * @param orderId The order ID to get gift card payments for
+     * @return The total gift card payment amount as BigDecimal, or 0 if none found
+     */
+    static BigDecimal getExchOrderGiftCardPaymentTotal(ExecutionContext ec, String orderId) {
+        def exchOrdergiftCardPayment = ec.entity.find("co.hotwax.netsuite.order.ExchOrderGiftCardPayment")
+                .condition("orderId", orderId)
+                .list()
+
+        return exchOrdergiftCardPayment ? exchOrdergiftCardPayment[0].giftCardPaymentTotal : null
+    }
+
+    /**
      * Gets the shipping method for an order.
      * @param ec ExecutionContext
      * @param isMixCartOrder 'Y' if it's a mixed cart order, 'N' otherwise
