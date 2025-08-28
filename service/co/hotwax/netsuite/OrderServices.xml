@@ -132,7 +132,7 @@
                 <set field="shippingTaxCode" from="NetSuiteMappingWorker.getShippingTaxCode(ec, order.orderId)"/>
                 <!-- Scenario of Exchange Order Gift Card Payment -->
                 <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getExchOrderGiftCardPaymentTotal(ec, order.orderId)"/>
-                <!-- If nothing received, check for Gift Card Payment for original order -->
+                <!-- Scenario of Original Order Gift Card Payment -->
                 <if condition="!orderDetails.giftCardPaymentTotal">
                     <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getGiftCardPaymentTotal(ec, order.orderId)"/>
                 </if>
@@ -185,6 +185,8 @@
                     orderDetails = null
                 </script>
             </iterate>
+            <set field="generatedCsvFilePath" from="validFileCsvHelper.getGeneratedFilePaths()"/>
+            <set field="generatedInvalidCsvFilePath" from="invalidFileCsvHelper.getGeneratedFilePaths()"/>
             <script>
                 }
             </script>
@@ -196,7 +198,7 @@
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
                     in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidFilePath, sendPath:invalidSendPath]"/>
             </if>
-            <return message="Generated Order Items Feed file  ${csvFilePath} and missing file response in ${invalidFilePath}"/>
+            <return message="Generated Order Items Feed file  ${generatedCsvFilePath} and missing file response in ${generatedInvalidCsvFilePath}"/>
         </actions>
     </service>
     <service verb="generate" noun="FulfilledOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
