@@ -572,19 +572,20 @@
     </view-entity>
 
     <view-entity entity-name="ExchOrderGiftCardPayment" package="co.hotwax.netsuite.order">
-        <member-entity entity-alias="OPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference"/>
-        <member-entity entity-alias="OPP2" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-optional="true" join-from-alias="OPP">
+        <description>View to get Gift Card Payment Total for Exchange Orders</description>
+        <member-entity entity-alias="EXCOPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference"/>
+        <member-entity entity-alias="ORIGOPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-optional="true" join-from-alias="EXCOPP">
             <key-map field-name="parentRefNum" related="manualRefNum"/>
         </member-entity>
-        <member-entity entity-alias="OPP3" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-optional="true" join-from-alias="OPP2">
+        <member-entity entity-alias="ORIGOPPGC" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-optional="true" join-from-alias="ORIGOPP">
             <key-map field-name="parentRefNum" related="manualRefNum"/>
         </member-entity>
 
-        <alias entity-alias="OPP" name="statusId" />
-        <alias entity-alias="OPP" name="paymentMethodTypeId"/>
-        <alias entity-alias="OPP" name="orderId"/>
-        <alias entity-alias="OPP3" name="giftCardPaymentTotal" field="maxAmount" function="sum"/>
-        <alias entity-alias="OPP3" field="paymentMethodTypeId" name="originalPaymentMethodTypeId"/>
+        <alias entity-alias="EXCOPP" name="statusId" />
+        <alias entity-alias="EXCOPP" name="paymentMethodTypeId"/>
+        <alias entity-alias="EXCOPP" name="orderId"/>
+        <alias entity-alias="ORIGOPPGC" name="giftCardPaymentTotal" field="maxAmount" function="sum"/>
+        <alias entity-alias="ORIGOPPGC" field="paymentMethodTypeId" name="originalPaymentMethodTypeId"/>
 
         <entity-condition>
             <econdition field-name="paymentMethodTypeId" value="EXCHANGE_PAYMENT"/>
