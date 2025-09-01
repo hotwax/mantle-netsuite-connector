@@ -137,7 +137,7 @@
                     <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getGiftCardPaymentTotal(ec, order.orderId)"/>
                 </if>
                 <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
-                    HCShopifySalesOrderId:order.shopifyOrderId, externalId: orderDetails.orderExternalId, shippingTaxCode:shippingTaxCode]"/>
+                    HCShopifySalesOrderId:(order.shopifyOrderId?.contains('.') ? order.shopifyOrderId.split('\\.')[0] : order.shopifyOrderId), externalId: orderDetails.orderExternalId, shippingTaxCode:shippingTaxCode]"/>
 
                 <set field="orderItems" from="[]"/>
                 <entity-find entity-name="co.hotwax.netsuite.order.OrderItemsDetails" list="orderItemsList">
