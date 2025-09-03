@@ -54,7 +54,7 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
                 import co.hotwax.netsuite.NetSuiteMappingWorker
-                import co.hotwax.util.CsvWriteHelper
+                import co.hotwax.ns.util.CsvWriteHelper
 
                 findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.SalesOrderMigrationOrders")
                 if(orderId) findNetSuiteOrders.condition("orderId", orderId)
@@ -204,7 +204,7 @@
             <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
             <script>
                 import groovy.json.JsonSlurper
-                import co.hotwax.util.CsvWriteHelper
+                import co.hotwax.ns.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
                 brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.BrokeredOrderItemsFeedMigration").distinct(true)
