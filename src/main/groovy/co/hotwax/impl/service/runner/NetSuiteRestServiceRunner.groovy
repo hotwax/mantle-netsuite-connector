@@ -13,6 +13,7 @@
  */
 package co.hotwax.impl.service.runner
 
+import co.hotwax.netsuite.util.NetSuiteUtil
 import groovy.transform.CompileStatic
 import org.moqui.context.NotificationMessage
 import org.moqui.impl.context.ContextJavaUtil
@@ -56,8 +57,8 @@ class NetSuiteRestServiceRunner implements ServiceRunner {
         }
 
         RestClient rc = eci.serviceFacade.rest().method(method)
-        String netSuiteBaseUrl = co.hotwax.util.NetSuiteUtil.getNetSuiteRestletInstanceUrl(eci.ecfi);
-        String token = co.hotwax.util.NetSuiteUtil.generateAcessToken(eci.ecfi);
+        String netSuiteBaseUrl = NetSuiteUtil.getNetSuiteRestletInstanceUrl(eci.ecfi);
+        String token = NetSuiteUtil.generateAcessToken(eci.ecfi);
 
         rc.addHeader("Authorization", "Bearer " + token);
         StringBuffer uri;
