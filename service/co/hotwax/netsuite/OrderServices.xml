@@ -55,8 +55,8 @@
                 import java.nio.charset.StandardCharsets
                 import org.moqui.entity.EntityCondition
                 import co.hotwax.netsuite.NetSuiteMappingWorker
-                import co.hotwax.util.CsvWriteHelper
-                import co.hotwax.util.PhoneValidationUtil
+                import co.hotwax.ns.util.CsvWriteHelper
+                import co.hotwax.ns.util.PhoneValidationUtil
 
                 findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
                 if(orderId) findNetSuiteOrders.condition("orderId", orderId)
@@ -226,7 +226,7 @@
                     return
                 }
 
-                import co.hotwax.util.CsvWriteHelper
+                import co.hotwax.ns.util.CsvWriteHelper
                 try (fulfilledOrderItemsItr = fulfilledOrderItemsFind.iterator();
                     CsvWriteHelper CsvWriteHelper = new CsvWriteHelper(baseFilePath, headers, fulfilledOrdersCountPerFeed)) {
             </script>
@@ -279,7 +279,7 @@
             <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
             <script>
                 import groovy.json.JsonSlurper
-                import co.hotwax.util.CsvWriteHelper
+                import co.hotwax.ns.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
                 brokeredOrderItemFind = ec.entity.find("co.hotwax.netsuite.warehouse.NetsuiteBrokeredOrderItemsFeed").distinct(true)

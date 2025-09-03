@@ -1,4 +1,4 @@
-package co.hotwax.util;
+package co.hotwax.ns.util;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;

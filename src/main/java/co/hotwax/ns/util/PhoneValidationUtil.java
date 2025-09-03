@@ -1,4 +1,4 @@
-package co.hotwax.util;
+package co.hotwax.ns.util;
 
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;

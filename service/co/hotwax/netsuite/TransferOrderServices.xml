@@ -477,7 +477,7 @@
             </if>
 
             <script>
-                import co.hotwax.util.CsvWriteHelper
+                import co.hotwax.ns.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
                 orderHeaderFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
