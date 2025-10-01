@@ -555,19 +555,18 @@
     <view-entity entity-name="NonRefundedGiftCardPayment" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference"/>
         <member-entity entity-alias="OPP2" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference" join-optional="true" join-from-alias="OPP">
+            <key-map field-name="orderId"/>
             <key-map field-name="manualRefNum" related="parentRefNum"/>
         </member-entity>
 
-        <alias name="statusId" entity-alias="OPP"/>
         <alias name="paymentMethodTypeId" entity-alias="OPP"/>
         <alias name="giftCardPaymentTotal" entity-alias="OPP" function="sum" field="maxAmount"/>
         <alias name="orderId" entity-alias="OPP" field="orderId"/>
-        <alias name="refundedOrderPaymentPreferenceId" entity-alias="OPP2" field="orderPaymentPreferenceId"/>
 
         <entity-condition>
-            <econdition field-name="statusId" operator="equals" value="PAYMENT_SETTLED"/>
-            <econdition field-name="refundedOrderPaymentPreferenceId" operator="equals" value=""/>
-            <econdition field-name="paymentMethodTypeId" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
+            <econdition field-name="statusId" entity-alias="OPP" operator="equals" value="PAYMENT_SETTLED"/>
+            <econdition field-name="orderPaymentPreferenceId" entity-alias="OPP2" operator="equals" value=""/>
+            <econdition field-name="paymentMethodTypeId" entity-alias="OPP" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
         </entity-condition>
     </view-entity>
 
