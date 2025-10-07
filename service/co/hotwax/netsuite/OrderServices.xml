@@ -106,10 +106,8 @@
 
                 <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="orderAdjustmentList">
                     <econdition field-name="orderId" operator="equals" from="order.orderId"/>
-                    <econdition field-name="orderAdjustmentTypeId" operator="equals" value="SHIPPING_CHARGES"/>
                 </entity-find>
-                <set field="orderDetails.shippingCost" from="shippingChargesList.sum{ it.amount ?: 0 } ?: BigDecimal.ZERO" type="BigDecimal"/>
-                <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
+                <set field="orderDetails.shippingCost" from="orderAdjustmentList.findAll{ it.orderAdjustmentTypeId == 'SHIPPING_CHARGES' }.sum{ it.amount ?: 0 } ?: BigDecimal.ZERO" type="BigDecimal"/>
                 <set field="orderDetails.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
 
                 <set field="billingValid" from="PhoneValidationUtil.isValidPhoneNumber(orderDetails.billingCountryCode, orderDetails.billingAreaCode, orderDetails.billingContactNumber, ec)"/>
@@ -149,9 +147,6 @@
                     <econdition field-name="orderId" operator="equals" from="order.orderId"/>
                 </entity-find>
                 <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getShippingMethod(ec, order.isMixCartOrder, orderItemsList)"/>
-                <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="orderAdjustmentList">
-                    <econdition field-name="orderId" operator="equals" from="order.orderId"/>
-                </entity-find>
                 <set field="totalAdjustment" from="orderAdjustmentList.sum{ it.amount ?: 0 }" type="BigDecimal"/>
                 <set field="itemAmountTotal" from="orderItemsList.sum{ (it.price ?: 0) * (it.quantity ?: 0) }" type="BigDecimal"/>
                 <set field="grandTotal" from="(totalAdjustment ?: 0) + (itemAmountTotal ?: 0)" type="BigDecimal"/>
