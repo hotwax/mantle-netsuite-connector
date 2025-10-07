@@ -109,7 +109,6 @@
                     <econdition field-name="orderAdjustmentTypeId" operator="equals" value="SHIPPING_CHARGES"/>
                 </entity-find>
                 <set field="orderDetails.shippingCost" from="shippingChargesList.sum{ it.amount ?: 0 } ?: BigDecimal.ZERO" type="BigDecimal"/>
-                <set field="orderDetails.shippingCost" from="orderDetails.shippingCost ?: BigDecimal.ZERO"/>
                 <set field="orderDetails.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
 
                 <set field="billingValid" from="PhoneValidationUtil.isValidPhoneNumber(orderDetails.billingCountryCode, orderDetails.billingAreaCode, orderDetails.billingContactNumber, ec)"/>
