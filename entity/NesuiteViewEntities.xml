@@ -55,6 +55,7 @@
         <alias name="netsuiteCustomerId" entity-alias="PID" field="idValue"/>
         <alias name="orderId" entity-alias="OH"/>
         <alias name="orderDate" entity-alias="OH"/>
+        <alias name="entryDate" entity-alias="OH"/>
         <alias name="shipmentMethodTypeId" entity-alias="OIV"/>
         <alias name="isMixCartOrder" type="text-indicator">
             <case>

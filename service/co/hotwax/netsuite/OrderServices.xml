@@ -45,6 +45,12 @@
                 </description>
             </parameter>
             <parameter name="ordersCountPerFeed" type="Integer" default-value="500"/>
+            <parameter name="minAgeInMinutes" type="Integer">
+                <description>
+                    Minimum age (in minutes) the order should have spent in OMS before being included in the feed.
+                    Example: 60 will include only orders where entryDate is at least 60 minutes old.
+                </description>
+            </parameter>
         </in-parameters>
         <actions>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
@@ -67,6 +73,13 @@
                 if(includeSalesChannel) findNetSuiteOrders.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.IN, includeSalesChannel)
                 if(excludeSalesChannel) findNetSuiteOrders.condition("salesChannelEnumId",EntityCondition.ComparisonOperator.NOT_IN, excludeSalesChannel)
                 if(isMixCartOrder) findNetSuiteOrders.condition("isMixCartOrder", isMixCartOrder)
+
+                if (minAgeInMinutes) {
+                    Calendar ageCal = ec.user.getNowCalendar()
+                    ageCal.add(Calendar.MINUTE, -minAgeInMinutes.toInteger())
+                    Timestamp maxEntryDate = new Timestamp(ageCal.getTimeInMillis())
+                    findNetSuiteOrders.condition("entryDate", EntityCondition.ComparisonOperator.LESS_THAN_EQUAL_TO, maxEntryDate)
+                }
 
                 findNetSuiteOrders.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
                 findNetSuiteOrders.useClone(true)
