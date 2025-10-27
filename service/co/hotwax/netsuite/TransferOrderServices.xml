@@ -34,7 +34,7 @@
                 <parameter name="orderId"/>
                 <parameter name="externalId"/>
                 <parameter name="shipmentStatusId"/>
-                <parameter name="shipmentDate"/>
+                <parameter name="shippedDate"/>
                 <parameter name="packages" type="List">
                         <parameter name="packageMap" type="Map">
                         <parameter name="trackingNumber"/>
@@ -53,7 +53,8 @@
         <actions>
             <!-- By default, external fulfilled shipments for WH TOs will be created in SHIPMENT_SHIPPED status -->
             <set field="payload.shipmentStatusId" value="SHIPMENT_SHIPPED"/>
-
+            <!-- It is the created date of shipment from external system -->
+            <set field="payload.shippedDate" from="payload.shipmentDate"/>
             <!-- Get HC Order ID -->
             <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
                 <econdition field-name="idValue" from="payload.remove('transferOrderId')"/>
@@ -61,7 +62,6 @@
                 <date-filter/>
             </entity-find>
             <set field="payload.orderId" from="orderIdentificationList?.first?.orderId"/>
-
             <iterate list="payload.packages" entry="shipmentPackage">
                 <iterate list="shipmentPackage.items" entry="item">
                     <!-- Get HC Product ID -->
