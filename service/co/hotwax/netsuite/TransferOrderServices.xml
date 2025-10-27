@@ -11,7 +11,7 @@
                 <description>The Transfer Order Fulfillment map from NetSuite to be mapped as per Shipment in OMS.</description>
                 <parameter name="transferOrderId"/>
                 <parameter name="externalId"/>
-                <parameter name="shipmentDate"/>
+                <parameter name="shippedDate"/>
                 <parameter name="packages" type="List">
                     <parameter name="packageMap" type="Map">
                         <parameter name="trackingNumber"/>
@@ -53,8 +53,7 @@
         <actions>
             <!-- By default, external fulfilled shipments for WH TOs will be created in SHIPMENT_SHIPPED status -->
             <set field="payload.shipmentStatusId" value="SHIPMENT_SHIPPED"/>
-            <!-- It is the created date of shipment from external system -->
-            <set field="payload.shippedDate" from="payload.shipmentDate"/>
+
             <!-- Get HC Order ID -->
             <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
                 <econdition field-name="idValue" from="payload.remove('transferOrderId')"/>
