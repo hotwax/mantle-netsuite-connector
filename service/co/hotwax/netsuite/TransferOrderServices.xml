@@ -11,6 +11,7 @@
                 <description>The Transfer Order Fulfillment map from NetSuite to be mapped as per Shipment in OMS.</description>
                 <parameter name="transferOrderId"/>
                 <parameter name="externalId"/>
+                <parameter name="shippedDate"/>
                 <parameter name="packages" type="List">
                     <parameter name="packageMap" type="Map">
                         <parameter name="trackingNumber"/>
@@ -33,6 +34,7 @@
                 <parameter name="orderId"/>
                 <parameter name="externalId"/>
                 <parameter name="shipmentStatusId"/>
+                <parameter name="shippedDate"/>
                 <parameter name="packages" type="List">
                         <parameter name="packageMap" type="Map">
                         <parameter name="trackingNumber"/>
