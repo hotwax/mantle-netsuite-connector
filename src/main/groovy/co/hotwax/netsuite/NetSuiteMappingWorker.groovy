@@ -245,12 +245,13 @@ class NetSuiteMappingWorker {
      * @return Total valid payment amount
      */
     static BigDecimal getValidPaymentTotal(ExecutionContext ec, String orderId) {
-        BigDecimal oppSum = ec.entity.find("org.apache.ofbiz.order.order.OrderPaymentPreference")
+        def oppList = ec.entity.find("org.apache.ofbiz.order.order.OrderPaymentPreference")
                 .condition("orderId", orderId)
                 .condition("statusId", EntityCondition.IN, ["PAYMENT_AUTHORIZED", "PAYMENT_SETTLED"])
-                .sum("maxAmount") as BigDecimal
+                .list()
 
-        return oppSum ?: BigDecimal.ZERO
+        BigDecimal oppSum = oppList.collect { it.maxAmount ?: 0.0 }.sum() as BigDecimal
+        return oppSum
     }
 
 }
