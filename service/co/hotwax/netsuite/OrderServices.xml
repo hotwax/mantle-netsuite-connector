@@ -104,11 +104,12 @@
 
             <set field="isFileEmpty" from="true"/>
             <set field="isReqFieldMissFileEmpty" from="true"/>
+            <set field="isValidPayment" from="true"/>
             <set field="csvHeaders" from="null"/>
 
             <script>
                 // Using try-with-resources to automatically close the EntityListIterator 'ordersItr'
-                try (ordersItr = findNetSuiteOrders.iterator(); CsvWriteHelper validFileCsvHelper = new CsvWriteHelper(csvFilePath, null, 0); CsvWriteHelper invalidFileCsvHelper = new CsvWriteHelper(invalidFilePath, null, 0)) {
+                try (ordersItr = findNetSuiteOrders.iterator(); CsvWriteHelper validFileCsvHelper = new CsvWriteHelper(csvFilePath, null, 0); CsvWriteHelper invalidFileCsvHelper = new CsvWriteHelper(invalidFilePath, null, 0); CsvWriteHelper invalidPaymentCsvHelper = new CsvWriteHelper(invalidFilePath, null, 0)) {
             </script>
 
             <iterate list="ordersItr" entry="order">
@@ -117,6 +118,9 @@
                 </entity-find-one>
                 <set field="orderDetails" from="orderDetails.getMap()"/>
 
+                <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="orderAdjustmentList">
+                    <econdition field-name="orderId" operator="equals" from="order.orderId"/>
+                </entity-find>
                 <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="orderAdjustmentList">
                     <econdition field-name="orderId" operator="equals" from="order.orderId"/>
                 </entity-find>
@@ -163,6 +167,9 @@
                 <set field="totalAdjustment" from="orderAdjustmentList.sum{ it.amount ?: 0 }" type="BigDecimal"/>
                 <set field="itemAmountTotal" from="orderItemsList.sum{ (it.price ?: 0) * (it.quantity ?: 0) }" type="BigDecimal"/>
                 <set field="grandTotal" from="(totalAdjustment ?: 0) + (itemAmountTotal ?: 0)" type="BigDecimal"/>
+                <!-- Get valid authorized+settled payment total -->
+                <set field="validPaymentTotal" from="NetSuiteMappingWorker.getValidPaymentTotal(ec, order.orderId)" type="BigDecimal"/>
+
                 <iterate list="orderItemsList" entry="orderItem">
                     <set field="orderItem" from="orderItem.getMap()"/>
 
@@ -178,7 +185,7 @@
                     <if condition="discountItems"><script>orderItems.addAll(discountItems)</script></if>
 
                 </iterate>
-                <set field="orderDetails" from="orderDetails + [HCOrderTotal:grandTotal, orderItems:orderItems]"/>
+                <set field="orderDetails" from="orderDetails + [HCOrderTotal:grandTotal, orderItems:orderItems, OppPaymentTotal:validPaymentTotal]"/>
                 <set field="requiredFields" from="['date', 'country', 'customer']"/>
                 <if condition="scriptPath">
                     <set field="scriptResult" from="ec.resource.script(scriptPath, null)"/>
@@ -186,11 +193,19 @@
                     <set field="requiredFields" from="requiredFields + scriptResult.customRequiredFileds"/>
                 </if>
                 <set field="netsuiteOrderItemList" from="NetSuiteMappingWorker.prepareNetSuiteOrderItemList(orderDetails)"/>
-                <script>
+                <script><![CDATA[
                     // Check for required fields and separate valid/invalid orders
                     netsuiteOrderItemList.each { record ->
                         def missingFields = requiredFields.findAll { !record[it] || record[it].toString().trim() == '' }
+                        BigDecimal oppTotal = it.OppPaymentTotal ?: 0
+                        BigDecimal orderTotal = it.HCOrderTotal ?: 0
 
+                        // payment mismatch first
+                        if (oppTotal < orderTotal) {
+                            record.put("InvalidPaymentReason","Order payment (${oppTotal}) is less than order total (${orderTotal})")
+                            invalidPaymentCsvHelper.writeToFile(record)
+                            isValidPayment = false
+                        }
                         if (missingFields) {
                             record.put("Missing Required Fields", missingFields.join(', '))
                             invalidFileCsvHelper.writeToFile(record)
@@ -201,16 +216,22 @@
                         }
                     }
                     orderDetails = null
-                </script>
+                ]]</script>
             </iterate>
             <set field="generatedCsvFilePath" from="validFileCsvHelper.getGeneratedFilePaths()"/>
             <set field="generatedInvalidCsvFilePath" from="invalidFileCsvHelper.getGeneratedFilePaths()"/>
+            <set field="generatedInvalidPaymentCsvFilePath" from="invalidPaymentCsvHelper.getGeneratedFilePaths()"/>
+
             <script>
                 }
             </script>
             <if condition="!isFileEmpty">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
                     in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:csvFilePath, sendPath:sendPath]"/>
+            </if>
+            <if condition="!isValidPayment">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
+                    in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidPaymentFilePath, sendPath:invalidPaymentSendPath]"/>
             </if>
             <if condition="!isReqFieldMissFileEmpty">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
