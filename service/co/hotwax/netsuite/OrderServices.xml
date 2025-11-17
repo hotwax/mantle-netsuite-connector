@@ -168,6 +168,9 @@
 
                     <set field="taxCode" from="NetSuiteMappingWorker.getTaxCode(ec, orderItem)"/>
                     <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
+                    <if condition="closed">
+                        <set field="orderItem.price" from="0"/>
+                    </if>
                     <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationTypeMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
                     <set field="department" from="NetSuiteMappingWorker.getFacilityIdentifications(ec, orderItem.orderFacilityId, 'ORDR_ORGN_DPT')" type="String"/>
 

@@ -542,34 +542,29 @@
         </entity-condition>
     </view-entity>
 
-    <view-entity entity-name="NonReturnRefundedGiftCardOpp" package="co.hotwax.netsuite.order">
+    <view-entity entity-name="NonRefundedGiftCardPayment" package="co.hotwax.netsuite.order">
         <member-entity entity-alias="OPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference"/>
         <member-entity entity-alias="RIR" entity-name="org.apache.ofbiz.order.return.ReturnItemResponse" join-from-alias="OPP" join-optional="true">
             <key-map field-name="orderPaymentPreferenceId"/>
         </member-entity>
-        <alias-all entity-alias="OPP"/>
-        <entity-condition>
-            <econdition field-name="orderPaymentPreferenceId" entity-alias="RIR" operator="is-null"/>
-            <econdition field-name="statusId" entity-alias="OPP" value="PAYMENT_REFUNDED"/>
-            <econdition field-name="paymentMethodTypeId" entity-alias="OPP" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
-        </entity-condition>
-    </view-entity>
-
-    <view-entity entity-name="NonRefundedGiftCardPayment" package="co.hotwax.netsuite.order">
-        <member-entity entity-alias="OPP" entity-name="org.apache.ofbiz.order.order.OrderPaymentPreference"/>
-        <member-entity entity-alias="OPP2" entity-name="co.hotwax.netsuite.order.NonReturnRefundedGiftCardOpp" sub-select="non-lateral" join-from-alias="OPP" join-optional="true">
-            <key-map field-name="orderId"/>
-            <key-map field-name="manualRefNum" related="parentRefNum"/>
-        </member-entity>
 
         <alias name="paymentMethodTypeId" entity-alias="OPP"/>
-        <alias name="giftCardPaymentTotal" entity-alias="OPP" function="sum" field="maxAmount"/>
+        <!--        <alias name="giftCardPaymentTotal" entity-alias="OPP" function="sum" field="maxAmount"/>-->
+        <alias name="giftCardPaymentTotal" type="number-decimal" function="sum">
+            <case>
+                <when expression="OPP.STATUS_ID = 'PAYMENT_SETTLED'">
+                    <complex-alias expression="OPP.MAX_AMOUNT"/>
+                </when>
+                <when expression="OPP.STATUS_ID = 'PAYMENT_REFUNDED'">
+                    <complex-alias expression="-OPP.MAX_AMOUNT"/>
+                </when>
+            </case>
+        </alias>
         <alias name="orderId" entity-alias="OPP" field="orderId"/>
-        <alias name="orderPaymentPreferenceId" entity-alias="OPP2"/>
 
         <entity-condition>
-            <econdition field-name="statusId" entity-alias="OPP" value="PAYMENT_SETTLED"/>
-            <econdition field-name="orderPaymentPreferenceId" entity-alias="OPP2" value=""/>
+            <!--            <econdition field-name="statusId" entity-alias="OPP" value="PAYMENT_SETTLED"/>-->
+            <econdition field-name="orderPaymentPreferenceId" entity-alias="RIR" value=""/>
             <econdition field-name="paymentMethodTypeId" entity-alias="OPP" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
         </entity-condition>
     </view-entity>
