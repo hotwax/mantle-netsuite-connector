@@ -549,7 +549,6 @@
         </member-entity>
 
         <alias name="paymentMethodTypeId" entity-alias="OPP"/>
-        <!--        <alias name="giftCardPaymentTotal" entity-alias="OPP" function="sum" field="maxAmount"/>-->
         <alias name="giftCardPaymentTotal" type="number-decimal" function="sum">
             <case>
                 <when expression="OPP.STATUS_ID = 'PAYMENT_SETTLED'">
@@ -563,7 +562,6 @@
         <alias name="orderId" entity-alias="OPP" field="orderId"/>
 
         <entity-condition>
-            <!--            <econdition field-name="statusId" entity-alias="OPP" value="PAYMENT_SETTLED"/>-->
             <econdition field-name="orderPaymentPreferenceId" entity-alias="RIR" value=""/>
             <econdition field-name="paymentMethodTypeId" entity-alias="OPP" operator="in" value="EXT_GIFT_CARD,EXT_SHOP_GFT_CARD"/>
         </entity-condition>
