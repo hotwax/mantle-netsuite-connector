@@ -122,4 +122,16 @@
             sendPath="/home/${sftpUsername}/netsuite/transferorderv2/export/oms-fulfillment/TransferOrderShipmentFeed-${dateTime}-${systemMessageId}.json"
             sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
             receivePath="${contentRoot}/netsuite/TransferOrderShipmentFeed/TransferOrderShipmentFeed-${dateTime}.json"/>
+
+    <!-- New System Message Type for Create Transfer Order from NetSuite to OMS -->
+    <!-- TODO add in upgrade data, also the service job to poll TOS from SFTP should be updated to use this new SM Type -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrderFeedNew"
+        description="Import Transfer Orders Feed file from SFTP location"
+        receivePath="/home/${sftpUsername}/netsuite/transferorderv2/import/transfer-order"
+        receiveResponseEnumId="MsgRrMove"
+        receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/import/transfer-order/archive"
+        parentTypeId="LocalFeedFile"
+        consumeServiceName="co.hotwax.system.FeedServices.consume#TransferOrderNetsuiteFeed"
+        sendPath="${contentRoot}/netsuite/TransferOrderFeed">
+    </moqui.service.message.SystemMessageType>
 </entity-facade-xml>
