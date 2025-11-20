@@ -236,7 +236,7 @@
             </if>
             <if condition="!isInvalidPmtFileEmpty">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
-                              in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidPaymentFilePath, sendPath:invalidPmtSendPath]"/>
+                              in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:invalidPmtFilePath, sendPath:invalidPmtSendPath]"/>
             </if>
             <return message="Generated Order Items Feed file  ${generatedCsvFilePath} and missing file response in ${generatedInvalidCsvFilePath} and invalid payment file response in ${generatedInvalidPaymentCsvFilePath}"/>
         </actions>
