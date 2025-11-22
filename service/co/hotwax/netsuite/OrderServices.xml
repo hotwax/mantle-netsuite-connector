@@ -112,72 +112,179 @@
             </script>
 
             <iterate list="ordersItr" entry="order">
-                <entity-find-one entity-name="co.hotwax.netsuite.order.OrderDetails" value-field="orderDetails">
-                    <field-map field-name="orderId" from="order.orderId"/>
-                </entity-find-one>
-                <set field="orderDetails" from="orderDetails.getMap()"/>
+                <set field="orderDetails" from="[:]"/>
+                <script> orderMaster = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader").condition("orderId", order.orderId).oneMaster()</script>
 
-                <entity-find entity-name="org.apache.ofbiz.order.order.OrderAdjustment" list="orderAdjustmentList">
-                    <econdition field-name="orderId" operator="equals" from="order.orderId"/>
+                <!-- Calculate shipping cost from SHIPPING_CHARGES adjustments in orderMaster -->
+                <set field="shippingAdjustments" from="orderMaster.get('adjustments')?.findAll{ it.orderAdjustmentTypeId == 'SHIPPING_CHARGES' }"/>
+                <set field="totalShippingCost" from="shippingAdjustments ? shippingAdjustments.sum{ it.amount ?: BigDecimal.ZERO } : BigDecimal.ZERO"/>
+                <set field="orderDetails.shippingCost" from="totalShippingCost"/>
+                <set field="orderDetails.date" from="ec.l10n.format(orderMaster.orderDate, 'MM/dd/yyyy')"/>
+                <set field="orderDetails.HCShopifySalesOrderId" from="orderMaster.identifications?.find{ it.orderIdentificationTypeId == 'SHOPIFY_ORD_ID' }?.idValue"/>
+
+                <!-- Extract phone numbers from contact mechs -->
+                <set field="billingPhone" from="orderMaster.contactMechs?.find { it.contactMechPurposeTypeId == 'PHONE_BILLING' }?.telecomNumber"/>
+                <set field="shippingPhone" from="orderMaster.contactMechs?.find { it.contactMechPurposeTypeId == 'PHONE_SHIPPING' }?.telecomNumber"/>
+
+                <!-- Format billing phone if valid -->
+                <if condition="billingPhone">
+                    <set field="billingValid" from="PhoneValidationUtil.isValidPhoneNumber(billingPhone.countryCode, billingPhone.areaCode, billingPhone.contactNumber, ec)"/>
+                    <if condition="billingValid">
+                        <set field="formattedBillingPhone" from="PhoneValidationUtil.getFormattedPhoneNumber(billingPhone.countryCode, billingPhone.areaCode, billingPhone.contactNumber)"/>
+                        <set field="orderDetails.billingPhone" from="formattedBillingPhone"/>
+                    </if>
+                </if>
+                <set field="orderDetails.billingPhone" from="orderDetails.billingPhone ?: ''"/>
+
+                <!-- Format shipping phone if valid -->
+                <if condition="shippingPhone">
+                    <set field="shippingValid" from="PhoneValidationUtil.isValidPhoneNumber(shippingPhone.countryCode, shippingPhone.areaCode, shippingPhone.contactNumber, ec)"/>
+                    <if condition="shippingValid">
+                        <set field="formattedShippingPhone" from="PhoneValidationUtil.getFormattedPhoneNumber(shippingPhone.countryCode, shippingPhone.areaCode, shippingPhone.contactNumber)"/>
+                        <set field="orderDetails.phone" from="formattedShippingPhone"/>
+                    </if>
+                </if>
+                <set field="orderDetails.phone" from="orderDetails.phone ?: ''"/>
+
+                <set field="billingContact" from="orderMaster.contactMechs?.find { it.contactMechPurposeTypeId == 'BILLING_LOCATION' }"/>
+                <set field="shippingContact" from="orderMaster.contactMechs?.find { it.contactMechPurposeTypeId == 'SHIPPING_LOCATION' }"/>
+
+                <set field="billingAddress" from="billingContact?.postalAddress"/>
+                <set field="shippingAddress" from="shippingContact?.postalAddress"/>
+
+                <set field="orderDetails" from="orderDetails + [
+                    billingAddress1:'', billingAddress2:'', billingCity:'', billingState:'', billingCountry:'', billingZip:'', billingAddressee:'',
+                    address1:'', address2:'', city:'', state:'', country:'', zip:'', addressee:''
+                ]"/>
+
+                <if condition="billingAddress">
+                    <set field="orderDetails.billingAddress1" from="billingAddress.address1 ?: ''"/>
+                    <set field="orderDetails.billingAddress2" from="billingAddress.address2 ?: ''"/>
+                    <set field="orderDetails.billingCity" from="billingAddress.city ?: ''"/>
+                    <set field="orderDetails.billingState" from="billingAddress.stateProvinceGeoId ?: ''"/>
+                    <set field="orderDetails.billingCountry" from="billingAddress.countryGeoId ?: ''"/>
+                    <set field="orderDetails.billingZip" from="billingAddress.postalCode ?: ''"/>
+                    <set field="orderDetails.billingAddressee" from="billingAddress.toName ?: ''"/>
+                </if>
+
+                <!-- Shipping Address -->
+                <if condition="shippingAddress">
+                    <set field="orderDetails.shippingContactMechId" from="shippingContact.contactMechId"/>
+                    <set field="orderDetails.address1" from="shippingAddress.address1 ?: ''"/>
+                    <set field="orderDetails.address2" from="shippingAddress.address2 ?: ''"/>
+                    <set field="orderDetails.city" from="shippingAddress.city ?: ''"/>
+                    <set field="orderDetails.state" from="shippingAddress.stateProvinceGeoId ?: ''"/>
+                    <set field="orderDetails.country" from="shippingAddress.countryGeoId ?: ''"/>
+                    <set field="orderDetails.zip" from="shippingAddress.postalCode ?: ''"/>
+                    <set field="orderDetails.addressee" from="shippingAddress.toName ?: ''"/>
+                </if>
+
+                <!-- Fallback Logic: If billing is missing but shipping is present → copy shipping to billing -->
+                <if condition="!billingAddress &amp;&amp; shippingAddress">
+                    <set field="orderDetails.billingContactMechId" from="orderDetails.shippingContactMechId"/>
+                    <set field="orderDetails.billingAddress1" from="orderDetails.address1"/>
+                    <set field="orderDetails.billingAddress2" from="orderDetails.address2"/>
+                    <set field="orderDetails.billingCity" from="orderDetails.city"/>
+                    <set field="orderDetails.billingState" from="orderDetails.state"/>
+                    <set field="orderDetails.billingCountry" from="orderDetails.country"/>
+                    <set field="orderDetails.billingZip" from="orderDetails.zip"/>
+                    <set field="orderDetails.billingAddressee" from="orderDetails.addressee"/>
+                </if>
+
+                <!-- Extract billing and shipping emails from contactMechs -->
+                <set field="orderDetails.billingEmail" from="orderMaster.contactMechs.find{ it.contactMechPurposeTypeId == 'BILLING_EMAILn' }?.contactMech?.infoString ?: ''"/>
+
+                <set field="orderDetails.email" from="orderMaster.contactMechs.find{ it.contactMechPurposeTypeId == 'SHIPPING_EMAIL' }?.contactMech?.infoString ?: ''"/>
+
+
+                <entity-find entity-name="org.apache.ofbiz.party.party.PartyIdentification" list="partyIdentificationList">
+                    <econdition field-name="partyIdentificationTypeId" value="NETSUITE_CUSTOMER_ID"/>
+                    <econdition field-name="partyId" from="orderMaster.roles.find{ it.roleTypeId == 'BILL_TO_CUSTOMER' }?.partyId"/>
                 </entity-find>
-                <set field="orderDetails.shippingCost" from="orderAdjustmentList.findAll{ it.orderAdjustmentTypeId == 'SHIPPING_CHARGES' }.sum{ it.amount ?: 0 } ?: BigDecimal.ZERO" type="BigDecimal"/>
-                <set field="orderDetails.date" from="ec.l10n.format(orderDetails.date, 'MM/dd/yyyy')"/>
 
-                <set field="billingValid" from="PhoneValidationUtil.isValidPhoneNumber(orderDetails.billingCountryCode, orderDetails.billingAreaCode, orderDetails.billingContactNumber, ec)"/>
-                <if condition="billingValid">
-                    <set field="formattedBillingPhone" from="PhoneValidationUtil.getFormattedPhoneNumber(orderDetails.billingCountryCode, orderDetails.billingAreaCode, orderDetails.billingContactNumber)"/>
-                    <set field="orderDetails.billingPhone" from="formattedBillingPhone"/>
-                    <else>
-                        <set field="orderDetails.billingPhone" value=""/>
-                    </else>
-                </if>
+                <set field="orderDetails.customer" from="partyIdentificationList?.first?.idValue"/>
 
-                <set field="shippingValid" from="PhoneValidationUtil.isValidPhoneNumber(orderDetails.shippingCountryCode, orderDetails.shippingAreaCode, orderDetails.shippingContactNumber, ec)"/>
-                <if condition="shippingValid">
-                    <set field="formattedShippingPhone" from="PhoneValidationUtil.getFormattedPhoneNumber(orderDetails.shippingCountryCode, orderDetails.shippingAreaCode, orderDetails.shippingContactNumber)"/>
-                    <set field="orderDetails.phone" from="formattedShippingPhone"/>
-                    <else>
-                        <set field="orderDetails.phone" value=""/>
-                    </else>
-                </if>
+                <entity-find-one entity-name="org.apache.ofbiz.product.store.ProductStore" value-field="productStore" cache="true">
+                    <field-map field-name="productStoreId" from="orderMaster.productStoreId"/>
+                </entity-find-one>
 
-                <if condition="(!orderDetails.billingContactMechId &amp;&amp; orderDetails.shippingContactMechId)">
-                    <set field="orderDetails" from="orderDetails + [billingAddress1:orderDetails.address1, billingAddress2:orderDetails.address2, billingCity:orderDetails.city, billingState:orderDetails.state, billingCountry:orderDetails.country, billingZip:orderDetails.zip, billingAddressee:orderDetails.addressee]"/>
-                </if>
+                <entity-find-one entity-name="moqui.basic.Enumeration" cache="true" value-field="orderSalesChannel">
+                    <field-map field-name="enumId" from="orderMaster.salesChannelEnumId"/>
+                </entity-find-one>
 
-                <set field="shippingTaxCode" from="NetSuiteMappingWorker.getShippingTaxCode(ec, order.orderId)"/>
+
+                <set field="orderDetails.shippingTaxCode" from="NetSuiteMappingWorker.getShippingTaxCode(ec, order.orderId)"/>
                 <!-- Scenario of Exchange Order Gift Card Payment -->
                 <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getExchOrderGiftCardPaymentTotal(ec, order.orderId)"/>
                 <!-- Scenario of Original Order Gift Card Payment -->
                 <if condition="!orderDetails.giftCardPaymentTotal">
                     <set field="orderDetails.giftCardPaymentTotal" from="NetSuiteMappingWorker.getGiftCardPaymentTotal(ec, order.orderId)"/>
                 </if>
-                <set field="orderDetails" from="orderDetails + [orderId:orderDetails.orderName, HCOrderId:orderDetails.orderId, customer:orderDetails.netsuiteCustomerId, subsidiary:orderDetails.productStoreExternalId, salesChannel:orderDetails.orderSalesChannelDescription,
-                    HCShopifySalesOrderId:order.shopifyOrderId, externalId: orderDetails.orderExternalId, shippingTaxCode:shippingTaxCode]"/>
+
+                <set field="itemAmountTotal" from="orderMaster.shipGroups*.items.flatten().sum{ (it.price ?: BigDecimal.ZERO) * (it.quantity ?: BigDecimal.ZERO) }" type="BigDecimal"/>
+                <set field="totalAdjustment" from="orderMaster.adjustments?.sum{ it.amount ?: BigDecimal.ZERO }" type="BigDecimal"/>
+                <set field="grandTotal" from="(totalAdjustment ?: BigDecimal.ZERO) + (itemAmountTotal ?: BigDecimal.ZERO)" type="BigDecimal"/>
+
+                <set field="orderDetails" from="orderDetails + [orderId:orderMaster.orderName, HCOrderId:orderMaster.orderId, subsidiary:productStore.externalId,
+                    salesChannel:orderSalesChannel.description, salesChannelEnumId:orderMaster.salesChannelEnumId, externalId: orderMaster.externalId]"/>
 
                 <set field="orderItems" from="[]"/>
-                <entity-find entity-name="co.hotwax.netsuite.order.OrderItemsDetails" list="orderItemsList">
-                    <econdition field-name="orderId" operator="equals" from="order.orderId"/>
-                </entity-find>
-                <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getShippingMethod(ec, order.isMixCartOrder, orderItemsList)"/>
-                <set field="totalAdjustment" from="orderAdjustmentList.sum{ it.amount ?: 0 }" type="BigDecimal"/>
-                <set field="itemAmountTotal" from="orderItemsList.sum{ (it.price ?: 0) * (it.quantity ?: 0) }" type="BigDecimal"/>
-                <set field="grandTotal" from="(totalAdjustment ?: 0) + (itemAmountTotal ?: 0)" type="BigDecimal"/>
-                <iterate list="orderItemsList" entry="orderItem">
-                    <set field="orderItem" from="orderItem.getMap()"/>
+                <set field="shipmentMethodTypeList" from="[]"/>
+                <iterate list="orderMaster.shipGroups" entry="shipGroup">
+                    <script>shipmentMethodTypeList.add(shipGroup.shipmentMethodTypeId)</script>
 
-                    <set field="taxCode" from="NetSuiteMappingWorker.getTaxCode(ec, orderItem)"/>
-                    <set field="closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.itemStatus)"/>
-                    <set field="priceLevel" from="NetSuiteMappingWorker.getIntegrationTypeMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
-                    <set field="department" from="NetSuiteMappingWorker.getFacilityIdentifications(ec, orderItem.orderFacilityId, 'ORDR_ORGN_DPT')" type="String"/>
+                    <iterate list="shipGroup.items" entry="orderItem">
+                        <set field="orderItemMap" from="[:]"/>
 
-                    <set field="orderItem" from="orderItem + [item:orderItem.netsuiteProductId, orderLineId:orderItem.orderItemSeqId, closed:closed, priceLevel:priceLevel, department:department, location:orderItem.orderFacilityExternalId, itemLocation:orderItem.facilityExternalId, taxCode:taxCode]"/>
-                    <script>orderItems.add(orderItem)</script>
+                        <set field="orderItemMap.orderLineId" from="orderItem.orderItemSeqId"/>
+                        <set field="orderItemMap.taxCode" from="NetSuiteMappingWorker.getTaxCode(ec, order.orderId, orderItem.orderItemSeqId)"/>
+                        <set field="orderItemMap.closed" from="'ITEM_CANCELLED'.equalsIgnoreCase(orderItem.statusId)"/>
+                        <set field="orderItemMap.priceLevel" from="NetSuiteMappingWorker.getIntegrationTypeMappingValue(ec, 'NETSUITE_PRICE_LEVEL', 'PRICE_LEVEL')" type="String"/>
+                        <set field="orderItemMap.department" from="NetSuiteMappingWorker.getFacilityIdentifications(ec, orderItem.orderFacilityId, 'ORDR_ORGN_DPT')" type="String"/>
 
-                    <set field="discountItems" from="NetSuiteMappingWorker.getDiscountItem(ec, order.orderId, orderItem)"/>
-                    <if condition="discountItems"><script>orderItems.addAll(discountItems)</script></if>
 
+                        <set field="facilityId" from="orderItem.facilityId"/>
+                        <set field="orderFacilityId" from="orderItem.orderFacilityId"/>
+
+                        <entity-find entity-name="co.hotwax.facility.FacilityGroupAndMember" list="facilityGroupInfoList">
+                            <econdition field-name="facilityId" from="facilityId"/>
+                            <econdition field-name="facilityGroupId" value="NETSUITE_FULFILLMENT"/>
+                            <econdition field-name="parentFacilityTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
+                        </entity-find>
+
+                        <entity-find entity-name="co.hotwax.facility.FacilityGroupAndMember" list="orderFacilityInfoList">
+                            <econdition field-name="facilityId" from="orderFacilityId"/>
+                            <econdition field-name="parentFacilityTypeId" operator="not-equals" value="VIRTUAL_FACILITY"/>
+                        </entity-find>
+
+                        <set field="itemLoc" value=""/>
+                        <if condition="(facilityGroupInfoList &amp;&amp; !facilityGroupInfoList.isEmpty())">
+                            <set field="itemLoc" from="facilityGroupInfoList.first()?.externalId ?: ''"/>
+                        </if>
+                        <set field="orderItemMap.itemLocation" from="itemLoc"/>
+
+                        <set field="orderLoc" value=""/>
+                        <if condition="orderFacilityInfoList &amp;&amp; !orderFacilityInfoList.isEmpty()">
+                            <set field="orderLoc" from="orderFacilityInfoList.first()?.externalId ?: ''"/>
+                        </if>
+                        <set field="orderItemMap.location" from="orderLoc"/>
+
+
+                        <entity-find-one entity-name="org.apache.ofbiz.product.product.GoodIdentification" value-field="netsuiteProductId">
+                            <field-map field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                            <field-map field-name="productId" from="orderItem.productId"/>
+                        </entity-find-one>
+                        <set field="orderItemMap.item" from="netsuiteProductId?.idValue"/>
+                        <set field="orderItemMap" from="orderItemMap + [price:orderItem.price, quantity:orderItem.quantity]"/>
+
+                        <script>orderItems.add(orderItemMap)</script>
+
+                        <set field="discountItems" from="NetSuiteMappingWorker.getDiscountItem(ec, order.orderId, orderItem)"/>
+                        <if condition="discountItems"><script>orderItems.addAll(discountItems)</script></if>
+                    </iterate>
                 </iterate>
+                <set field="orderDetails.shippingMethod" from="NetSuiteMappingWorker.getShippingMethod(ec, order.isMixCartOrder, shipmentMethodTypeList)"/>
+
                 <set field="orderDetails" from="orderDetails + [HCOrderTotal:grandTotal, orderItems:orderItems]"/>
                 <set field="requiredFields" from="['date', 'country', 'customer']"/>
                 <if condition="scriptPath">

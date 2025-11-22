@@ -112,22 +112,21 @@ class NetSuiteMappingWorker {
      * Gets the shipping method for an order.
      * @param ec ExecutionContext
      * @param isMixCartOrder 'Y' if it's a mixed cart order, 'N' otherwise
-     * @param orderItems List of order items
+     * @param shipmentMethodTypeList
      * @return The mapped shipping method or null if not found
      */
-    static String getShippingMethod(ExecutionContext ec, String isMixCartOrder, List<Map> orderItems) {
+    static String getShippingMethod(ExecutionContext ec, String isMixCartOrder, List<String> shipmentMethodTypeList) {
 
         if ("Y".equals(isMixCartOrder)) {
             // For mixed cart orders, find all unique shipping methods excluding POS_COMPLETED and STOREPICKUP
-            def shippingMethods = orderItems.collect { it.shipmentMethodTypeId }
-                    .findAll { it && it != 'POS_COMPLETED' && it != 'STOREPICKUP' }
+            def shippingMethods = shipmentMethodTypeList.findAll {it && it != 'POS_COMPLETED' && it != 'STOREPICKUP'}.unique()
 
             // Get the first shipping method if available
             def selectedMethod = shippingMethods ? shippingMethods.first() : null
             return selectedMethod ? getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', (String) selectedMethod) : null
         } else {
             // For non-mixed cart orders, use the first valid shipping method
-            return getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', orderItems[0].shipmentMethodTypeId)
+            return getIntegrationTypeMappingValue(ec, 'NETSUITE_SHP_MTHD', shipmentMethodTypeList[0].shipmentMethodTypeId)
         }
     }
 
@@ -156,13 +155,18 @@ class NetSuiteMappingWorker {
      * @param item The item to get the tax code for
      * @return The tax code, defaults to "-Not Taxable-"
      */
-    static String getTaxCode(ExecutionContext ec, Map item) {
+    static String getTaxCode(ExecutionContext ec, String orderId, String orderItemSeqId) {
         // Default to not taxable
         String taxCode = "-Not Taxable-"
 
-        // If item has tax adjustments, use the default tax code
-        if (item.taxAdjustments && !item.taxAdjustments.isEmpty()) {
-            taxCode = getIntegrationTypeMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT') ?: taxCode
+        def orderAdjustments = ec.entity.find("org.apache.ofbiz.order.order.OrderAdjustment")
+            .condition("orderId", orderId)
+            .condition("orderItemSeqId", orderItemSeqId)
+            .condition("orderAdjustmentTypeId", "SALES_TAX")
+            .count()
+
+        if (orderAdjustments > 0) {
+            taxCode = NetSuiteMappingWorker.getIntegrationTypeMappingValue(ec, 'NETSUITE_TAX_CODE', 'DEFAULT') ?: "-Not Taxable-"
         }
         return taxCode
     }

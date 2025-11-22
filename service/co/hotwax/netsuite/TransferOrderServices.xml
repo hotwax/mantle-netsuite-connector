@@ -484,6 +484,7 @@
 
                 orderHeaderFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
                 orderHeaderFind.condition("orderTypeId", "TRANSFER_ORDER")
+                orderHeaderFind.condition("externalId", EntityCondition.IS_NOT_NULL, null)
                 if(orderId) orderHeaderFind.condition("orderId", orderId)
                 if(sinceEntryDate) orderHeaderFind.condition("entryDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceEntryDate)
                 .selectField("orderId,externalId")
