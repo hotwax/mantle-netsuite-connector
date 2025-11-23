@@ -51,6 +51,13 @@
                     Example: 60 will include only orders where entryDate is at least 60 minutes old.
                 </description>
             </parameter>
+            <parameter name="runFeedWithHistory">
+                <description>
+                    Parameter to run the feed with history.
+                    Example: Y to run the feed with history.
+                    N to not run the feed with history.
+                </description>
+            </parameter>
         </in-parameters>
         <actions>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
@@ -64,7 +71,11 @@
                 import co.hotwax.ns.util.CsvWriteHelper
                 import co.hotwax.ns.util.PhoneValidationUtil
 
-                findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
+                if('Y' == runFeedWithHistory) {
+                    findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.EligibleOrdersWithHistory")
+                } else {
+                    findNetSuiteOrders = ec.entity.find("co.hotwax.netsuite.order.EligibleOrders")
+                }
                 if(orderId) findNetSuiteOrders.condition("orderId", orderId)
                 if(fromOrderDate) findNetSuiteOrders.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
                 if(thruOrderDate) findNetSuiteOrders.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
@@ -202,6 +213,9 @@
                     }
                     orderDetails = null
                 </script>
+                <if condition="'Y' == runFeedWithHistory">
+                    <service-call name="create#co.hotwax.netsuite.NetsuiteOrderSyncHistory" in-map="[orderId:order.orderId, syncDate:nowTimestamp]"/>
+                </if>
             </iterate>
             <set field="generatedCsvFilePath" from="validFileCsvHelper.getGeneratedFilePaths()"/>
             <set field="generatedInvalidCsvFilePath" from="invalidFileCsvHelper.getGeneratedFilePaths()"/>
