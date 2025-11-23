@@ -275,8 +275,9 @@
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
         <parameters parameterName="isMixCartOrder" parameterValue=""/>
         <parameters parameterName="scriptPath" parameterValue=""/>
-        <parameter parameterName="ordersCountPerFeed" parameterValue="500"/>
+        <parameters parameterName="ordersCountPerFeed" parameterValue="500"/>
         <parameters parameterName="minAgeInMinutes" parameterValue=""/>
+        <parameters parameterName="runFeedWithHistory" parameterValue="N"/>
     </moqui.service.job.ServiceJob>
 
     <!-- ServiceJob data for create POS order from HC to netsuite -->
@@ -293,8 +294,9 @@
         <parameters parameterName="excludeSalesChannel" parameterValue="" />
         <parameters parameterName="isMixCartOrder" parameterValue=""/>
         <parameters parameterName="scriptPath" parameterValue=""/>
-        <parameter parameterName="ordersCountPerFeed" parameterValue="500"/>
+        <parameters parameterName="ordersCountPerFeed" parameterValue="500"/>
         <parameters parameterName="minAgeInMinutes" parameterValue=""/>
+        <parameters parameterName="runFeedWithHistory" parameterValue="N"/>
     </moqui.service.job.ServiceJob>
 
     <!-- ServiceJob data for create customer deposit from HC to netsuite -->
