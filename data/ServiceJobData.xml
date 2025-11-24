@@ -317,6 +317,7 @@
         serviceName="co.hotwax.netsuite.CustomerServices.generate#CustomerSyncFeed" cronExpression="0 0/15 * * * ?" paused="Y">
         <parameters parameterName="systemMessageTypeId" parameterValue=""/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters name="customersCountPerFeed" parameterValue="500"/>
         <parameters parameterName="partyId" parameterValue=""/>
     </moqui.service.job.ServiceJob>
 

@@ -11,4 +11,8 @@
         <parameters parameterName="runFeedWithHistory" parameterValue="N"/>
         <parameters parameterName="ordersCountPerFeed" parameterValue="500"/>
     </moqui.service.job.ServiceJob>
+
+    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed">
+        <parameters name="customersCountPerFeed" parameterValue="500"/>
+    </moqui.service.job.ServiceJob>
 </entity-facade-xml>
