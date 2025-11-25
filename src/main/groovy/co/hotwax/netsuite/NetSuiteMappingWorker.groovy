@@ -238,4 +238,20 @@ class NetSuiteMappingWorker {
         return oid?.first?.idValue
     }
 
+    /**
+     * Gets total authorized/settled payment amount for an order (valid OPP sum)
+     * @param ec ExecutionContext
+     * @param orderId The order ID
+     * @return Total valid payment amount
+     */
+    static BigDecimal getValidPaymentTotal(ExecutionContext ec, String orderId) {
+        def oppList = ec.entity.find("org.apache.ofbiz.order.order.OrderPaymentPreference")
+                .condition("orderId", orderId)
+                .condition("statusId", EntityCondition.IN, ["PAYMENT_AUTHORIZED", "PAYMENT_SETTLED"])
+                .list()
+
+        BigDecimal oppSum = oppList.collect { it.maxAmount ?: 0.0 }.sum() as BigDecimal
+        return oppSum
+    }
+
 }
