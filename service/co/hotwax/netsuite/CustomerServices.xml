@@ -164,6 +164,7 @@
             <parameter name="systemMessageRemoteId" required="true">
                 <description>The System Message Remote Id for generating the Customer Feed for Netsuite.</description>
             </parameter>
+            <parameter name="customersCountPerFeed" type="Integer" default-value="500"/>
         </in-parameters>
         <actions>
             <set field="nowDate" from="ec.user.nowTimestamp"/>
@@ -203,6 +204,8 @@
                 def netsuiteCustomer_find = ec.entity.find("co.netsuite.customer.CustomerView")
                 if (partyId) netsuiteCustomer_find.condition("externalId", partyId)
                 netsuiteCustomer_find.useClone(true)
+                netsuiteCustomer_find.limit(customersCountPerFeed)
+
                 try (netsuiteCustomer_itr = netsuiteCustomer_find.iterator()) {
             </script>
         <if condition="!netsuiteCustomer_itr.hasNext()">
