@@ -214,7 +214,7 @@
                     orderDetails = null
                 </script>
                 <if condition="'Y' == runFeedWithHistory">
-                    <service-call name="create#co.hotwax.netsuite.NetsuiteOrderSyncHistory" in-map="[orderId:order.orderId, syncDate:nowTimestamp]"/>
+                    <service-call name="create#co.hotwax.integration.ExternalOrderSyncHistory" in-map="[orderId:order.orderId, syncDate:nowTimestamp]"/>
                 </if>
             </iterate>
             <set field="generatedCsvFilePath" from="validFileCsvHelper.getGeneratedFilePaths()"/>
