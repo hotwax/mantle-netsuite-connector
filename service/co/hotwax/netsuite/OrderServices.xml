@@ -228,7 +228,7 @@
                     }
                     orderDetails = null
                 ]]></script>
-                <if condition="'Y' == runFeedWithHistory">
+                <if condition="'Y' == runFeedWithHistory &amp;&amp; isInvalidPmtFileEmpty">
                     <service-call name="create#co.hotwax.integration.ExternalOrderSyncHistory" in-map="[orderId:order.orderId, syncDate:nowTimestamp]"/>
                 </if>
             </iterate>
