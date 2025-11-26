@@ -2,4 +2,7 @@
 <entity-facade-xml type="ext">
     <Enumeration enumCode="NETSUITE_TAX_CODE" enumId="NETSUITE_TAX_CODE" enumName="Netsuite Tax codes" enumTypeId="NETSUITE" />
     <IntegrationTypeMapping integrationTypeId="NETSUITE_TAX_CODE" mappingKey="DEFAULT" mappingValue="" />
+
+    <!-- TODO add in upgrade data -->
+    <co.hotwax.datamanager.DataManagerConfig configId="NS_TRANSFER_ORDER_IMPORT" importServiceName="co.hotwax.netsuite.TransferOrderServices.process#NetSuiteTransferOrder" description="Create Transfer Order from NetSuite JSON Feed files in OMS"/>
 </entity-facade-xml>
