@@ -72,4 +72,19 @@
             <econdition entity-alias="SH" field-name="shipmentTypeId" value="OUT_TRANSFER"/>
         </entity-condition>
     </view-entity>
+    <view-entity entity-name="TransferOrderWithIdentification" package="co.hotwax.netsuite">
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+            </entity-condition>
+        </member-entity>
+        <alias-all entity-alias="OID"/>
+        <alias field="orderId" name="hotwaxOrderId" entity-alias="OH"/>
+        <alias name="entryDate" entity-alias="OH"/>
+        <entity-condition>
+            <econdition field-name="orderTypeId" value="TRANSFER_ORDER"/>
+        </entity-condition>
+    </view-entity>
 </entities>
