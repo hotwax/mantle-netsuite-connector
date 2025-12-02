@@ -84,7 +84,7 @@
         <alias field="orderId" name="hotwaxOrderId" entity-alias="OH"/>
         <alias name="entryDate" entity-alias="OH"/>
         <entity-condition>
-            <econdition field-name="orderTypeId" value="TRANSFER_ORDER"/>
+            <econdition field-name="orderTypeId" entity-alias="OH" value="TRANSFER_ORDER"/>
         </entity-condition>
     </view-entity>
 </entities>
