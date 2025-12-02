@@ -482,11 +482,9 @@
                 import co.hotwax.ns.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
 
-                orderHeaderFind = ec.entity.find("org.apache.ofbiz.order.order.OrderHeader")
-                orderHeaderFind.condition("orderTypeId", "TRANSFER_ORDER")
-                if(orderId) orderHeaderFind.condition("orderId", orderId)
+                orderHeaderFind = ec.entity.find("co.hotwax.netsuite.TransferOrderWithIdentification")
+                if(orderId) orderHeaderFind.condition("hotwaxOrderId", orderId)
                 if(sinceEntryDate) orderHeaderFind.condition("entryDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceEntryDate)
-                .selectField("orderId,externalId")
                 .orderBy("entryDate")
 
                 //If no eligible orders, then don't generate the file
@@ -499,7 +497,7 @@
                 CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, null, recordLimitPerFeed)) {
             </script>
             <iterate list="orderHeaderItr" entry="order">
-                <script>csvWriteHelper.writeToFile([internalId:order.externalId, hcOrderId:order.orderId])</script>
+                <script>csvWriteHelper.writeToFile([internalId:order.idValue, hcOrderId:order.hotwaxOrderId])</script>
             </iterate>
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
             <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
