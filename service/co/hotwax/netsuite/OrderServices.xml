@@ -210,14 +210,15 @@
                         def missingFields = requiredFields.findAll { !record[it] || record[it].toString().trim() == '' }
                         BigDecimal oppTotal = record.orderPaymentTotal ?: 0.0
                         BigDecimal orderTotal = record.HCOrderTotal ?: 0.0
+                        String salesChannel = record.salesChannel
 
                         // payment mismatch first
-                        if (oppTotal < orderTotal) {
+                        if (oppTotal < orderTotal && salesChannel == 'POS Channel') {
                             record.put("InvalidPaymentReason","Order payment (${oppTotal}) is less than order total (${orderTotal})")
                             invalidPaymentCsvHelper.writeToFile(record)
                             isInvalidPmtFileEmpty = false
                         }
-                        if (missingFields) {
+                        else if (missingFields) {
                             record.put("Missing Required Fields", missingFields.join(', '))
                             invalidFileCsvHelper.writeToFile(record)
                             isReqFieldMissFileEmpty = false
