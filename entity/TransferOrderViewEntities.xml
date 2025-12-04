@@ -35,6 +35,7 @@
         <alias entity-alias="SI" field="externalId" name="shipmentItemExternalId"/>
         <alias entity-alias="SI" name="productId"/>
         <alias entity-alias="OI" field="statusId" name="itemStatusId"/>
+        <alias entity-alias="OI" field="externalId" name="itemExternalId"/>
         <entity-condition>
             <econdition entity-alias="SRH" field-name="historyId" value=""/>
             <econdition entity-alias="SH" field-name="shipmentTypeId" value="OUT_TRANSFER"/>
