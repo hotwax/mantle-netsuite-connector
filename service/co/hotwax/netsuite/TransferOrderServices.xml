@@ -171,7 +171,7 @@
                 <!-- Get Shipment Receipt Item level details for the Shipment -->
                 <entity-find entity-name="co.hotwax.netsuite.TransferOrderShipmentReceiptHistory" list="shipmentReceiptItems">
                     <econdition field-name="shipmentId" from="toShipmentReceipt.shipmentId"/>
-                    <select-field field-name="shipmentItemExternalId,productId,shipmentItemSeqId,totalQuantityAccepted"/>
+                    <select-field field-name="shipmentItemExternalId,productId,shipmentItemSeqId,totalQuantityAccepted,orderId,orderItemSeqId,itemStatusId"/>
                 </entity-find>
 
                 <!-- Preparing Shipment Receipt Item Details -->
@@ -183,9 +183,30 @@
                         <date-filter/>
                     </entity-find>
 
+                    <!-- Get total Shipped quantity for the item -->
+                    <entity-find entity-name="co.hotwax.shipment.ShipmentItemView" list="shipmentItemList">
+                        <econdition field-name="orderId" from="shipmentReceiptItem.orderId"/>
+                        <econdition field-name="orderItemSeqId" from="shipmentReceiptItem.orderItemSeqId"/>
+                        <select-field field-name="orderId,orderItemSeqId,quantity"/>
+                    </entity-find>
+
+                    <!-- Get total Received Quantity for the item -->
+                    <entity-find entity-name="co.hotwax.shipment.ShipmentReceiptSummary" list="shipmentReceiptList">
+                        <econdition field-name="orderId" from="shipmentReceiptItem.orderId"/>
+                        <econdition field-name="orderItemSeqId" from="shipmentReceiptItem.orderItemSeqId"/>
+                        <select-field field-name="orderId,orderItemSeqId,quantityAccepted"/>
+                    </entity-find>
+
+                    <!-- Put the shippedQuantity and receivedQuantity in transferOrderItem -->
+                    <set field="itemShippedQty" from="shipmentItemList*.quantity.sum()"/>
+                    <set field="itemReceivedQty" from="shipmentReceiptList?.first?.quantityAccepted"/>
+                    <set field="itemReceivedDiscrepancyQty" from="'ITEM_COMPLETED'.equals(shipmentReceiptItem.itemStatusId) ? itemReceivedQty.subtract(itemShippedQty) : 0"/>
+
                     <!-- Set Shipment Receipt Item level details -->
                     <set field="shipmentReceiptItemMap" from="[lineId:shipmentReceiptItem.shipmentItemExternalId,
-                        quantity:shipmentReceiptItem.totalQuantityAccepted, productId:goodIdentificationList?.first?.idValue]"/>
+                        quantity:shipmentReceiptItem.totalQuantityAccepted, productId:goodIdentificationList?.first?.idValue,
+                        itemReceivedQty:itemReceivedQty, itemReceivedDiscrepancyQty:itemReceivedDiscrepancyQty,
+                        itemStatusId:shipmentReceiptItem.itemStatusId]"/>
                     <script>items.add(shipmentReceiptItemMap)</script>
 
                     <!-- NOTE The quantity sent for an item received will be the totalQuantityAccepted for the item per Shipment.
