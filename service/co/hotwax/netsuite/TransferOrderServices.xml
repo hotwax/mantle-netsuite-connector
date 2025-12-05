@@ -516,4 +516,34 @@
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
+
+    <service verb="process" noun="NetSuiteTransferOrder">
+        <description>Service to map the Transfer Order JSON into the OMS Transfer Order JSON and create the order in OMS.</description>
+        <in-parameters>
+            <parameter name="externalId"/>
+            <parameter name="orderName"/>
+            <parameter name="productStoreId"/>
+            <parameter name="statusId"/>
+            <parameter name="originFacilityExternalId"/>
+            <parameter name="orderTypeId"/>
+            <parameter name="orderDate"/>
+            <parameter name="statusFlowId"/>
+            <parameter name="grandTotal" type="BigDecimal"/>
+            <parameter name="shipGroups" type="List"/>
+            <parameter name="identifications" type="List"/>
+        </in-parameters>
+        <actions>
+            <!-- Initialize payload -->
+            <set field="payload" from="[externalId:externalId, orderName:orderName, productStoreId:productStoreId,
+                originFacilityExternalId:originFacilityExternalId, statusId:statusId, orderTypeId:orderTypeId,
+                orderDate:orderDate, statusFlowId:statusFlowId, grandTotal:grandTotal, shipGroups:shipGroups,
+                identifications: identifications]"/>
+
+            <!-- Transform the NetSuite Transfer Order data into the Transfer Order data required by OMS -->
+            <service-call name="co.hotwax.netsuite.TransferOrderServices.map#TransferOrder" in-map="[payload:payload]" out-map="mapToOut"/>
+
+            <!--Calling the OOTB transfer order service -->
+            <service-call name="co.hotwax.orderledger.order.TransferOrderServices.create#TransferOrder" in-map="[payload:mapToOut.payload]"/>
+        </actions>
+    </service>
 </services>

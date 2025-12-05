@@ -1,6 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
 
+    <service verb="consume" noun="TransferOrderNetsuiteFeed" transaction-timeout="7200">
+        <description>Service to consume the Transfer Order NetSuite Feed to process the feed files using MDM.</description>
+        <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>
+        <actions>
+            <!-- Fetch the SystemMessage record and the JSON file path-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageAndType" value-field="systemMessage"/>
+            <set field="filePathRef" from="systemMessage.messageText"/>
+
+            <log message="======= fileName: ${systemMessage.remoteMessageId} =========="/>
+            <log message="======= filePathRef: ${filePathRef} =========="/>
+            <set field="jsonText" from="ec.resource.getLocationReference(filePathRef).getText()"/>
+
+            <!-- Convert response to JSON string -->
+            <script>
+                import org.apache.commons.fileupload.disk.DiskFileItem
+                import org.apache.commons.io.IOUtils
+
+                // Create FileItem for upload
+                byte[] jsonBytes = jsonText.getBytes("UTF-8")
+
+                // Create in-memory FileItem (no physical file)
+                DiskFileItem fileItem = new DiskFileItem("contentFile",
+                                "application/json",
+                                false,
+                                "${systemMessage.remoteMessageId}",
+                                jsonBytes.length,
+                                null)
+
+                try (OutputStream os = fileItem.getOutputStream()) {
+                    IOUtils.copy(new ByteArrayInputStream(jsonBytes), os)
+                }
+            </script>
+
+            <!-- Upload immediately to DataManager -->
+            <service-call name="co.hotwax.util.UtilityServices.upload#DataManagerFile"
+                    in-map="[configId:'NS_TRANSFER_ORDER_IMPORT', contentFile:fileItem]"/>
+
+        </actions>
+    </service>
+
     <service verb="consume" noun="NetsuiteFeed" transaction-timeout="7200">
         <description>Service to consume the NetSuite Feed.</description>
         <implements service="org.moqui.impl.SystemMessageServices.consume#SystemMessage"/>

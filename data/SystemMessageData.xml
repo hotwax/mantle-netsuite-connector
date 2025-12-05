@@ -49,10 +49,11 @@
     <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.script.cronexpression" systemPropertyValue="698&amp;deploy=1"/>
     <org.apache.ofbiz.common.property.SystemProperty systemResourceId="Restlet_Config" systemPropertyId="netsuite.restlet.sftp.sftpconfiguration" systemPropertyValue="800&amp;deploy=1"/>
 
+    <!-- TODO add in upgrade data -->
     <moqui.service.message.SystemMessageType systemMessageTypeId="ImportTransferOrderFeed"
         description="Import Transfer Orders Feed file from SFTP location"
         parentTypeId="LocalFeedFile"
-        consumeServiceName="co.hotwax.system.FeedServices.consume#NetsuiteFeed"
+        consumeServiceName="co.hotwax.system.FeedServices.consume#TransferOrderNetsuiteFeed"
         receivePath="/home/${sftpUsername}/netsuite/transferorderv2/import/transfer-order"
         receiveResponseEnumId="MsgRrMove"
         receiveMovePath="/home/${sftpUsername}/netsuite/transferorderv2/import/transfer-order/archive"
