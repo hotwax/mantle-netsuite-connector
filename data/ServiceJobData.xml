@@ -39,6 +39,7 @@
     <moqui.basic.Enumeration enumId="GEN_BRKR_ORD_FD_NS" enumCode="GEN_BRKR_ORD_FD_NS" description="Generate Brokerd Order Items feed for NetSuite" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_FLFLD_ORD_FD_NS" enumCode="GEN_FLFLD_ORD_FD_NS" description="Generate Fulfilled Order Items feed for NetSuite" enumTypeId="FULFILLMENT_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_TO_ACK_FD" enumCode="GEN_TO_ACK_FD" description="Generate Transfer Order Acknowledgement Feed" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_TO_MISSHIP_RCPT_ADJ_FD" enumCode="GEN_TO_MISSHIP_RCPT_ADJ_FD" description="Generate Transfer Order MisShipped Receipt Inv Adj Feed" enumTypeId="INVENTORY_SYS_JOB"/>
 
     <!-- NetSuite Transfer Order v2 Job Enum Data -->
     <moqui.basic.Enumeration enumId="NS_EXP_TO_S2S" enumCode="NS_EXP_TO_S2S" description="NetSuite Export Store to Store Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
@@ -159,6 +160,9 @@
     <Product productId="GEN_TO_ACK_FD" productTypeId="SERVICE" internalName="GEN_TO_ACK_FD"
              productName="Generate Transfer Order Acknowledgement Feed" description="Generate Transfer Order Acknowledgement Feed"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_TO_MISSHIP_RCPT_ADJ_FD" productTypeId="SERVICE" internalName="GEN_TO_MISSHIP_RCPT_ADJ_FD"
+             productName="Generate Transfer Order MisShipped Receipt Inv Adj Feed" description="Generate Transfer Order MisShipped Receipt Inv Adj Feed"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
 
     <!-- NetSuite Transfer Order v2 Job Product Data -->
     <Product productId="NS_EXP_TO_S2S" productTypeId="SERVICE" internalName="NS_EXP_TO_S2S"
@@ -215,6 +219,7 @@
     <ProductCategoryMember productId="GEN_FLFLD_ORD_FD_NS" productCategoryId="FULFILLMENT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_ACK_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPDATE_TO" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_MISSHIP_RCPT_ADJ_FD" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
     <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -251,6 +256,7 @@
     <ProductCategoryMember productId="GEN_BRKR_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_FLFLD_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_ACK_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_MISSHIP_RCPT_ADJ_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
     <!-- NetSuite Transfer Order v2 Job Product Category Members -->
     <ProductCategoryMember productId="NS_EXP_TO_S2S" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -521,4 +527,18 @@
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPDATE_TO"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_UpdateTransferOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
+    <moqui.service.job.ServiceJob jobName="Generate_TransferOrder_MisShipped_Rcpt_Feed" instanceOfProductId="GEN_TO_MISSHIP_RCPT_ADJ_FD" jobTypeEnumId="GEN_TO_MISSHIP_RCPT_ADJ_FD"
+            description="Service to generate Inventory Adjustment Feed file for the Mis-shipped items received as part of the Transfer Orders for NetSuite"
+            serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderMisShippedReceiptAdjFeed"
+            cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="filePathPattern"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="adjustmentAccount"/>
+        <parameters parameterName="sinceDatetimeReceived"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="recordLimitPerFeed"/>
+        <parameters parameterName="jobName"/>
+        <parameters parameterName="skipLastRunTimeUpdate"/>
+        <parameters parameterName="lastRunTime"/>
+    </moqui.service.job.ServiceJob>
 </entity-facade-xml>
