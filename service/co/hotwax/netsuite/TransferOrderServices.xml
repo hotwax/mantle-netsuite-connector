@@ -591,16 +591,24 @@
                     <date-filter/>
                 </entity-find>
 
+                <!-- Get the Receiving Facility External Id and Name,
+                     NOTE: not adding this in view for potential issue of duplicate records since no order item available
+                        and so join would have to be added on OISG from OH. -->
+                <entity-find entity-name="co.hotwax.oms.order.TransferOrderAndItem" list="transferOrderList" limit="1">
+                    <econdition field-name="orderId" from="toReceipt.orderId"/>
+                    <select-field field-name="orderId,orderFacilityExternalId,orderFacilityName"/>
+                </entity-find>
+
                 <set field="invAdjMap" from="['Reference No':toReceipt.orderName + '-' + toReceipt.receiptId,
                         'Adjustment Account':adjustmentAccount,
                         Item:goodIdentificationList?.first?.idValue,
                         'Adjust Qty By':toReceipt.quantityAccepted,
                         'Date': ec.l10n.format(nowTimestamp, 'MM/dd/yyyy'),
-                        Memo:'Transfer Order Inventory Adj for MisShipped Item Receipt',
-                        'HC Inventory Adj Id':toReceipt.orderName,
-                        Location:toReceipt.facilityExternalId,
-                        'Adjustment Location':toReceipt.facilityExternalId,
-                        'Facility Name':toReceipt.facilityName]"/>
+                        Memo:'Inventory Adj for MisShipped Item Receipt for Transfer Order ' +  toReceipt.orderName,
+                        'HC Inventory Adj Id':toReceipt.orderId,
+                        Location:transferOrderList?.first?.orderFacilityExternalId,
+                        'Adjustment Location':transferOrderList?.first?.orderFacilityExternalId,
+                        'Facility Name':transferOrderList?.first?.orderFacilityName,]"/>
                 <script>csvWriteHelper.writeToFile(invAdjMap)</script>
             </iterate>
             <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>

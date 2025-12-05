@@ -97,23 +97,12 @@
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader" join-from-alias="SR">
             <key-map field-name="orderId"/>
         </member-entity>
-        <member-entity entity-alias="OISG" entity-name="org.apache.ofbiz.order.order.OrderItemShipGroup" join-from-alias="OH">
-            <key-map field-name="orderId"/>
-        </member-entity>
-        <member-entity entity-alias="F" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG">
-            <key-map field-name="orderFacilityId" related="facilityId"/>
-        </member-entity>
         <alias-all entity-alias="SR"/>
         <alias entity-alias="OH" name="orderName"/>
         <alias entity-alias="OH" field="externalId" name="orderExternalId"/>
         <alias entity-alias="OH" name="statusFlowId"/>
         <alias entity-alias="OH" name="orderDate"/>
         <alias entity-alias="OH" name="entryDate"/>
-        <alias entity-alias="OISG" name="shipGroupSeqId" />
-        <alias entity-alias="OISG" name="facilityId"/>
-        <alias entity-alias="OISG" name="orderFacilityId"/>
-        <alias entity-alias="F" name="facilityName"/>
-        <alias entity-alias="F" field="externalId" name="facilityExternalId" />
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" value="TRANSFER_ORDER"/>
             <econdition entity-alias="SR" field-name="shipmentId" operator="is-null"/>
