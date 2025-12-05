@@ -603,12 +603,11 @@
                         'Facility Name':toReceipt.facilityName]"/>
                 <script>csvWriteHelper.writeToFile(invAdjMap)</script>
             </iterate>
-            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
             <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
             <script>}</script>
 
             <iterate list="generatedFilePaths" entry="generatedFilePath">
-                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
             </iterate>
 
             <if condition="!skipLastRunTimeUpdate">
