@@ -60,7 +60,7 @@
         <alias name="isMixCartOrder" type="text-indicator">
             <case>
                 <when expression="(SELECT COUNT(DISTINCT OISG.shipment_Method_Type_Id)
-                           FROM Order_Item_Ship_Group OISG
+                           FROM Order_Item_Ship_Group OISG JOIN ORDER_ITEM OI ON OISG.ORDER_ID = OI.ORDER_ID AND OISG.SHIP_GROUP_SEQ_ID = OI.SHIP_GROUP_SEQ_ID
                            WHERE OISG.ORDER_ID = OH.ORDER_ID) = 1">
                     <complex-alias expression="'N'" />
                 </when>
@@ -125,7 +125,7 @@
         <alias name="isMixCartOrder" type="text-indicator">
             <case>
                 <when expression="(SELECT COUNT(DISTINCT OISG.shipment_Method_Type_Id)
-                           FROM Order_Item_Ship_Group OISG
+                           FROM Order_Item_Ship_Group OISG JOIN ORDER_ITEM OI ON OISG.ORDER_ID = OI.ORDER_ID AND OISG.SHIP_GROUP_SEQ_ID = OI.SHIP_GROUP_SEQ_ID
                            WHERE OISG.ORDER_ID = OH.ORDER_ID) = 1">
                     <complex-alias expression="'N'" />
                 </when>
