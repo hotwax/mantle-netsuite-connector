@@ -544,4 +544,115 @@
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
+
+    <service verb="generate" noun="TransferOrderMisShippedReceiptAdjFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>Service to generate the Inventory Adjustment file for NetSuite for the Transfer Order receipts for products which were mis-shipped as part of the order.</description>
+        <in-parameters>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="filePathPattern" required="true" default-value="netsuite/inventoryadjustment"/>
+            <parameter name="adjustmentAccount" required="true">
+                <description>
+                    The specific General Ledger (GL) account where the financial impact of inventory changes is recorded when you use an Inventory Adjustment transaction in NetSuite.
+                </description>
+            </parameter>
+            <parameter name="sinceDatetimeReceived">
+                <description>Parameter to fetch Transfer Order Receipts as inventory adjustment after a specific datetimeReceived.</description>
+            </parameter>
+            <parameter name="orderId">
+                <description>
+                    The Transfer Order ID in OMS to sync the mis-shipped receipts as inventory adjustment, if required.
+                </description>
+            </parameter>
+            <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
+            <parameter name="jobName">
+                <description>The name of the scheduled job to fetch the last run time for preparing the Feed.</description>
+            </parameter>
+            <parameter name="skipLastRunTimeUpdate" type="Boolean" default="false">
+                <description>skip the LastRunTime update,mainly used while debugging</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <log message="Generating Transfer Order Inventory Adjustment Feed file for mis-shipped receipts at time ${nowTimestamp}"/>
+
+            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/TransferOrderMisShippedReceiptInvAdjFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')}.csv"/>
+            <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
+            <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
+
+            <!-- We can use last run time to fetch the records updated after the last service job run -->
+            <!-- Check the parameter used for storing the last feed run time -->
+            <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="lastRunParam">
+                <field-map field-name="jobName"/>
+                <field-map field-name="parameterName" value="lastRunTime"/>
+            </entity-find-one>
+
+            <!-- Set sinceDatetimeReceived using the lastRunTime, if it is set, fetch records from
+                   that time, else it will be null -->
+            <if condition="!sinceDatetimeReceived">
+                <set field="sinceDatetimeReceived" from="lastRunParam?.parameterValue"/>
+            </if>
+
+            <script>
+                import co.hotwax.ns.util.CsvWriteHelper
+                import org.moqui.entity.EntityCondition
+
+                toMisShippedReceiptFind = ec.entity.find("co.hotwax.netsuite.TransferOrderMisShippedReceipt")
+                if (orderId) toMisShippedReceiptFind.condition("orderId", orderId)
+                if( sinceDatetimeReceived) toMisShippedReceiptFind.condition("datetimeReceived", EntityCondition.ComparisonOperator.GREATER_THAN, sinceDatetimeReceived)
+                .orderBy("datetimeReceived")
+
+                //If no eligible receipts, then don't generate the file
+                long toMisShippedReceiptCount = toMisShippedReceiptFind.count()
+                if (toMisShippedReceiptCount == 0) {
+                    ec.message.addMessage("No eligible Transfer Order Mis-Shipped Receipts for Feed at ${nowTimestamp}, not generating the HotWax Feed file.")
+                    return
+                }
+                try (toMisShippedReceiptItr = toMisShippedReceiptFind.iterator();
+                CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, null, recordLimitPerFeed)) {
+            </script>
+            <iterate list="toMisShippedReceiptItr" entry="toReceipt">
+
+                <!-- Get NetSuite Product ID for the item received -->
+                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList">
+                    <econdition field-name="productId" from="toReceipt.productId"/>
+                    <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                    <date-filter/>
+                </entity-find>
+
+                <!-- Get the Receiving Facility External Id and Name,
+                     NOTE: not adding this in view for potential issue of duplicate records since no order item available
+                        and so join would have to be added on OISG from OH. -->
+                <entity-find entity-name="co.hotwax.oms.order.TransferOrderAndItem" list="transferOrderList" limit="1">
+                    <econdition field-name="orderId" from="toReceipt.orderId"/>
+                    <select-field field-name="orderId,orderFacilityExternalId,orderFacilityName"/>
+                </entity-find>
+
+                <set field="invAdjMap" from="['Reference No':toReceipt.orderName + '-' + toReceipt.receiptId,
+                        'Adjustment Account':adjustmentAccount,
+                        Item:goodIdentificationList?.first?.idValue,
+                        'Adjust Qty By':toReceipt.quantityAccepted,
+                        'Date': ec.l10n.format(nowTimestamp, 'MM/dd/yyyy'),
+                        Memo:'Inventory Adj for MisShipped Item Receipt for Transfer Order ' +  toReceipt.orderName,
+                        'HC Inventory Adj Id':toReceipt.orderId,
+                        Location:transferOrderList?.first?.orderFacilityExternalId,
+                        'Adjustment Location':transferOrderList?.first?.orderFacilityExternalId,
+                        'Facility Name':transferOrderList?.first?.orderFacilityName,]"/>
+                <script>csvWriteHelper.writeToFile(invAdjMap)</script>
+            </iterate>
+            <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
+            <script>}</script>
+
+            <iterate list="generatedFilePaths" entry="generatedFilePath">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
+            </iterate>
+
+            <if condition="!skipLastRunTimeUpdate">
+                <!-- Set the current timestamp as the last run time for next run -->
+                <service-call name="update#moqui.service.job.ServiceJobParameter"
+                    in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName, parameterValue:nowTimestamp]"/>
+            </if>
+
+            <return message="Created the Transfer Order Inventory Adjustment Feed file for mis-shipped receipts feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
+        </actions>
+    </service>
 </services>

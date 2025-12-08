@@ -93,4 +93,28 @@
             <econdition field-name="orderTypeId" entity-alias="OH" value="TRANSFER_ORDER"/>
         </entity-condition>
     </view-entity>
+
+    <view-entity entity-name="TransferOrderMisShippedReceipt" package="co.hotwax.netsuite">
+        <description>
+            View to get the Transfer Order Shipment Receipts for the items that were mis-shipped and received with the order.
+            These items are products that were not shipped on the TO and so need to be received into NetSuite as an inventory adjustment.
+        </description>
+        <member-entity entity-alias="SR" entity-name="org.apache.ofbiz.shipment.receipt.ShipmentReceipt"/>
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader" join-from-alias="SR">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <alias-all entity-alias="SR"/>
+        <alias entity-alias="OH" name="orderName"/>
+        <alias entity-alias="OH" field="externalId" name="orderExternalId"/>
+        <alias entity-alias="OH" name="statusFlowId"/>
+        <alias entity-alias="OH" name="orderDate"/>
+        <alias entity-alias="OH" name="entryDate"/>
+        <entity-condition>
+            <econdition entity-alias="OH" field-name="orderTypeId" value="TRANSFER_ORDER"/>
+            <econdition entity-alias="SR" field-name="shipmentId" operator="is-null"/>
+            <econdition entity-alias="SR" field-name="shipmentItemSeqId" operator="is-null"/>
+            <econdition entity-alias="SR" field-name="orderId" operator="is-not-null"/>
+            <econdition entity-alias="SR" field-name="orderItemSeqId" operator="is-null"/>
+        </entity-condition>
+    </view-entity>
 </entities>
