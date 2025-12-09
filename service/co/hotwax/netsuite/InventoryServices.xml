@@ -21,19 +21,20 @@ under the License.
         <description>Process inventory rows from NetSuite file and compute variances</description>
         <in-parameters>
             <parameter name="idType"/>
-            <parameter name="facilityId" required="true"/>
+            <parameter name="externalFacilityId"/>
             <parameter name="quantity" type="Integer"/>
             <parameter name="idValue"/>
             <parameter name="locationSeqId"/>
             <parameter name="productId"/>
             <parameter name="_importBatchId"/>
+            <parameter name="facilityId"/>
         </in-parameters>
         <out-parameters>
             <parameter name="successCount"/>
             <parameter name="failureList"/>
         </out-parameters>
         <actions>
-            <set field="idType" value="NETSUITE_PRODUCT_ID"/>
+<!--            <set field="idType" value="NETSUITE_PRODUCT_ID"/>-->
             <if condition="!productId">
                 <if condition="!idType || !idValue">
                     <return error="true" message="Either productId or both idType and idValue must be provided"/>
@@ -50,6 +51,21 @@ under the License.
                     <return error="true" message="No product found for idType [${idType}] and idValue [${idValue}]"/>
                 </if>
             </if>
+
+            <!-- Check if facilityId is provided, if not look it up using externalFacilityId -->
+            <if condition="!facilityId &amp;&amp; externalFacilityId">
+                <entity-find entity-name="mantle.facility.Facility" list="facility">
+                    <econdition field-name="externalId" from="externalFacilityId"/>
+                </entity-find>
+                <if condition="!facility">
+                    <return error="true" message="No facility found with externalFacilityId: ${externalFacilityId}"/>
+                </if>
+                <set field="facilityId" from="facility.first.facilityId"/>
+                <elseif condition="!facilityId">
+                    <return error="true" message="Either facilityId or externalFacilityId must be provided"/>
+                </elseif>
+            </if>
+
 
             <!-- Check inventory configuration -->
             <entity-find entity-name="org.apache.ofbiz.product.inventory.InventoryItem" list="inventoryItems">
@@ -80,11 +96,11 @@ under the License.
             <set field="quantityOnHandDiff" from="quantity - quantityOnHand" type="Integer"/>
 
             <!-- After calculating availableToPromiseDiff and quantityOnHandDiff -->
-            <log message="=============_importBatchId==============${_importBatchId}=========="/>
             <if condition="availableToPromiseDiff != 0 || quantityOnHandDiff != 0">
                 <set field="resetRecord" from="[:]"/>
                 <set field="resetRecord.resetDateResourceId" from="_importBatchId"/>
                 <set field="resetRecord.facilityId" from="facilityId"/>
+                <set field="resetRecord.externalFacilityId" from="externalFacilityId"/>
                 <set field="resetRecord.productId" from="productId"/>
                 <set field="resetRecord.productIdentType" from="idType"/>
                 <set field="resetRecord.productIdentValue" from="idValue"/>
