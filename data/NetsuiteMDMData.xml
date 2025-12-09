@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed">
+    <DataManagerConfig configId="STORE_INV_RESET" importPath="" exportPath="" importServiceName="co.hotwax.netsuite.InventoryServices.process#ExternalInventoryReset" exportServiceName="" executionModeId="DMC_QUEUE"/>
+</entity-facade-xml>
