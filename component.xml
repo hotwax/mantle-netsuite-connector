@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-3.xsd"
-   name="mantle-netsuite-connector" version="1.9.6">
+   name="mantle-netsuite-connector" version="1.9.7">
 </component>
