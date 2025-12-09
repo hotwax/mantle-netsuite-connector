@@ -521,4 +521,11 @@
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPDATE_TO"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_UpdateTransferOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
+    <moqui.service.job.ServiceJob jobName="import_store_inventory_from_NS" description="Import Store Inventory from NetSuite" instanceOfProductId="" jobTypeEnumId=""
+        serviceName="co.hotwax.util.UtilityServices.upload#DataManagerFileFromSftp" cronExpression="" paused="Y">
+        <parameters parameterName="configId" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="parameters" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
 </entity-facade-xml>

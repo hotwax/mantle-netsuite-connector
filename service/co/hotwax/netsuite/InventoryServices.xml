@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="process" noun="ExternalInventoryReset">
+        <description>Process inventory rows from NetSuite file and compute variances</description>
+        <in-parameters>
+            <parameter name="idType"/>
+            <parameter name="facilityId" required="true"/>
+            <parameter name="quantity" type="Integer"/>
+            <parameter name="idValue"/>
+            <parameter name="locationSeqId"/>
+            <parameter name="productId"/>
+            <parameter name="_importBatchId"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="successCount"/>
+            <parameter name="failureList"/>
+        </out-parameters>
+        <actions>
+            <set field="idType" value="NETSUITE_PRODUCT_ID"/>
+            <if condition="!productId">
+                <if condition="!idType || !idValue">
+                    <return error="true" message="Either productId or both idType and idValue must be provided"/>
+                </if>
+                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
+                    <econdition field-name="goodIdentificationTypeId" from="idType"/>
+                    <econdition field-name="idValue" from="idValue"/>
+                    <date-filter/>
+                    <order-by field-name="fromDate"/>
+                </entity-find>
+
+                <set field="productId" from="goodIdentifications?.first?.productId"/>
+                <if condition="!productId">
+                    <return error="true" message="No product found for idType [${idType}] and idValue [${idValue}]"/>
+                </if>
+            </if>
+
+            <!-- Check inventory configuration -->
+            <entity-find entity-name="org.apache.ofbiz.product.inventory.InventoryItem" list="inventoryItems">
+                <econdition field-name="productId" from="productId"/>
+                <econdition field-name="facilityId" from="facilityId"/>
+                <econdition field-name="locationSeqId" from="locationSeqId" ignore-if-empty="true"/>
+                <order-by field-name="-datetimeReceived"/>
+            </entity-find>
+
+            <if condition="!inventoryItems">
+               <return error="true" message=""/>
+                <else>
+                    <set field="inventoryItem" from="inventoryItems[0]"/>
+                </else>
+            </if>
+
+            <entity-find-one entity-name="co.hotwax.inventory.ReservedInventorySummary" value-field="reservedItemByFacility">
+                <field-map field-name="facilityId" from="facilityId"/>
+                <field-map field-name="productId" from="productId"/>
+            </entity-find-one>
+
+            <set field="quantityReserved" from="reservedItemByFacility?.quantity ?: 0" type="Integer"/>
+
+            <set field="quantityOnHand" from="inventoryItem.quantityOnHandTotal ?: 0" type="Integer"/>
+            <set field="availableToPromise" from="inventoryItem.availableToPromiseTotal ?: 0" type="Integer"/>
+
+            <set field="availableToPromiseDiff" from="quantity - availableToPromise - quantityReserved" type="Integer"/>
+            <set field="quantityOnHandDiff" from="quantity - quantityOnHand" type="Integer"/>
+
+            <!-- After calculating availableToPromiseDiff and quantityOnHandDiff -->
+            <log message="=============_importBatchId==============${_importBatchId}=========="/>
+            <if condition="availableToPromiseDiff != 0 || quantityOnHandDiff != 0">
+                <set field="resetRecord" from="[:]"/>
+                <set field="resetRecord.resetDateResourceId" from="_importBatchId"/>
+                <set field="resetRecord.facilityId" from="facilityId"/>
+                <set field="resetRecord.productId" from="productId"/>
+                <set field="resetRecord.productIdentType" from="idType"/>
+                <set field="resetRecord.productIdentValue" from="idValue"/>
+                <set field="resetRecord.inventoryItemId" from="inventoryItem.inventoryItemId"/>
+                <set field="resetRecord.inventoryItemATP" from="availableToPromise" type="Integer"/>
+                <set field="resetRecord.inventoryItemQOH" from="quantityOnHand" type="Integer"/>
+                <set field="resetRecord.inventoryItemATPDiff" from="availableToPromiseDiff" type="Integer"/>
+                <set field="resetRecord.inventoryItemQOHDiff" from="quantityOnHandDiff" type="Integer"/>
+                <set field="resetRecord.externalATP" from="quantity" type="Integer"/>
+                <set field="resetRecord.externalQOH" from="quantity" type="Integer"/>
+                <service-call name="create#co.hotwax.netsuite.inventory.ExternalInventoryReset" in-map="resetRecord" out-map="resetResult"/>
+            </if>
+
+        </actions>
+    </service>
+</services>
