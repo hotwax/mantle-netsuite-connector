@@ -6,4 +6,9 @@
         <field name="externalSystemId" type="id"/>
         <field name="syncDate" type="date-time"/>
     </entity>
+    <extend-entity entity-name="ExternalInventoryReset" package="org.apache.ofbiz.product.inventory">
+        <field name="createdDate" type="date-time"/>
+        <field name="inventoryItemATPDiff" type="number-integer"/>
+        <field name="inventoryItemQOHDiff" type="number-integer"/>
+    </extend-entity>
 </entities>

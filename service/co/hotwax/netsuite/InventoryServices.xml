@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="process" noun="ExternalInventoryReset">
+        <description>Process inventory rows from NetSuite file and compute variances</description>
+        <in-parameters>
+            <parameter name="idType" default-value="NETSUITE_PRODUCT_ID"/>
+            <parameter name="externalFacilityId"/>
+            <parameter name="quantity" type="Integer"/>
+            <parameter name="idValue"/>
+            <parameter name="locationSeqId"/>
+            <parameter name="productId"/>
+            <parameter name="_batchId"/>
+            <parameter name="facilityId"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="resetItemId"/>
+        </out-parameters>
+        <actions>
+            <service-call name="co.hotwax.oms.product.ProductServices.findOrCreate#FacilityInventoryItem" in-map="[externalFacilityId: externalFacilityId,
+                productIdentType: productIdentType, productIdentValue: productIdentValue, productId: productId, facilityId: facilityId]" out-map="findOrCreateResult"/>
+
+            <set field="facilityId" from="findOrCreateResult.facilityId"/>
+            <set field="productId" from="findOrCreateResult.productId"/>
+            <set field="inventoryItemId" from="findOrCreateResult.inventoryItemId"/>
+
+            <entity-find-one entity-name="org.apache.ofbiz.product.inventory.InventoryItem" value-field="inventoryItem">
+                <field-map field-name="inventoryItemId" from="inventoryItemId"/>
+            </entity-find-one>
+
+            <entity-find-one entity-name="co.hotwax.inventory.ReservedInventorySummary" value-field="reservedItemByFacility">
+                <field-map field-name="facilityId" from="facilityId"/>
+                <field-map field-name="productId" from="productId"/>
+            </entity-find-one>
+
+            <set field="quantityReserved" from="reservedItemByFacility?.quantity ?: 0" type="Integer"/>
+
+            <set field="quantityOnHand" from="inventoryItem.quantityOnHandTotal ?: 0" type="Integer"/>
+            <set field="availableToPromise" from="inventoryItem.availableToPromiseTotal ?: 0" type="Integer"/>
+
+            <set field="availableToPromiseDiff" from="quantity - availableToPromise - quantityReserved" type="Integer"/>
+            <set field="quantityOnHandDiff" from="quantity - quantityOnHand" type="Integer"/>
+
+            <!-- After calculating availableToPromiseDiff and quantityOnHandDiff -->
+            <if condition="availableToPromiseDiff != 0 || quantityOnHandDiff != 0">
+                <set field="resetRecord" from="[:]"/>
+                <set field="resetRecord.resetDateResourceId" from="_batchId"/>
+                <set field="resetRecord.facilityId" from="facilityId"/>
+                <set field="resetRecord.externalFacilityId" from="externalFacilityId"/>
+                <set field="resetRecord.productId" from="productId"/>
+                <set field="resetRecord.productIdentType" from="idType"/>
+                <set field="resetRecord.productIdentValue" from="idValue"/>
+                <set field="resetRecord.inventoryItemId" from="inventoryItem.inventoryItemId"/>
+                <set field="resetRecord.inventoryItemATP" from="availableToPromise" type="Integer"/>
+                <set field="resetRecord.inventoryItemQOH" from="quantityOnHand" type="Integer"/>
+                <set field="resetRecord.inventoryItemATPDiff" from="availableToPromiseDiff" type="Integer"/>
+                <set field="resetRecord.inventoryItemQOHDiff" from="quantityOnHandDiff" type="Integer"/>
+                <set field="resetRecord.externalATP" from="quantity" type="Integer"/>
+                <set field="resetRecord.externalQOH" from="quantity" type="Integer"/>
+                <set field="resetRecord.createdDate" from="ec.user.nowTimestamp"/>
+                <service-call name="create#org.apache.ofbiz.product.inventory.ExternalInventoryReset" in-map="resetRecord" out-map="resetRecordOut"/>
+                <set field="resetItemId" from="resetRecordOut.resetItemId"/>
+            </if>
+        </actions>
+    </service>
+
+    <service verb="generate" noun="InventoryAdjustmentFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>Service to generate inventory adjustment feed for NetSuite</description>
+        <in-parameters>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="filePathPattern" required="true"/>
+            <parameter name="jobName">
+                <description>The name of the scheduled job to fetch the last run time for preparing the Feed.</description>
+            </parameter>
+            <parameter name="skipLastRunTimeUpdate" type="Boolean" default="false">
+                <description>Skip the LastRunTime update, mainly used while debugging</description>
+            </parameter>
+            <parameter name="recordLimitPerFeed" type="Integer"  default-value="1000"/>
+            <parameter name="lastRunTime"/>
+        </in-parameters>
+        <actions>
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <log message="Generating Inventory Adjustment Feed file at time ${nowTimestamp}"/>
+
+            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/InventoryAdjustmentFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss')}.csv"/>
+            <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
+            <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
+
+            <!-- Get the last run time from the service job parameters -->
+            <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="lastRunParam">
+                <field-map field-name="jobName" from="jobName"/>
+                <field-map field-name="parameterName" value="lastRunTime"/>
+            </entity-find-one>
+
+            <!-- Set sinceEntryDate using the lastRunTime, if it is set, fetch records from that time, else it will be null -->
+            <set field="sinceEntryDate" from="lastRunParam?.parameterValue"/>
+
+            <script>
+                import co.hotwax.ns.util.CsvWriteHelper
+                import org.moqui.entity.EntityCondition
+                import org.moqui.entity.EntityFind
+                
+                // Define the headers for the CSV file
+                headers = [
+                    'Reference No',
+                    'Adjustment Account',
+                    'Item',
+                    'Adjust Qty By',
+                    'Location',
+                    'Date',
+                    'Memo',
+                    'HC Inventory Adj Id',
+                    'Adjustment Location',
+                    'Facility Name'
+                ]
+                
+                // Find inventory adjustments that need to be processed
+                adjustmentFind = ec.entity.find("org.apache.ofbiz.product.inventory.ExternalInventoryReset")
+                if (sinceEntryDate) {
+                    adjustmentFind.condition("createdDate", EntityCondition.GREATER_THAN, sinceEntryDate)
+                }
+                adjustmentFind.orderBy("createdDate")
+
+                // If no adjustments found, return early
+                long adjustmentCount = adjustmentFind.count()
+                if (adjustmentCount == 0) {
+                    ec.message.addMessage("No inventory adjustments found for the feed at ${nowTimestamp}.")
+                    return
+                }
+
+                try (adjustmentItr = adjustmentFind.iterator();
+                     CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, headers, recordLimitPerFeed)) {
+            </script>
+            
+            <iterate list="adjustmentItr" entry="adjustment">
+                <set field="adjDate" from="ec.l10n.format(adjustment.createdDate ?: nowTimestamp, 'MM/dd/yyyy')"/>
+                <if condition="adjustment.externalFacilityId">
+                    <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="facilityList">
+                        <econdition field-name="externalId" from="adjustment.externalFacilityId"/>
+                    </entity-find>
+                    <set field="facilityName" from="facilityList.first.facilityName"/>
+                    <else>
+                        <entity-find-one entity-name="org.apache.ofbiz.product.facility.Facility" value-field="facility">
+                            <field-map field-name="facilityId" from="adjustment.facilityId"/>
+                        </entity-find-one>
+                        <set field="adjustment.externalFacilityId" from="facility.externalId"/>
+                        <set field="facilityName" from="facility.facilityName"/>
+                    </else>
+                </if>
+                <script>
+                    // Create the adjustment record
+                    adjustmentRecord = [
+                        'Reference No': adjustment.resetDateResourceId,
+                        'Adjustment Account': '254',
+                        'Item': adjustment.productIdentValue,
+                        'Adjust Qty By': adjustment.inventoryItemQOHDiff?.toString(),
+                        'Location': adjustment.externalFacilityId,
+                        'Date': adjDate,
+                        'Memo': 'Inventory adjustment from HotWax',
+                        'HC Inventory Adj Id': adjustment.resetDateResourceId,
+                        'Adjustment Location': adjustment.externalFacilityId,
+                        'Facility Name': facilityName
+                    ]
+                    
+                    // Write the record to the CSV file
+                    csvWriteHelper.writeToFile(adjustmentRecord)
+                </script>
+            </iterate>
+            <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
+            <script>}</script>
+            
+            <!-- Upload the generated files to SFTP if any -->
+            <if condition="generatedFilePaths">
+                <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote">
+                    <field-map field-name="systemMessageRemoteId" from="systemMessageRemoteId"/>
+                </entity-find-one>
+                
+                <iterate list="generatedFilePaths" entry="generatedFilePath">
+                    <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" 
+                        in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath,  sendPath:sendPath]"/>
+                </iterate>
+                
+                <!-- Update the last run time if not skipped -->
+                <if condition="!skipLastRunTimeUpdate">
+                    <service-call name="update#moqui.service.job.ServiceJobParameter" in-map="[jobName:jobName, parameterName:'lastRunTime', parameterValue:nowTimestamp]"/>
+                </if>
+                
+                <return message="Successfully generated inventory adjustment feed with ${adjustmentCount} records. Files: ${generatedFilePaths}"/>
+                <else>
+                    <return message="No inventory adjustment records were processed."/>
+                </else>
+            </if>
+        </actions>
+    </service>
+</services>
