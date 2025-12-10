@@ -531,6 +531,9 @@
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="sinceCompletedDate"/>
+        <parameters parameterName="jobName"/>
+        <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
+        <parameters parameterName="lastRunTime"/>
     </moqui.service.job.ServiceJob>
 
 </entity-facade-xml>

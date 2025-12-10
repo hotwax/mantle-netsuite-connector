@@ -531,6 +531,12 @@
             <parameter name="sinceCompletedDate">
                 <description>Parameter to fetch Transfer Receipt Reconciliation details for items completed after a specific date.</description>
             </parameter>
+            <parameter name="jobName">
+                <description>The name of the scheduled job to fetch the last run time for preparing the Feed.</description>
+            </parameter>
+            <parameter name="skipLastRunTimeUpdate" type="Boolean" default="false">
+                <description>skip the LastRunTime update,mainly used while debugging</description>
+            </parameter>
         </in-parameters>
         <actions>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
@@ -539,6 +545,19 @@
             <!-- Fetch the SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
             <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
             <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+
+            <!-- We can use last run time to fetch the records updated after the last service job run -->
+            <!-- Check the parameter used for storing the last feed run time -->
+            <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="lastRunParam">
+                <field-map field-name="jobName"/>
+                <field-map field-name="parameterName" value="lastRunTime"/>
+            </entity-find-one>
+
+            <!-- Set sinceEntryDate using the lastRunTime, if it is set, fetch records from
+                   that time, else it will be null -->
+            <if condition="!sinceCompletedDate">
+                <set field="sinceCompletedDate" from="lastRunParam?.parameterValue"/>
+            </if>
 
             <script>
                 import com.fasterxml.jackson.core.JsonGenerator
@@ -551,7 +570,7 @@
                 .condition("itemStatusId", "ITEM_COMPLETED")
 
                 if(orderId) transferOrder_find.condition("orderId", orderId)
-                if(sinceCompletedDate) transferOrder_find.havingCondition(ec.entity.conditionFactory.makeCondition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, sinceCompletedDate))
+                if(sinceCompletedDate) transferOrder_find.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, sinceCompletedDate)
                 transferOrder_find.selectField("orderId,orderFacilityId,orderName")
                 transferOrder_find.distinct(true)
 
@@ -658,7 +677,6 @@
                     </if>
                 </iterate>
 
-
                 <!-- Get the items which are under-received shipment wise -->
                 <entity-find entity-name="co.hotwax.shipment.TransferOrderItemShipmentSummary" list="underReceivedShipmentItemList">
                     <econdition field-name="orderId" from="transferOrder.orderId"/>
@@ -734,6 +752,12 @@
             <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                 in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
                 messageText:jsonFilePathRef]" out-map="toReceiptReconcFeedSysMsgOut"/>
+
+            <if condition="!skipLastRunTimeUpdate">
+                <!-- Set the current timestamp as the last run time for next run -->
+                <service-call name="update#moqui.service.job.ServiceJobParameter"
+                        in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName, parameterValue:nowTimestamp]"/>
+            </if>
 
             <return message="Completed the Transfer Order Receipt Reconciliation Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
                 remote ${systemMessageRemoteId} saved response in messages ${toReceiptReconcFeedSysMsgOut?.systemMessageId}"/>
