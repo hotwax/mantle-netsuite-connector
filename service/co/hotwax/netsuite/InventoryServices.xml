@@ -26,16 +26,17 @@ under the License.
             <parameter name="idValue"/>
             <parameter name="locationSeqId"/>
             <parameter name="productId"/>
-            <parameter name="_batchId"/>
+            <parameter name="_importId"/>
             <parameter name="facilityId"/>
         </in-parameters>
         <out-parameters>
             <parameter name="resetItemId"/>
         </out-parameters>
         <actions>
+            <log message="=========================calling the process external inventory reset service-------- for importId ${_importId}========"/> 
             <service-call name="co.hotwax.oms.product.ProductServices.findOrCreate#FacilityInventoryItem" in-map="[externalFacilityId: externalFacilityId,
                 productIdentType: productIdentType, productIdentValue: productIdentValue, productId: productId, facilityId: facilityId]" out-map="findOrCreateResult"/>
-
+            <log message="------------called the findOrCreate#FacilityInventoryItem service======================="/>
             <set field="facilityId" from="findOrCreateResult.facilityId"/>
             <set field="productId" from="findOrCreateResult.productId"/>
             <set field="inventoryItemId" from="findOrCreateResult.inventoryItemId"/>
@@ -60,7 +61,7 @@ under the License.
             <!-- After calculating availableToPromiseDiff and quantityOnHandDiff -->
             <if condition="availableToPromiseDiff != 0 || quantityOnHandDiff != 0">
                 <set field="resetRecord" from="[:]"/>
-                <set field="resetRecord.resetDateResourceId" from="_batchId"/>
+                <set field="resetRecord.resetDateResourceId" from="_importId"/>
                 <set field="resetRecord.facilityId" from="facilityId"/>
                 <set field="resetRecord.externalFacilityId" from="externalFacilityId"/>
                 <set field="resetRecord.productId" from="productId"/>
