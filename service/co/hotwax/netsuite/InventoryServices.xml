@@ -26,16 +26,17 @@ under the License.
             <parameter name="idValue"/>
             <parameter name="locationSeqId"/>
             <parameter name="productId"/>
-            <parameter name="_batchId"/>
+            <parameter name="_importId"/>
             <parameter name="facilityId"/>
         </in-parameters>
         <out-parameters>
             <parameter name="resetItemId"/>
         </out-parameters>
         <actions>
+            <log message="=========================calling the process external inventory reset service-------- for importId ${_importId}========"/>
             <service-call name="co.hotwax.oms.product.ProductServices.findOrCreate#FacilityInventoryItem" in-map="[externalFacilityId: externalFacilityId,
-                productIdentType: productIdentType, productIdentValue: productIdentValue, productId: productId, facilityId: facilityId]" out-map="findOrCreateResult"/>
-
+                productIdentType: idType, productIdentValue: idValue, productId: productId, facilityId: facilityId]" out-map="findOrCreateResult"/>
+            <log message="------------called the findOrCreate#FacilityInventoryItem service======================="/>
             <set field="facilityId" from="findOrCreateResult.facilityId"/>
             <set field="productId" from="findOrCreateResult.productId"/>
             <set field="inventoryItemId" from="findOrCreateResult.inventoryItemId"/>
@@ -60,7 +61,7 @@ under the License.
             <!-- After calculating availableToPromiseDiff and quantityOnHandDiff -->
             <if condition="availableToPromiseDiff != 0 || quantityOnHandDiff != 0">
                 <set field="resetRecord" from="[:]"/>
-                <set field="resetRecord.resetDateResourceId" from="_batchId"/>
+                <set field="resetRecord.resetDateResourceId" from="_importId"/>
                 <set field="resetRecord.facilityId" from="facilityId"/>
                 <set field="resetRecord.externalFacilityId" from="externalFacilityId"/>
                 <set field="resetRecord.productId" from="productId"/>
@@ -115,7 +116,7 @@ under the License.
                 import co.hotwax.ns.util.CsvWriteHelper
                 import org.moqui.entity.EntityCondition
                 import org.moqui.entity.EntityFind
-                
+
                 // Define the headers for the CSV file
                 headers = [
                     'Reference No',
@@ -129,7 +130,7 @@ under the License.
                     'Adjustment Location',
                     'Facility Name'
                 ]
-                
+
                 // Find inventory adjustments that need to be processed
                 adjustmentFind = ec.entity.find("org.apache.ofbiz.product.inventory.ExternalInventoryReset")
                 if (sinceEntryDate) {
@@ -147,7 +148,7 @@ under the License.
                 try (adjustmentItr = adjustmentFind.iterator();
                      CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, headers, recordLimitPerFeed)) {
             </script>
-            
+
             <iterate list="adjustmentItr" entry="adjustment">
                 <set field="adjDate" from="ec.l10n.format(adjustment.createdDate ?: nowTimestamp, 'MM/dd/yyyy')"/>
                 <if condition="adjustment.externalFacilityId">
@@ -177,30 +178,30 @@ under the License.
                         'Adjustment Location': adjustment.externalFacilityId,
                         'Facility Name': facilityName
                     ]
-                    
+
                     // Write the record to the CSV file
                     csvWriteHelper.writeToFile(adjustmentRecord)
                 </script>
             </iterate>
             <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
             <script>}</script>
-            
+
             <!-- Upload the generated files to SFTP if any -->
             <if condition="generatedFilePaths">
                 <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote">
                     <field-map field-name="systemMessageRemoteId" from="systemMessageRemoteId"/>
                 </entity-find-one>
-                
+
                 <iterate list="generatedFilePaths" entry="generatedFilePath">
-                    <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" 
+                    <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp"
                         in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath,  sendPath:sendPath]"/>
                 </iterate>
-                
+
                 <!-- Update the last run time if not skipped -->
                 <if condition="!skipLastRunTimeUpdate">
                     <service-call name="update#moqui.service.job.ServiceJobParameter" in-map="[jobName:jobName, parameterName:'lastRunTime', parameterValue:nowTimestamp]"/>
                 </if>
-                
+
                 <return message="Successfully generated inventory adjustment feed with ${adjustmentCount} records. Files: ${generatedFilePaths}"/>
                 <else>
                     <return message="No inventory adjustment records were processed."/>
