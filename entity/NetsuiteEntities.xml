@@ -6,21 +6,9 @@
         <field name="externalSystemId" type="id"/>
         <field name="syncDate" type="date-time"/>
     </entity>
-    <entity entity-name="ExternalInventoryReset" package="co.hotwax.netsuite.inventory">
-        <field name="resetItemId" type="id" is-pk="true"/>
-        <field name="resetDateResourceId" type="id"/>
-        <field name="facilityId" type="id"/>
-        <field name="productId" type="id"/>
-        <field name="externalFacilityId" type="id"/>
-        <field name="productIdentType" type="text-medium"/>
-        <field name="productIdentValue" type="text-medium"/>
-        <field name="inventoryItemId" type="id"/>
-        <field name="inventoryItemATP" type="number-integer"/>
-        <field name="inventoryItemQOH" type="number-integer"/>
+    <extend-entity entity-name="ExternalInventoryReset" package="org.apache.ofbiz.product.inventory">
+        <field name="createdDate" type="date-time"/>
         <field name="inventoryItemATPDiff" type="number-integer"/>
         <field name="inventoryItemQOHDiff" type="number-integer"/>
-        <field name="externalATP" type="number-integer"/>
-        <field name="externalQOH" type="number-integer"/>
-    </entity>
-
+    </extend-entity>
 </entities>
