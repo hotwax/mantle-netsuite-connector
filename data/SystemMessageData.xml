@@ -122,4 +122,12 @@
             sendPath="/home/${sftpUsername}/netsuite/transferorderv2/export/oms-fulfillment/TransferOrderShipmentFeed-${dateTime}-${systemMessageId}.json"
             sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
             receivePath="${contentRoot}/netsuite/TransferOrderShipmentFeed/TransferOrderShipmentFeed-${dateTime}.json"/>
+
+   <!-- System Message Type for Transfer Order Receipt Reconciliation Feed -->
+    <moqui.service.message.SystemMessageType systemMessageTypeId="TransferOrderReceiptReconciliationFeed"
+            description="Generate HotWax Transfer Orders Receipt Reconciliation Feed"
+            parentTypeId="LocalFeedFile"
+            sendPath="/home/${sftpUsername}/netsuite/transferorderv2/export/receipt-reconciliation/TransferOrderReceiptReconciliationFeed-${dateTime}-${systemMessageId}.json"
+            sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+            receivePath="${contentRoot}/netsuite/TransferOrderReceiptReconciliationFeed/TransferOrderReceiptReconciliationFeed-${dateTime}.json"/>
 </entity-facade-xml>

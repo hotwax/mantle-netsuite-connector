@@ -521,4 +521,16 @@
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPDATE_TO"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_UpdateTransferOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
 
+    <!-- TODO enums, product related data  -->
+    <!-- Template Service Job to generate Transfer Order Receipt Reconciliation Feed from HotWax -->
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderReceiptReconciliationFeed" jobTypeEnumId="GEN_TO_RCPT_REC_FD"
+                                  description="Template Service Job to generate the Transfer Order Receipt Reconciliation Feed from HotWax" instanceOfProductId="GEN_TO_RCPT_REC_FD"
+                                  serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderReceiptReconciliationFeed"
+                                  cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="sinceCompletedDate"/>
+    </moqui.service.job.ServiceJob>
+
 </entity-facade-xml>
