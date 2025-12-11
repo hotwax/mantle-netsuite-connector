@@ -524,7 +524,7 @@
             <parameter name="orderId">
                 <description>Optional parameter to process a specific transfer order</description>
             </parameter>
-            <parameter name="sinceCompletedDate">
+            <parameter name="completedDate">
                 <description>Parameter to fetch Order details after specific completed date of Transfer Order</description>
             </parameter>
             <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
@@ -549,9 +549,9 @@
                 <field-map field-name="parameterName" value="lastRunTime"/>
             </entity-find-one>
 
-            <!-- Set sinceEntryDate using the lastRunTime if not explicitly provided -->
-            <if condition="!sinceEntryDate">
-                <set field="sinceEntryDate" from="lastRunParam?.parameterValue"/>
+            <!-- Set completedDate using the lastRunTime if not explicitly provided -->
+            <if condition="!completedDate">
+                <set field="completedDate" from="lastRunParam?.parameterValue"/>
             </if>
 
             <script>
@@ -565,8 +565,8 @@
                 if (orderId) {
                     toItemFind.condition("orderId", orderId)
                 }
-                if (sinceEntryDate) {
-                    toItemFind.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, sinceEntryDate)
+                if (completedDate) {
+                    toItemFind.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, completedDate)
                 }
 
                 // If no eligible order items, don't generate the file
@@ -583,7 +583,7 @@
             <iterate list="toItemItr" entry="toItem">
                 <script>
                     // Write the order item details to CSV with isClosed as TRUE
-                    csvWriteHelper.writeToFile([orderId: toItem.orderId, lineId: toItem.itemExternalId, isClosed: "TRUE" ])
+                    csvWriteHelper.writeToFile([internalId: toItem.netsuiteOrderId, hcOrderId: toItem.orderId, lineId: toItem.itemExternalId, closed: "TRUE"])  
                 </script>
             </iterate>
 
