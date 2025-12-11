@@ -516,4 +516,240 @@
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
+
+    <service verb="generate" noun="TransferOrderReconciliationFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <in-parameters>
+            <parameter name="orderId">
+                <description>Parameter to fetch reconciliation details for a specific orderId.</description>
+            </parameter>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote ID to send Transfer Order Reconciliation Feed.</description>
+            </parameter>
+            <parameter name="systemMessageTypeId" required="true">
+                <description>The System Message Type ID for generating Transfer Order Reconciliation Feed.</description>
+            </parameter>
+            <parameter name="sinceCompletedDate">
+                <description>Parameter to fetch Transfer Order Reconciliation details for items completed after a specific date.</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <log message="Generating Transfer Order Reconciliation Feed file for orderId ${orderId} at time ${nowTimestamp}"/>
+
+            <!-- Fetch the SystemMessageType to prepare the path for creating the file in the receiving system. Ex: Moqui's datamanager directory in runtime for creating feeds.-->
+            <entity-find-one entity-name="moqui.service.message.SystemMessageType" value-field="systemMessageType"/>
+            <if condition="systemMessageType == null"><return error="true" message="Could not find SystemMessageType with ID ${systemMessageTypeId}"/></if>
+
+            <script>
+                import com.fasterxml.jackson.core.JsonGenerator
+                import com.fasterxml.jackson.core.JsonFactory
+                import com.fasterxml.jackson.databind.ObjectMapper
+                import java.nio.charset.StandardCharsets
+                import org.moqui.entity.EntityCondition
+
+                transferOrder_find = ec.entity.find("co.hotwax.netsuite.TransferOrderItemAndHistory")
+
+                if(orderId) transferOrder_find.condition("orderId", orderId)
+                if(sinceCompletedDate) transferOrder_find.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, sinceCompletedDate)
+                transferOrder_find.selectField("orderId,orderName,orderFacilityExternalId")
+                transferOrder_find.distinct(true)
+
+                //If no eligible transfer orders, then don't generate the file
+                long transferOrderCount = transferOrder_find.count()
+                if (transferOrderCount == 0) {
+                    ec.message.addMessage("No eligible Transfer Orders for Receipt Reconciliation Feed at ${nowTimestamp}, not generating the Feed File for NetSuite.")
+                    return
+                }
+
+                // Using try-with-resources to automatically close the EntityListIterator
+                try (transferOrderItr = transferOrder_find.iterator()) {
+            </script>
+
+            <!-- Prepare TO Receipt Reconciliation JSON File Path -->
+            <!-- Using receivePath from SystemMessageType to prepare the jsonFilePathRef.-->
+            <set field="jsonFilePathRef" from="ec.resource.expand(systemMessageType.receivePath, null,
+                [contentRoot: ec.user.getPreference('mantle.content.root') ?: 'dbresource://datamanager', date:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd'),
+                dateTime:ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')], false)"/>
+            <set field="jsonFilePath" from="ec.resource.getLocationReference(jsonFilePathRef).getUri().getPath()"/>
+
+            <set field="isFileEmpty" from="true"/>
+            <!-- Prepare the Transfer Order Reconciliation Feed file -->
+            <script>
+                try {
+                    //json file
+                    File toReconciliationFeedFile = new File(jsonFilePath)
+                    if (!toReconciliationFeedFile.parentFile.exists()) toReconciliationFeedFile.parentFile.mkdirs()
+                    JsonFactory jfactory = new JsonFactory()
+
+                    /* Declaring the PrintWriter and JsonGenerator resources in the the try statement,
+                    so that they are automatically closed regardless of whether the try statement completes normally or abruptly. */
+                    try (PrintWriter pw = new PrintWriter(StandardCharsets.UTF_8, toReconciliationFeedFile);
+                    JsonGenerator jGenerator = jfactory.createGenerator(pw)) {
+                        jGenerator.writeStartArray()
+            </script>
+
+            <!-- Preparing Transfer Orders Receipt details -->
+            <iterate list="transferOrderItr" entry="transferOrder">
+                <!-- Get NetSuite Order ID -->
+                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
+                    <econdition field-name="orderId" from="transferOrder.orderId"/>
+                    <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+                    <date-filter/>
+                </entity-find>
+
+                <!-- Set Transfer Order level details -->
+                <set field="transferOrderMap" from="[hcOrderId:transferOrder.orderId, orderName:transferOrder.orderName,
+                    transferOrderId:orderIdentificationList?.first?.idValue, destinationFacilityId:transferOrder.orderFacilityExternalId]"/>
+
+                <!-- Get the items which are over-received wise -->
+                <entity-find entity-name="co.hotwax.shipment.TransferOrderItemShipmentSummary" list="overReceivedItemList">
+                    <econdition field-name="orderId" from="transferOrder.orderId"/>
+                    <econdition field-name="itemStatusId" value="ITEM_COMPLETED"/>
+                    <having-econditions>
+                        <econdition field-name="qtyAvailableToReceive" value="0"/>
+                    </having-econditions>
+                </entity-find>
+
+                <!-- Get unique orderId and orderItemSeqId to prevent unnecessary loop for multiple receipts for the same order item -->
+                <set field="uniqueOverReceivedToItems" from="overReceivedItemList.collect{ [orderId: it.orderId, orderItemSeqId: it.orderItemSeqId, orderItemExternalId: it.orderItemExternalId, productId: it.productId] }.unique()"/>
+
+                <set field="overReceivedItems" from="[]"/>
+                <set field="fullyReceivedItems" from="[]"/>
+                <!-- This may be completely received or over-received -->
+                <iterate list="uniqueOverReceivedToItems" entry="uniqueOverReceivedToItem">
+                    <!-- Get total Shipped quantity for the item -->
+                    <entity-find entity-name="co.hotwax.shipment.ShipmentItemView" list="shipmentItemList">
+                        <econdition field-name="orderId" from="uniqueOverReceivedToItem.orderId"/>
+                        <econdition field-name="orderItemSeqId" from="uniqueOverReceivedToItem.orderItemSeqId"/>
+                        <select-field field-name="orderId,orderItemSeqId,quantity"/>
+                    </entity-find>
+
+                    <!-- Get total Received Quantity for the item -->
+                    <entity-find entity-name="co.hotwax.shipment.ShipmentReceiptSummary" list="shipmentReceiptList">
+                        <econdition field-name="orderId" from="uniqueOverReceivedToItem.orderId"/>
+                        <econdition field-name="orderItemSeqId" from="uniqueOverReceivedToItem.orderItemSeqId"/>
+                        <select-field field-name="orderId,orderItemSeqId,quantityAccepted"/>
+                    </entity-find>
+
+                    <set field="totalShippedQty" from="shipmentItemList*.quantity.sum()"/>
+                    <set field="totalReceivedQty" from="shipmentReceiptList?.first?.quantityAccepted"/>
+
+                    <if condition="totalReceivedQty &gt; totalShippedQty"><then>
+                        <!-- Get NetSuite Product ID for each item -->
+                        <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList">
+                            <econdition field-name="productId" from="uniqueOverReceivedToItem.productId"/>
+                            <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                            <date-filter/>
+                        </entity-find>
+
+                        <set field="overReceivedQty" from="totalReceivedQty.subtract(totalShippedQty)"/>
+                        <script>overReceivedItems.add([orderItemSeqId:uniqueOverReceivedToItem.orderItemSeqId, orderLineId:uniqueOverReceivedToItem.orderItemExternalId, itemId:goodIdentificationList?.first?.idValue, overReceivedQty:overReceivedQty])</script>
+                        <set field="isFileEmpty" from="false"/>
+                    </then><else-if condition="totalReceivedQty == totalShippedQty">
+                        <script>fullyReceivedItems.add(uniqueOverReceivedToItem)</script>
+                    </else-if>
+                    </if>
+                </iterate>
+
+                <!-- Get the items which are under-received shipment wise -->
+                <entity-find entity-name="co.hotwax.shipment.TransferOrderItemShipmentSummary" list="underReceivedShipmentItemList">
+                    <econdition field-name="orderId" from="transferOrder.orderId"/>
+                    <econdition field-name="itemStatusId" value="ITEM_COMPLETED"/>
+                    <having-econditions>
+                        <econdition field-name="qtyAvailableToReceive" operator="greater" value="0"/>
+                    </having-econditions>
+                </entity-find>
+                <set field="underReceivedShipments" from="[]"/>
+
+                <set field="shipmentIds" from="new HashSet(underReceivedShipmentItemList*.shipmentId)"/>
+
+                <!-- Get unique orderId and orderItemSeqId to create history of the items -->
+                <set field="uniqueUnderReceivedToItems" from="underReceivedShipmentItemList.collect{ [orderId: it.orderId, orderItemSeqId: it.orderItemSeqId] }.unique()"/>
+
+                <iterate list="shipmentIds" entry="shipmentId">
+
+                    <set field="items" from="[]"/>
+                    <!-- Set Transfer Order Shipment level details -->
+                    <set field="shipmentMap" from="[hcShipmentId:shipmentId]"/>
+
+                    <set field="itemsList" from="underReceivedShipmentItemList.findAll{ it.shipmentId == shipmentId }"/>
+                    <set field="shipmentMap.fulfillmentId" from="itemsList[0].shipmentExternalId"/>
+
+                    <iterate list="itemsList" entry="underReceivedShipmentItem">
+                        <!-- Get NetSuite Product ID for each item -->
+                        <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList">
+                            <econdition field-name="productId" from="underReceivedShipmentItem.productId"/>
+                            <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                            <date-filter/>
+                        </entity-find>
+
+                        <!-- Set Shipment Receipt Item level details -->
+                        <set field="shipmentReceiptItemMap" from="[
+                            orderItemSeqId:underReceivedShipmentItem.orderItemSeqId,
+                            lineId:underReceivedShipmentItem.shipmentItemExternalId,
+                            orderLineId:underReceivedShipmentItem.orderItemExternalId,
+                            itemId:goodIdentificationList?.first?.idValue,
+                            underReceivedQty:-(underReceivedShipmentItem.qtyAvailableToReceive)]"/>
+                        <script>items.add(shipmentReceiptItemMap)</script>
+                    </iterate>
+
+                    <set field="shipmentMap.items" from="items"/>
+                    <script>underReceivedShipments.add(shipmentMap)</script>
+                    <set field="isFileEmpty" from="false"/>
+
+                </iterate>
+                <!-- Create History for the items -->
+                <iterate list="fullyReceivedItems" entry="fullyReceivedItem">
+                    <service-call name="create#co.hotwax.integration.order.TransferOrderItemHistory"
+                            in-map="[orderId:fullyReceivedItem.orderId, orderItemSeqId:fullyReceivedItem.orderItemSeqId,
+                            createdDate:nowTimestamp,
+                            comments:'Transfer Order Item fully received, not sent as part of Transfer Order Reconciliation Feed']"/>
+                </iterate>
+                <iterate list="overReceivedItems" entry="overReceivedItem">
+                    <service-call name="create#co.hotwax.integration.order.TransferOrderItemHistory"
+                            in-map="[orderId:transferOrder.orderId, orderItemSeqId:overReceivedItem.orderItemSeqId,
+                            createdDate:nowTimestamp,
+                            comments:'Transfer Order Item over received, sent as part of Transfer Order Reconciliation Feed']"/>
+                </iterate>
+                <iterate list="uniqueUnderReceivedToItems" entry="uniqueUnderReceivedToItem">
+                    <service-call name="create#co.hotwax.integration.order.TransferOrderItemHistory"
+                            in-map="[orderId:uniqueUnderReceivedToItem.orderId,
+                            orderItemSeqId:uniqueUnderReceivedToItem.orderItemSeqId, createdDate:nowTimestamp,
+                            comments:'Transfer Order Item under received, sent as part of Transfer Order Reconciliation Feed']"/>
+                </iterate>
+
+                <set field="transferOrderMap.overReceivedItems" from="overReceivedItems"/>
+                <set field="transferOrderMap.underReceivedShipments" from="underReceivedShipments"/>
+
+                <if condition="overReceivedItems.isEmpty() &amp;&amp; underReceivedShipments.isEmpty()">
+                    <continue/>
+                </if>
+
+                <script>
+                    new ObjectMapper()
+                        .setDateFormat(new java.text.SimpleDateFormat(System.getProperty('default_date_time_format')))
+                        .writerWithDefaultPrettyPrinter().writeValue(jGenerator, transferOrderMap)
+                </script>
+            </iterate>
+            <script>
+                            jGenerator.writeEndArray()
+                        }
+                    } catch (IOException e) {
+                        logger.info("Error preparing transfer order shipment receipt Feed file", e)
+                    }
+                }
+            </script>
+
+            <!-- Call queue#SystemMessage that will save the json file path in messageText and
+            send the file to sftp using send service configured in SystemMessageType -->
+            <if condition="!isFileEmpty">
+                <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
+                              in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                messageText:jsonFilePathRef]" out-map="toReceiptReconcFeedSysMsgOut"/>
+            </if>
+
+            <return message="Completed the Transfer Order Receipt Reconciliation Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+                remote ${systemMessageRemoteId} saved response in messages ${toReceiptReconcFeedSysMsgOut?.systemMessageId}"/>
+        </actions>
+    </service>
 </services>
