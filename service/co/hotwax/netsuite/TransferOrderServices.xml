@@ -619,7 +619,7 @@
                 <set field="uniqueOverReceivedToItems" from="overReceivedItemList.collect{ [orderId: it.orderId, orderItemSeqId: it.orderItemSeqId, orderItemExternalId: it.orderItemExternalId, productId: it.productId] }.unique()"/>
 
                 <set field="overReceivedItems" from="[]"/>
-                <set field="fullyReceivedItems" from="[]"/>
+                <set field="itemsToCreateHistory" from="[]"/>
                 <!-- This may be completely received or over-received -->
                 <iterate list="uniqueOverReceivedToItems" entry="uniqueOverReceivedToItem">
                     <!-- Get total Shipped quantity for the item -->
@@ -648,10 +648,12 @@
                         </entity-find>
 
                         <set field="overReceivedQty" from="totalReceivedQty.subtract(totalShippedQty)"/>
-                        <script>overReceivedItems.add([orderItemSeqId:uniqueOverReceivedToItem.orderItemSeqId, orderLineId:uniqueOverReceivedToItem.orderItemExternalId, itemId:goodIdentificationList?.first?.idValue, overReceivedQty:overReceivedQty])</script>
+                        <set field="overReceivedItemMap" from="[orderItemSeqId:uniqueOverReceivedToItem.orderItemSeqId, orderLineId:uniqueOverReceivedToItem.orderItemExternalId, itemId:goodIdentificationList?.first?.idValue, overReceivedQty:overReceivedQty]"/>
+                        <script>overReceivedItems.add(overReceivedItemMap)</script>
+                        <script>itemsToCreateHistory.add(overReceivedItemMap + [orderId:transferOrder.orderId, comment:'Transfer Order Item over received, sent as part of Transfer Order Reconciliation Feed'])</script>
                         <set field="isFileEmpty" from="false"/>
                     </then><else-if condition="totalReceivedQty == totalShippedQty">
-                        <script>fullyReceivedItems.add(uniqueOverReceivedToItem)</script>
+                        <script>itemsToCreateHistory.add(uniqueOverReceivedToItem + [comment:'Transfer Order Item fully received, not sent as part of Transfer Order Reconciliation Feed'])</script>
                     </else-if>
                     </if>
                 </iterate>
@@ -670,6 +672,8 @@
 
                 <!-- Get unique orderId and orderItemSeqId to create history of the items -->
                 <set field="uniqueUnderReceivedToItems" from="underReceivedShipmentItemList.collect{ [orderId: it.orderId, orderItemSeqId: it.orderItemSeqId] }.unique()"/>
+                <set field="uniqueUnderReceivedToItems*.comment" value="Transfer Order Item under received, sent as part of Transfer Order Reconciliation Feed"/>
+                <script>itemsToCreateHistory.addAll(uniqueUnderReceivedToItems)</script>
 
                 <iterate list="shipmentIds" entry="shipmentId">
 
@@ -704,23 +708,10 @@
 
                 </iterate>
                 <!-- Create History for the items -->
-                <iterate list="fullyReceivedItems" entry="fullyReceivedItem">
+                <iterate list="itemsToCreateHistory" entry="itemToCreateHistory">
                     <service-call name="create#co.hotwax.integration.order.TransferOrderItemHistory"
-                            in-map="[orderId:fullyReceivedItem.orderId, orderItemSeqId:fullyReceivedItem.orderItemSeqId,
-                            createdDate:nowTimestamp,
-                            comments:'Transfer Order Item fully received, not sent as part of Transfer Order Reconciliation Feed']"/>
-                </iterate>
-                <iterate list="overReceivedItems" entry="overReceivedItem">
-                    <service-call name="create#co.hotwax.integration.order.TransferOrderItemHistory"
-                            in-map="[orderId:transferOrder.orderId, orderItemSeqId:overReceivedItem.orderItemSeqId,
-                            createdDate:nowTimestamp,
-                            comments:'Transfer Order Item over received, sent as part of Transfer Order Reconciliation Feed']"/>
-                </iterate>
-                <iterate list="uniqueUnderReceivedToItems" entry="uniqueUnderReceivedToItem">
-                    <service-call name="create#co.hotwax.integration.order.TransferOrderItemHistory"
-                            in-map="[orderId:uniqueUnderReceivedToItem.orderId,
-                            orderItemSeqId:uniqueUnderReceivedToItem.orderItemSeqId, createdDate:nowTimestamp,
-                            comments:'Transfer Order Item under received, sent as part of Transfer Order Reconciliation Feed']"/>
+                            in-map="[orderId:itemToCreateHistory.orderId, orderItemSeqId:itemToCreateHistory.orderItemSeqId,
+                            createdDate:nowTimestamp, comments:itemToCreateHistory.comment]"/>
                 </iterate>
 
                 <set field="transferOrderMap.overReceivedItems" from="overReceivedItems"/>
@@ -750,7 +741,7 @@
             <if condition="!isFileEmpty">
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
                         in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                messageText:jsonFilePathRef]" out-map="toReconciliationFeedSysMsgOut"/>
+                        messageText:jsonFilePathRef]" out-map="toReconciliationFeedSysMsgOut"/>
             </if>
 
             <return message="Completed the Transfer Order Completed Items Reconciliation Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
