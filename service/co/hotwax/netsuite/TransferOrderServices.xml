@@ -518,6 +518,11 @@
     </service>
 
     <service verb="generate" noun="TransferOrderReconciliationFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>
+            Generate Feed file for reconciliation of the completed Transfer Order Items, this will include details for
+            overReceivedItems and underReceivedShipments for each order which has one or more completed items.
+            This feed is expected to work with the history entity, TransferOrderItemAndHistory.
+        </description>
         <in-parameters>
             <parameter name="orderId">
                 <description>Parameter to fetch reconciliation details for a specific orderId.</description>
@@ -735,7 +740,7 @@
                             jGenerator.writeEndArray()
                         }
                     } catch (IOException e) {
-                        logger.info("Error preparing transfer order shipment receipt Feed file", e)
+                        logger.info("Error preparing transfer order reconciliation Feed file", e)
                     }
                 }
             </script>
@@ -744,12 +749,12 @@
             send the file to sftp using send service configured in SystemMessageType -->
             <if condition="!isFileEmpty">
                 <service-call name="org.moqui.impl.SystemMessageServices.queue#SystemMessage"
-                              in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
-                messageText:jsonFilePathRef]" out-map="toReceiptReconcFeedSysMsgOut"/>
+                        in-map="[systemMessageTypeId:systemMessageTypeId, systemMessageRemoteId:systemMessageRemoteId,
+                messageText:jsonFilePathRef]" out-map="toReconciliationFeedSysMsgOut"/>
             </if>
 
-            <return message="Completed the Transfer Order Receipt Reconciliation Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
-                remote ${systemMessageRemoteId} saved response in messages ${toReceiptReconcFeedSysMsgOut?.systemMessageId}"/>
+            <return message="Completed the Transfer Order Completed Items Reconciliation Feed file at time ${ec.user.nowTimestamp} with type ${systemMessageTypeId} and
+                remote ${systemMessageRemoteId} saved response in messages ${toReconciliationFeedSysMsgOut?.systemMessageId}"/>
         </actions>
     </service>
 </services>

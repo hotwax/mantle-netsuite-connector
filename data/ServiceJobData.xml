@@ -532,7 +532,7 @@
                                   description="Template Service Job to generate the Transfer Order Completed Items Reconciliation Feed from HotWax" instanceOfProductId="GEN_TO_REC_FD"
                                   serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderReconciliationFeed"
                                   cronExpression="0 0 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="systemMessageTypeId" parameterValue="TransferOrderReconciliationFeed"/>
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="sinceCompletedDate"/>

@@ -112,9 +112,6 @@
         </member-entity>
         <alias entity-alias="OH" name="orderId"/>
         <alias entity-alias="OH" name="orderName"/>
-        <alias entity-alias="OH" name="grandTotal"/>
-        <alias entity-alias="OH" name="orderDate"/>
-        <alias entity-alias="OH" name="entryDate"/>
         <alias entity-alias="OH" field="statusId" name="orderStatusId"/>
         <alias entity-alias="OH" name="orderTypeId"/>
         <alias entity-alias="OH" name="productStoreId"/>
@@ -123,7 +120,6 @@
         <alias entity-alias="OI" name="orderItemSeqId"/>
         <alias entity-alias="OI" name="shipGroupSeqId"/>
         <alias entity-alias="OI" name="quantity"/>
-        <alias entity-alias="OI" name="unitPrice"/>
         <alias entity-alias="OI" field="statusId" name="itemStatusId"/>
         <alias entity-alias="OI" name="productId"/>
 
