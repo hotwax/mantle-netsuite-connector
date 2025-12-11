@@ -534,7 +534,7 @@
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="filePathPattern" parameterValue="netsuite/transferorder/close-items"/>
         <parameters parameterName="orderId"/>
-        <parameters parameterName="sinceCompletedDate"/>
+        <parameters parameterName="completedDate"/>
         <parameters parameterName="recordLimitPerFeed" parameterValue="1000"/>
         <parameters parameterName="jobName" parameterValue="Generate_Transfer_Order_Item_Closure_Feed"/>
         <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
