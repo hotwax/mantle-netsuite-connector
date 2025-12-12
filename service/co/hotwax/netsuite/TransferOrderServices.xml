@@ -283,7 +283,7 @@
             <!-- Set maySplit based on RECEIVE_BY_FULFILL setting (null or false = true, true = false) -->
             <!-- When RECEIVE_BY_FULFILL is ON (true), maySplit should be false (no split shipments) -->
             <!-- When RECEIVE_BY_FULFILL is OFF or null (false), maySplit should be true (allow split shipments) -->
-            <set field="receiveByFulfillEnabled" from="receiveByFulfillSetting?.settingValue == 'true'"/>
+            <set field="receiveByFulfillEnabled" from="receiveByFulfillSetting?.settingValue?.toLowerCase() == 'true'"/>
             <set field="payload.shipGroups[0].maySplit" from="receiveByFulfillEnabled ? 'N' : 'Y'"/>
 
 
