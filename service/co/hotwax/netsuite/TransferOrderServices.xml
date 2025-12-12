@@ -516,7 +516,7 @@
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
-    <service verb="generate" noun="TransferOrderItemClosureFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <service verb="generate" noun="UnfilfilledCompletedTransferOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>Service to generate feed file for NetSuite to close Transfer Order items that are completed in OMS but have no shipment or receipt records</description>
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true"/>
