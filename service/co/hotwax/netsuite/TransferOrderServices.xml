@@ -88,7 +88,7 @@
                         <script>validItems.add(item)</script>
                         <else>
                             <!-- Log that we're skipping a completed item -->
-                            <log level="info" message="Skipping item with orderItemSeqId ${item.orderItemSeqId} of Transfer Order ${payload.transferOrderId} as it is already in ITEM_COMPLETED status"/>
+                            <log level="info" message="OrderItem [${item.orderItemSeqId}] for Order [${payload.orderId}] – skipped in shipment creation; already completed."/>
                         </else>
                     </if>
                 </iterate>
@@ -108,7 +108,7 @@
 
             <!-- If no packages remain with valid items, return empty payload to skip shipment creation -->
             <if condition="!payload.packages">
-                <log level="info" message="All items in the shipment are completed. Skipping shipment creation for externalId: ${payload.externalId}"/>
+                <log level="info" message="Shipment [${payload.externalId}] – skipped for creation; all items already completed."/>
                 <set field="payload" from="[:]"/>
             </if>
         </actions>
