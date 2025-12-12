@@ -87,4 +87,45 @@
             <econdition field-name="orderTypeId" entity-alias="OH" value="TRANSFER_ORDER"/>
         </entity-condition>
     </view-entity>
+    <view-entity entity-name="UnfilfilledCompletedTransferOrderItems" package="co.hotwax.netsuite">
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="ORDS" entity-name="org.apache.ofbiz.order.order.OrderStatus" join-from-alias="OI">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+            <key-map field-name="statusId"/>
+        </member-entity>
+        <member-entity entity-alias="OS" entity-name="org.apache.ofbiz.order.order.OrderShipment" join-from-alias="OI" join-optional="true">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+        </member-entity>
+        <member-entity entity-alias="S" entity-name="org.apache.ofbiz.shipment.shipment.Shipment" join-from-alias="OS">
+            <key-map field-name="shipmentId"/>
+        </member-entity>
+        <member-entity entity-alias="SR" entity-name="org.apache.ofbiz.shipment.receipt.ShipmentReceipt" join-from-alias="OI" join-optional="true">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+        </member-entity>
+        <alias name="orderId" entity-alias="OH"/>
+        <alias name="itemExternalId" entity-alias="OI" field="externalId"/>
+        <alias name="netsuiteOrderId" entity-alias="OID" field="idValue"/>
+        <alias name="statusDatetime"  entity-alias="ORDS"/>
+        <entity-condition>
+            <econditions combine="or">
+                <econdition field-name="shipmentId" entity-alias="OS" value=""/>
+                <econdition field-name="statusId" entity-alias="S" value="SHIPMENT_CANCELLED"/>
+            </econditions>
+            <econdition field-name="receiptId" entity-alias="SR" value=""/>
+            <econdition field-name="orderTypeId" entity-alias="OH" value="TRANSFER_ORDER"/>
+            <econdition field-name="statusId" entity-alias="OI" value="ITEM_COMPLETED"/>
+        </entity-condition>
+    </view-entity>
 </entities>

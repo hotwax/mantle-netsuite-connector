@@ -27,4 +27,25 @@
         <parameters parameterName="lastRunTime"/>
     </moqui.service.job.ServiceJob>
 
+    <moqui.basic.Enumeration enumId="GEN_TO_ITEM_CLOSURE_FD" enumCode="GEN_TO_ITEM_CLOSURE_FD" description="Generate Transfer Order Item Closure Feed" enumTypeId="ORDER_SYS_JOB"/>
+
+    <Product productId="GEN_TO_ITEM_CLOSURE_FD" productTypeId="SERVICE" internalName="GEN_TO_ITEM_CLOSURE_FD"
+        productName="Generate Transfer Order Item Closure Feed" description="Generate Transfer Order Item Closure Feed"
+        primaryProductCategoryId="ORDER_SYS_JOB"/>
+
+    <ProductCategoryMember productId="GEN_TO_ITEM_CLOSURE_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
+    <moqui.service.job.ServiceJob jobName="Generate_Transfer_Order_Item_Closure_Feed" instanceOfProductId="GEN_TO_ITEM_CLOSURE_FD" jobTypeEnumId="GEN_TO_ITEM_CLOSURE_FD"
+        description="Service to generate feed file for NetSuite to close Transfer Order items that are completed in OMS but have no shipment or receipt records"
+        serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderItemClosureFeed"
+        cronExpression="0 0 1 * * ?" paused="Y">
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="filePathPattern" parameterValue="netsuite/transferorder/close-items"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="completedDate"/>
+        <parameters parameterName="recordLimitPerFeed" parameterValue="1000"/>
+        <parameters parameterName="jobName" parameterValue="Generate_Transfer_Order_Item_Closure_Feed"/>
+        <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
+    </moqui.service.job.ServiceJob>
+
 </entity-facade-xml>
