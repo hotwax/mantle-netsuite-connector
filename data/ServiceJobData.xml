@@ -540,7 +540,7 @@
         serviceName="co.hotwax.util.UtilityServices.get#DataManagerFileFromSftp" cronExpression="" paused="Y">
         <parameters parameterName="configId" parameterValue="STORE_INV_RESET"/>
         <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
-        <parameters parameterName="parameters" parameterValue=""/>
+        <parameters parameterName="parameters" parameterValue="[{'resetBy':'QOH'}]"/>
     </moqui.service.job.ServiceJob>
 
     <moqui.service.job.ServiceJob jobName="Generate_Inventory_Var_Feed" instanceOfProductId="GEN_INV_VAR_FEED_NS" jobTypeEnumId="GEN_INV_VAR_FEED_NS"

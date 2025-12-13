@@ -20,62 +20,94 @@ under the License.
     <service verb="process" noun="ExternalInventoryReset">
         <description>Process inventory rows from NetSuite file and compute variances</description>
         <in-parameters>
-            <parameter name="idType" default-value="NETSUITE_PRODUCT_ID"/>
             <parameter name="externalFacilityId"/>
             <parameter name="quantity" type="Integer"/>
-            <parameter name="idValue"/>
+            <parameter name="netsuiteProductId"/>
             <parameter name="locationSeqId"/>
             <parameter name="productId"/>
             <parameter name="_batchId"/>
             <parameter name="facilityId"/>
+            <parameter name="resetBy" default-value="QOH">
+                <description>QOH or ATP</description>
+            </parameter>
         </in-parameters>
         <out-parameters>
             <parameter name="resetItemId"/>
         </out-parameters>
         <actions>
-            <service-call name="co.hotwax.oms.product.ProductServices.findOrCreate#FacilityInventoryItem" in-map="[externalFacilityId: externalFacilityId,
-                productIdentType: productIdentType, productIdentValue: productIdentValue, productId: productId, facilityId: facilityId]" out-map="findOrCreateResult"/>
 
-            <set field="facilityId" from="findOrCreateResult.facilityId"/>
-            <set field="productId" from="findOrCreateResult.productId"/>
+            <if condition="!productId">
+                <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" cache="true">
+                    <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                    <econdition field-name="idValue" from="netsuiteProductId"/>
+                    <date-filter/>
+                </entity-find>
+                <if condition="!goodIdentifications">
+                    <return error="true" message="Product with Netsuite Product Id ${netsuiteProductId}: Not Found"/>
+                </if>
+                <set field="productId" from="goodIdentifications?goodIdentifications[0].productId:null"/>
+            </if>
+
+            <if condition="!facilityId">
+                <entity-find entity-name="org.apache.ofbiz.product.facility.Facility" list="facilities" cache="true">
+                    <econdition field-name="externalId" from="externalFacilityId"/>
+                </entity-find>
+                <if condition="!facilities">
+                    <return error="true" message="Facility with external ID ${externalFacilityId}: Not Found"/>
+                </if>
+                <set field="facilityId" from="facilities?facilities[0].facilityId:null"/>
+            </if>
+
+            <service-call name="co.hotwax.oms.product.ProductServices.findOrCreate#FacilityInventoryItem" in-map="[facilityId: facilityId, productId: productId]" out-map="findOrCreateResult"/>
+
             <set field="inventoryItemId" from="findOrCreateResult.inventoryItemId"/>
+            <entity-find-one entity-name="org.apache.ofbiz.product.inventory.InventoryItem" value-field="inventoryItem"/>
 
-            <entity-find-one entity-name="org.apache.ofbiz.product.inventory.InventoryItem" value-field="inventoryItem">
-                <field-map field-name="inventoryItemId" from="inventoryItemId"/>
-            </entity-find-one>
+            <if condition="resetBy='QOH'">
+                <set field="quantityOnHand" from="inventoryItem.quantityOnHandTotal ?: 0" type="Integer"/>
+                <set field="quantityOnHandDiff" from="quantity - quantityOnHand" type="Integer"/>
 
-            <entity-find-one entity-name="co.hotwax.inventory.ReservedInventorySummary" value-field="reservedItemByFacility">
-                <field-map field-name="facilityId" from="facilityId"/>
-                <field-map field-name="productId" from="productId"/>
-            </entity-find-one>
+                <if condition="quantityOnHandDiff != 0">
+                    <set field="resetRecord" from="[:]"/>
+                    <set field="resetRecord.resetDateResourceId" from="_batchId"/>
+                    <set field="resetRecord.facilityId" from="facilityId"/>
+                    <set field="resetRecord.externalFacilityId" from="externalFacilityId"/>
+                    <set field="resetRecord.productId" from="productId"/>
+                    <set field="resetRecord.netsuiteProductId" from="netsuiteProductId"/>
+                    <set field="resetRecord.inventoryItemId" from="inventoryItem.inventoryItemId"/>
+                    <set field="resetRecord.inventoryItemQOH" from="quantityOnHand" type="Integer"/>
+                    <set field="resetRecord.inventoryItemQOHDiff" from="quantityOnHandDiff" type="Integer"/>
+                    <set field="resetRecord.externalQOH" from="quantity" type="Integer"/>
+                    <set field="resetRecord.createdDate" from="ec.user.nowTimestamp"/>
+                    <service-call name="create#co.netsuite.integration.NetsuiteInventoryReset" in-map="resetRecord" out-map="resetRecordOut"/>
+                    <set field="resetItemId" from="resetRecordOut.resetItemId"/>
+                    <else>
+                        <log message="InventoryItem [${inventoryItem.inventoryItemId}] with QOH [${quantityOnHand}] – skipped for creation; No variances found."/>
+                    </else>
+                </if>
+                <else>
+                    <set field="availableToPromise" from="inventoryItem.availableToPromiseTotal ?: 0" type="Integer"/>
+                    <set field="availableToPromiseDiff" from="quantity - availableToPromise" type="Integer"/>
 
-            <set field="quantityReserved" from="reservedItemByFacility?.quantity ?: 0" type="Integer"/>
-
-            <set field="quantityOnHand" from="inventoryItem.quantityOnHandTotal ?: 0" type="Integer"/>
-            <set field="availableToPromise" from="inventoryItem.availableToPromiseTotal ?: 0" type="Integer"/>
-
-            <set field="availableToPromiseDiff" from="quantity - availableToPromise - quantityReserved" type="Integer"/>
-            <set field="quantityOnHandDiff" from="quantity - quantityOnHand" type="Integer"/>
-
-            <!-- After calculating availableToPromiseDiff and quantityOnHandDiff -->
-            <if condition="availableToPromiseDiff != 0 || quantityOnHandDiff != 0">
-                <set field="resetRecord" from="[:]"/>
-                <set field="resetRecord.resetDateResourceId" from="_batchId"/>
-                <set field="resetRecord.facilityId" from="facilityId"/>
-                <set field="resetRecord.externalFacilityId" from="externalFacilityId"/>
-                <set field="resetRecord.productId" from="productId"/>
-                <set field="resetRecord.productIdentType" from="idType"/>
-                <set field="resetRecord.productIdentValue" from="idValue"/>
-                <set field="resetRecord.inventoryItemId" from="inventoryItem.inventoryItemId"/>
-                <set field="resetRecord.inventoryItemATP" from="availableToPromise" type="Integer"/>
-                <set field="resetRecord.inventoryItemQOH" from="quantityOnHand" type="Integer"/>
-                <set field="resetRecord.inventoryItemATPDiff" from="availableToPromiseDiff" type="Integer"/>
-                <set field="resetRecord.inventoryItemQOHDiff" from="quantityOnHandDiff" type="Integer"/>
-                <set field="resetRecord.externalATP" from="quantity" type="Integer"/>
-                <set field="resetRecord.externalQOH" from="quantity" type="Integer"/>
-                <set field="resetRecord.createdDate" from="ec.user.nowTimestamp"/>
-                <service-call name="create#org.apache.ofbiz.product.inventory.ExternalInventoryReset" in-map="resetRecord" out-map="resetRecordOut"/>
-                <set field="resetItemId" from="resetRecordOut.resetItemId"/>
+                    <if condition="availableToPromiseDiff != 0">
+                        <set field="resetRecord" from="[:]"/>
+                        <set field="resetRecord.resetDateResourceId" from="_batchId"/>
+                        <set field="resetRecord.facilityId" from="facilityId"/>
+                        <set field="resetRecord.externalFacilityId" from="externalFacilityId"/>
+                        <set field="resetRecord.productId" from="productId"/>
+                        <set field="resetRecord.netsuiteProductId" from="netsuiteProductId"/>
+                        <set field="resetRecord.inventoryItemId" from="inventoryItem.inventoryItemId"/>
+                        <set field="resetRecord.inventoryItemATP" from="availableToPromise" type="Integer"/>
+                        <set field="resetRecord.inventoryItemATPDiff" from="availableToPromiseDiff" type="Integer"/>
+                        <set field="resetRecord.externalATP" from="quantity" type="Integer"/>
+                        <set field="resetRecord.createdDate" from="ec.user.nowTimestamp"/>
+                        <service-call name="create#co.netsuite.integration.NetsuiteInventoryReset" in-map="resetRecord" out-map="resetRecordOut"/>
+                        <set field="resetItemId" from="resetRecordOut.resetItemId"/>
+                        <else>
+                            <log message="InventoryItem [${inventoryItem.inventoryItemId}] with ATP [${availableToPromise}] – skipped for creation; No variances found."/>
+                        </else>
+                    </if>
+                </else>
             </if>
         </actions>
     </service>
@@ -93,8 +125,16 @@ under the License.
             </parameter>
             <parameter name="recordLimitPerFeed" type="Integer"  default-value="1000"/>
             <parameter name="lastRunTime"/>
+            <parameter name="resetBy" default-value="QOH">
+                <description>QOH or ATP - determines which quantity to use for adjustment</description>
+            </parameter>
         </in-parameters>
         <actions>
+            <script>
+                import co.hotwax.ns.util.CsvWriteHelper
+                import org.moqui.entity.EntityCondition
+                import org.moqui.entity.EntityFind
+            </script>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
             <log message="Generating Inventory Adjustment Feed file at time ${nowTimestamp}"/>
 
@@ -110,28 +150,11 @@ under the License.
 
             <!-- Set sinceEntryDate using the lastRunTime, if it is set, fetch records from that time, else it will be null -->
             <set field="sinceEntryDate" from="lastRunParam?.parameterValue"/>
+            <set field="headers" from="['Reference No', 'Adjustment Account', 'Item', 'Adjust Qty By', 'Location', 'Date', 'Memo', 'HC Inventory Adj Id', 'Adjustment Location', 'Facility Name', 'Item Tag']"/>
 
             <script>
-                import co.hotwax.ns.util.CsvWriteHelper
-                import org.moqui.entity.EntityCondition
-                import org.moqui.entity.EntityFind
-                
-                // Define the headers for the CSV file
-                headers = [
-                    'Reference No',
-                    'Adjustment Account',
-                    'Item',
-                    'Adjust Qty By',
-                    'Location',
-                    'Date',
-                    'Memo',
-                    'HC Inventory Adj Id',
-                    'Adjustment Location',
-                    'Facility Name'
-                ]
-                
                 // Find inventory adjustments that need to be processed
-                adjustmentFind = ec.entity.find("org.apache.ofbiz.product.inventory.ExternalInventoryReset")
+                adjustmentFind = ec.entity.find("co.netsuite.integration.NetsuiteInventoryReset")
                 if (sinceEntryDate) {
                     adjustmentFind.condition("createdDate", EntityCondition.GREATER_THAN, sinceEntryDate)
                 }
@@ -163,24 +186,10 @@ under the License.
                         <set field="facilityName" from="facility.facilityName"/>
                     </else>
                 </if>
-                <script>
-                    // Create the adjustment record
-                    adjustmentRecord = [
-                        'Reference No': adjustment.resetDateResourceId,
-                        'Adjustment Account': '254',
-                        'Item': adjustment.productIdentValue,
-                        'Adjust Qty By': adjustment.inventoryItemQOHDiff?.toString(),
-                        'Location': adjustment.externalFacilityId,
-                        'Date': adjDate,
-                        'Memo': 'Inventory adjustment from HotWax',
-                        'HC Inventory Adj Id': adjustment.resetDateResourceId,
-                        'Adjustment Location': adjustment.externalFacilityId,
-                        'Facility Name': facilityName
-                    ]
-                    
-                    // Write the record to the CSV file
-                    csvWriteHelper.writeToFile(adjustmentRecord)
-                </script>
+                <set field="adjustQtyBy" from="(resetBy == 'QOH') ? (adjustment.inventoryItemQOHDiff ?: 0) : (adjustment.inventoryItemATPDiff ?: 0)"/>
+                <set field="adjustmentRecord" from="['Reference No': adjustment.resetDateResourceId, 'Adjustment Account': '254', 'Item': adjustment.netsuiteProductId, 'Adjust Qty By': adjustQtyBy.toString(), 'Location': adjustment.externalFacilityId, 'Date': adjDate,
+                    'Memo': 'Inventory Reset Adjustment from HotWax - ' + (resetBy == 'QOH' ? 'QOH' : 'ATP'), 'HC Inventory Adj Id': adjustment.resetDateResourceId, 'Adjustment Location': adjustment.externalFacilityId, 'Facility Name': facilityName, 'Item Tag': adjustment.resetItemId]"/>
+                <script>csvWriteHelper.writeToFile(adjustmentRecord)</script>
             </iterate>
             <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
             <script>}</script>
