@@ -23,7 +23,6 @@ under the License.
             <parameter name="externalFacilityId"/>
             <parameter name="quantity" type="Integer"/>
             <parameter name="netsuiteProductId"/>
-            <parameter name="locationSeqId"/>
             <parameter name="productId"/>
             <parameter name="_batchId"/>
             <parameter name="facilityId"/>
