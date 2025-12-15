@@ -89,8 +89,18 @@
     </view-entity>
 
     <view-entity entity-name="TransferOrderItemAndHistory" package="co.hotwax.netsuite">
-        <description>View to get Transfer Order details.</description>
+        <description>
+            View to get Transfer Order details for the Reconciliation Feed.
+            This view is being used in the service generate TransferOrderReconciliationFeed, this view will not consider
+            Fulfill Only type TOs since it will incorrectly create the receipts/adjustments for those TOs.
+        </description>
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+            </entity-condition>
+        </member-entity>
         <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
             <key-map field-name="orderId"/>
         </member-entity>
@@ -98,9 +108,8 @@
             <key-map field-name="orderId"/>
             <key-map field-name="shipGroupSeqId"/>
         </member-entity>
-        <member-entity entity-alias="OS" entity-name="org.apache.ofbiz.order.order.OrderStatus" join-from-alias="OI">
+        <member-entity entity-alias="OS" entity-name="org.apache.ofbiz.order.order.OrderStatus" join-from-alias="OH">
             <key-map field-name="orderId"/>
-            <key-map field-name="orderItemSeqId"/>
             <key-map field-name="statusId"/>
         </member-entity>
         <member-entity entity-alias="ODRF" entity-name="org.apache.ofbiz.product.facility.Facility" join-from-alias="OISG">
@@ -116,12 +125,14 @@
         <alias entity-alias="OH" name="orderTypeId"/>
         <alias entity-alias="OH" name="productStoreId"/>
         <alias entity-alias="OH" name="statusFlowId"/>
+        <alias entity-alias="OID" field="idValue" name="nsOrderId"/>
 
         <alias entity-alias="OI" name="orderItemSeqId"/>
         <alias entity-alias="OI" name="shipGroupSeqId"/>
         <alias entity-alias="OI" name="quantity"/>
         <alias entity-alias="OI" field="statusId" name="itemStatusId"/>
         <alias entity-alias="OI" name="productId"/>
+        <alias entity-alias="OI" field="externalId" name="orderItemExternalId"/>
 
         <alias entity-alias="OISG" name="facilityId"/>
         <alias entity-alias="OISG" name="orderFacilityId"/>
@@ -133,7 +144,8 @@
         <entity-condition>
             <econdition entity-alias="OH" field-name="orderTypeId" value="TRANSFER_ORDER"/>
             <econdition entity-alias="TOIH" field-name="historyId" value=""/>
-            <econdition entity-alias="OI" field-name="statusId" value="ITEM_COMPLETED"/>
+            <econdition entity-alias="OH" field-name="statusId" value="ORDER_COMPLETED"/>
+            <econdition entity-alias="OH" field-name="statusFlowId" operator="in" value="TO_Fulfill_And_Receive,TO_Receive_Only"/>
         </entity-condition>
     </view-entity>
 </entities>

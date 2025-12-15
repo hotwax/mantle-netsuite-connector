@@ -519,8 +519,9 @@
 
     <service verb="generate" noun="TransferOrderReconciliationFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>
-            Generate Feed file for reconciliation of the completed Transfer Order Items, this will include details for
-            overReceivedItems and underReceivedShipments for each order which has one or more completed items.
+            Generate Feed file for reconciliation of the completed Transfer Orders.
+            This will include details for overReceivedItems and underReceivedShipments for each completed order.
+            For the items which are not shipped but received, they will be included in overReceivedItems for inventory adjustment.
             This feed is expected to work with the history entity, TransferOrderItemAndHistory.
         </description>
         <in-parameters>
@@ -556,7 +557,7 @@
 
                 if(orderId) transferOrder_find.condition("orderId", orderId)
                 if(sinceCompletedDate) transferOrder_find.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, sinceCompletedDate)
-                transferOrder_find.selectField("orderId,orderName,orderFacilityExternalId")
+                transferOrder_find.selectField("orderId,orderName,nsOrderId,orderFacilityExternalId")
                 transferOrder_find.distinct(true)
 
                 //If no eligible transfer orders, then don't generate the file
@@ -595,35 +596,38 @@
 
             <!-- Preparing Transfer Orders Receipt details -->
             <iterate list="transferOrderItr" entry="transferOrder">
-                <!-- Get NetSuite Order ID -->
-                <entity-find entity-name="co.hotwax.order.OrderIdentification" list="orderIdentificationList">
-                    <econdition field-name="orderId" from="transferOrder.orderId"/>
-                    <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
-                    <date-filter/>
-                </entity-find>
-
                 <!-- Set Transfer Order level details -->
                 <set field="transferOrderMap" from="[hcOrderId:transferOrder.orderId, orderName:transferOrder.orderName,
-                    transferOrderId:orderIdentificationList?.first?.idValue, destinationFacilityId:transferOrder.orderFacilityExternalId]"/>
+                    transferOrderId:transferOrder.nsOrderId, destinationFacilityId:transferOrder.orderFacilityExternalId]"/>
 
-                <!-- Get the items which are over-received wise -->
-                <entity-find entity-name="co.hotwax.shipment.TransferOrderItemShipmentSummary" list="overReceivedItemList">
+                <!-- Get the completed items, this is to create the history for all the items. -->
+                <!-- NOTE For Cancelled items in Completed order, it will be treated as not shipped and not received and
+                    history will get created -->
+                <entity-find entity-name="co.hotwax.netsuite.TransferOrderItemAndHistory" list="completedOrderItemsList">
+                    <econdition field-name="orderId" from="transferOrder.orderId"/>
+                </entity-find>
+
+                <!-- Get the items which are shipped and may be under or over-received -->
+                <entity-find entity-name="co.hotwax.shipment.TransferOrderItemShipmentSummary" list="shippedOrderItemsList">
                     <econdition field-name="orderId" from="transferOrder.orderId"/>
                     <econdition field-name="itemStatusId" value="ITEM_COMPLETED"/>
                     <having-econditions>
-                        <econdition field-name="qtyAvailableToReceive" value="0"/>
+                        <econdition field-name="qtyAvailableToReceive" operator="greater-equals" value="0"/>
                     </having-econditions>
                 </entity-find>
 
+                <!-- Prepare the over received items for the feed -->
+                <set field="overReceivedItemList" from="shippedOrderItemsList.findAll { it.qtyAvailableToReceive == 0 }"/>
                 <!-- Get unique orderId and orderItemSeqId to prevent unnecessary loop for multiple receipts for the same order item -->
                 <set field="uniqueOverReceivedToItems" from="overReceivedItemList.collect{ [orderId: it.orderId, orderItemSeqId: it.orderItemSeqId, orderItemExternalId: it.orderItemExternalId, productId: it.productId] }.unique()"/>
 
                 <set field="overReceivedItems" from="[]"/>
+                <!-- Separate list to include specific comment for each item history creation -->
                 <set field="itemsToCreateHistory" from="[]"/>
                 <!-- This may be completely received or over-received -->
                 <iterate list="uniqueOverReceivedToItems" entry="uniqueOverReceivedToItem">
                     <!-- Get total Shipped quantity for the item -->
-                    <entity-find entity-name="co.hotwax.shipment.ShipmentItemView" list="shipmentItemList">
+                    <entity-find entity-name="org.apache.ofbiz.order.order.OrderShipment" list="orderShipmentList">
                         <econdition field-name="orderId" from="uniqueOverReceivedToItem.orderId"/>
                         <econdition field-name="orderItemSeqId" from="uniqueOverReceivedToItem.orderItemSeqId"/>
                         <select-field field-name="orderId,orderItemSeqId,quantity"/>
@@ -636,7 +640,7 @@
                         <select-field field-name="orderId,orderItemSeqId,quantityAccepted"/>
                     </entity-find>
 
-                    <set field="totalShippedQty" from="shipmentItemList*.quantity.sum()"/>
+                    <set field="totalShippedQty" from="orderShipmentList*.quantity.sum()"/>
                     <set field="totalReceivedQty" from="shipmentReceiptList?.first?.quantityAccepted"/>
 
                     <if condition="totalReceivedQty &gt; totalShippedQty"><then>
@@ -658,16 +662,9 @@
                     </if>
                 </iterate>
 
-                <!-- Get the items which are under-received shipment wise -->
-                <entity-find entity-name="co.hotwax.shipment.TransferOrderItemShipmentSummary" list="underReceivedShipmentItemList">
-                    <econdition field-name="orderId" from="transferOrder.orderId"/>
-                    <econdition field-name="itemStatusId" value="ITEM_COMPLETED"/>
-                    <having-econditions>
-                        <econdition field-name="qtyAvailableToReceive" operator="greater" value="0"/>
-                    </having-econditions>
-                </entity-find>
+                <!-- Prepare the under received items for the feed shipment wise -->
+                <set field="underReceivedShipmentItemList" from="shippedOrderItemsList.findAll { it.qtyAvailableToReceive &gt; 0 }"/>
                 <set field="underReceivedShipments" from="[]"/>
-
                 <set field="shipmentIds" from="new HashSet(underReceivedShipmentItemList*.shipmentId)"/>
 
                 <!-- Get unique orderId and orderItemSeqId to create history of the items -->
@@ -676,7 +673,6 @@
                 <script>itemsToCreateHistory.addAll(uniqueUnderReceivedToItems)</script>
 
                 <iterate list="shipmentIds" entry="shipmentId">
-
                     <set field="items" from="[]"/>
                     <!-- Set Transfer Order Shipment level details -->
                     <set field="shipmentMap" from="[hcShipmentId:shipmentId]"/>
@@ -705,8 +701,45 @@
                     <set field="shipmentMap.items" from="items"/>
                     <script>underReceivedShipments.add(shipmentMap)</script>
                     <set field="isFileEmpty" from="false"/>
-
                 </iterate>
+
+                <!-- Preparing the completed items which are not shipped, need to check the receipts and include in over received or not -->
+                <!-- For the completedNotShippedItems items,
+                       This could be case of "not shipped not received" or "not shipped but received",
+                       for the first one, we need to ignore the item as it will be included in the Close TransferOrderItemsFeed ,
+                       for the second one, we need to include the item in overReceivedItems list -->
+                <set field="uniqueTransferOrderShippedItemIds" from="new HashSet(shippedOrderItemsList*.orderItemSeqId)"/>
+                <set field="completedNotShippedItems" from="completedOrderItemsList.findAll { !(it.orderItemSeqId in uniqueTransferOrderShippedItemIds) }"/>
+                <iterate list="completedNotShippedItems" entry="completedNotShippedItem">
+                    <!-- Check if received quantity -->
+                    <!-- Get total Received Quantity for the item -->
+                    <entity-find entity-name="co.hotwax.shipment.ShipmentReceiptSummary" list="shipmentReceiptList">
+                        <econdition field-name="orderId" from="transferOrder.orderId"/>
+                        <econdition field-name="orderItemSeqId" from="completedNotShippedItem.orderItemSeqId"/>
+                        <select-field field-name="orderId,orderItemSeqId,quantityAccepted"/>
+                    </entity-find>
+                    <set field="totalReceivedQty" from="shipmentReceiptList?.first?.quantityAccepted"/>
+
+                    <if condition="totalReceivedQty &gt; 0"><then>
+                        <!-- Put it in over-received items -->
+                        <!-- Get NetSuite Product ID for each item -->
+                        <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentificationList">
+                            <econdition field-name="productId" from="completedNotShippedItem.productId"/>
+                            <econdition field-name="goodIdentificationTypeId" value="NETSUITE_PRODUCT_ID"/>
+                            <date-filter/>
+                        </entity-find>
+
+                        <set field="orderItemMap" from="[orderItemSeqId:completedNotShippedItem.orderItemSeqId, orderLineId:completedNotShippedItem.orderItemExternalId, itemId:goodIdentificationList?.first?.idValue, overReceivedQty:totalReceivedQty]"/>
+                        <script>overReceivedItems.add(orderItemMap)</script>
+                        <script>itemsToCreateHistory.add(orderItemMap + [orderId:transferOrder.orderId, comment:'Transfer Order Item not shipped but received, sent as part of Transfer Order Reconciliation Feed'])</script>
+                        <set field="isFileEmpty" from="false"/>
+                    </then><else>
+                        <script>itemsToCreateHistory.add([orderId:transferOrder.orderId, orderItemSeqId:completedNotShippedItem.orderItemSeqId, comment:'Transfer Order Item not shipped and not received, not sent as part of Transfer Order Reconciliation Feed'])</script>
+                        <set field="isFileEmpty" from="false"/>
+                    </else>
+                    </if>
+                </iterate>
+
                 <!-- Create History for the items -->
                 <iterate list="itemsToCreateHistory" entry="itemToCreateHistory">
                     <service-call name="create#co.hotwax.integration.order.TransferOrderItemHistory"
@@ -717,6 +750,7 @@
                 <set field="transferOrderMap.overReceivedItems" from="overReceivedItems"/>
                 <set field="transferOrderMap.underReceivedShipments" from="underReceivedShipments"/>
 
+                <!-- This is done to skip creating the order level map if fully received TO -->
                 <if condition="overReceivedItems.isEmpty() &amp;&amp; underReceivedShipments.isEmpty()">
                     <continue/>
                 </if>
