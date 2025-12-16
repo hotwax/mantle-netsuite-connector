@@ -36,7 +36,7 @@
                 <parameter name="shipmentStatusId"/>
                 <parameter name="shippedDate"/>
                 <parameter name="packages" type="List">
-                        <parameter name="packageMap" type="Map">
+                    <parameter name="packageMap" type="Map">
                         <parameter name="trackingNumber"/>
                         <parameter name="items" type="List">
                             <parameter name="itemMap" type="Map">
@@ -62,6 +62,9 @@
             </entity-find>
             <set field="payload.orderId" from="orderIdentificationList?.first?.orderId"/>
             <iterate list="payload.packages" entry="shipmentPackage">
+                <!-- Create a list to track items that should be kept -->
+                <set field="validItems" from="[]"/>
+
                 <iterate list="shipmentPackage.items" entry="item">
                     <!-- Get HC Product ID -->
                     <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
@@ -72,14 +75,42 @@
                     </entity-find>
                     <set field="item.productId" from="goodIdentifications?.first?.productId"/>
 
-                    <!-- Get Order Item Seq ID and Ship Group Seq ID -->
+                    <!-- Get Order Item Seq ID and Ship Group Seq ID and check status -->
                     <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
                         <econdition field-name="orderId" from="payload.orderId"/>
                         <econdition field-name="externalId" from="item.remove('itemExternalId')"/>
                     </entity-find>
                     <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
+                    <set field="orderItemStatusId" from="orderItemList?.first?.statusId"/>
+
+                    <!-- Only add item to validItems if it's not completed -->
+                    <if condition="orderItemStatusId != 'ITEM_COMPLETED'">
+                        <script>validItems.add(item)</script>
+                        <else>
+                            <!-- Log that we're skipping a completed item -->
+                            <log level="info" message="OrderItem [${item.orderItemSeqId}] for Order [${payload.orderId}] – skipped in shipment creation; already completed."/>
+                        </else>
+                    </if>
                 </iterate>
+
+                <!-- Replace the items list with only valid items -->
+                <set field="shipmentPackage.items" from="validItems"/>
             </iterate>
+
+            <!-- Remove packages that have no valid items -->
+            <set field="validPackages" from="[]"/>
+            <iterate list="payload.packages" entry="shipmentPackage">
+                <if condition="shipmentPackage.items">
+                    <script>validPackages.add(shipmentPackage)</script>
+                </if>
+            </iterate>
+            <set field="payload.packages" from="validPackages"/>
+
+            <!-- If no packages remain with valid items, return empty payload to skip shipment creation -->
+            <if condition="!payload.packages">
+                <log level="info" message="Shipment [${payload.externalId}] – skipped for creation; all items already completed."/>
+                <set field="payload" from="[:]"/>
+            </if>
         </actions>
     </service>
 
