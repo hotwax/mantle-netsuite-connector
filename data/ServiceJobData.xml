@@ -49,6 +49,9 @@
     <moqui.basic.Enumeration enumId="NS_EXP_TO_W2S" enumCode="NS_EXP_TO_W2S" description="NetSuite Export Warehouse to Store Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_UPDATE_TO" enumCode="NS_UPDATE_TO" description="NetSuite Import Update Transfer Order Job" enumTypeId="ORDER_SYS_JOB"/>
 
+    <moqui.basic.Enumeration enumId="IMP_STR_INV_NS" enumCode="IMP_STR_INV_NS" description="Import store inventory from netsuite" enumTypeId="INVENTORY_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_INV_VAR_FEED_NS" enumCode="GEN_INV_VAR_FEED_NS" description="Generate Inventory Adjustment Feed for NetSuite" enumTypeId="INVENTORY_SYS_JOB"/>
+
     <!-- NetSuite Job Product Data -->
     <Product productId="NS_CREATE_CD" productTypeId="SERVICE" internalName="NS_CREATE_CD"
              productName="NetSuite Create Customer Deposit Job" description="NetSuite Create Customer Deposit Job"
@@ -186,6 +189,15 @@
              productName="NetSuite Import Update Transfer Order Job" description="NetSuite Import Update Transfer Order Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
 
+    <Product productId="IMP_STR_INV_NS" productTypeId="SERVICE" internalName="IMP_STR_INV_NS"
+             productName="Import store inventory from netsuite" description="Import store inventory from netsuite"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+
+    <Product productId="GEN_INV_VAR_FEED_NS" productTypeId="SERVICE" internalName="GEN_INV_VAR_FEED_NS"
+             productName="Generate Inventory Adjustment Feed for NetSuite" description="Generate Inventory Adjustment Feed for NetSuite"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+
+
 
     <!-- Job Product Category Members -->
 
@@ -277,6 +289,9 @@
     <ProductCategoryMember productId="NS_EXP_TO_S2S" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_TO_S2W" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_EXP_TO_W2S" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
+    <ProductCategoryMember productId="IMP_STR_INV_NS" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
 
     <!-- ServiceJob data for create order from HC to netsuite -->
     <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed" description="Generate HotWax Create Order Feed for Netsuite" instanceOfProductId="GEN_CRT_ORD_FD" jobTypeEnumId="GEN_CRT_ORD_FD"
@@ -537,6 +552,25 @@
     <moqui.service.job.ServiceJob jobName="HC_SC_UpdateTransferOrders" description="Import Update Transfer Order CSV" instanceOfProductId="NS_UPDATE_TO"
                                   serviceName="co.hotwax.netsuite.NetSuiteRestletServices.run#DummySuiteScript" cronExpression="0 0/15 * * * ?" paused="N" permissionGroupId="NETSUITE" jobTypeEnumId="NS_UPDATE_TO"/>
     <moqui.service.job.ServiceJobParameter jobName="HC_SC_UpdateTransferOrders" parameterName="scriptType" parameterValue="SCHEDULED"/>
+
+    <moqui.service.job.ServiceJob jobName="import_store_inventory_from_NS" description="Import Store Inventory from NetSuite" instanceOfProductId="IMP_STR_INV_NS" jobTypeEnumId="IMP_STR_INV_NS"
+        serviceName="co.hotwax.util.UtilityServices.get#DataManagerFileFromSftp" cronExpression="" paused="Y">
+        <parameters parameterName="configId" parameterValue="STORE_INV_RESET"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="parameters" parameterValue="[{'resetBy':'QOH'}]"/>
+    </moqui.service.job.ServiceJob>
+
+    <moqui.service.job.ServiceJob jobName="Generate_Inventory_Var_Feed" instanceOfProductId="GEN_INV_VAR_FEED_NS" jobTypeEnumId="GEN_INV_VAR_FEED_NS"
+        description="Generate Inventory Adjustment Feed for NetSuite"
+        serviceName="co.hotwax.netsuite.InventoryServices.generate#InventoryAdjustmentFeed"
+        cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="recordLimitPerFeed" parameterValue="1000"/>
+        <parameters parameterName="filePathPattern" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="jobName" parameterValue="Generate_Inventory_Var_Feed"/>
+        <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
+        <parameters parameterName="lastRunTime"/>
+    </moqui.service.job.ServiceJob>
 
 
     <moqui.service.job.ServiceJob jobName="Generate_Unfilfilled_Completed_Closed_Feed" instanceOfProductId="GEN_TO_ITEM_CLOSURE_FD" jobTypeEnumId="GEN_TO_ITEM_CLOSURE_FD"

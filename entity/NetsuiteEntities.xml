@@ -6,6 +6,33 @@
         <field name="externalSystemId" type="id"/>
         <field name="syncDate" type="date-time"/>
     </entity>
+    <entity entity-name="NetsuiteInventoryReset" package="co.netsuite.integration">
+        <field name="resetItemId" type="id" is-pk="true"/>
+        <field name="resetDateResourceId" type="id"/>
+        <field name="facilityId" type="id"/>
+        <field name="productId" type="id"/>
+        <field name="externalFacilityId" type="id"/>
+        <field name="netsuiteProductId" type="id"/>
+        <field name="inventoryItemId" type="id"/>
+        <field name="inventoryItemATP" type="number-decimal"/>
+        <field name="inventoryItemQOH" type="number-decimal"/>
+        <field name="externalATP" type="number-decimal"/>
+        <field name="externalQOH" type="number-decimal"/>
+        <field name="createdDate" type="date-time"/>
+        <field name="inventoryItemATPDiff" type="number-integer"/>
+        <field name="inventoryItemQOHDiff" type="number-integer"/>
+
+        <relationship type="one" fk-name="EXTINVRST_FAC" related="org.apache.ofbiz.product.facility.Facility">
+            <key-map field-name="facilityId"/>
+        </relationship>
+        <relationship type="one" fk-name="EXTINVRST_PROD" related="org.apache.ofbiz.product.product.Product">
+            <key-map field-name="productId"/>
+        </relationship>
+        <relationship type="one" fk-name="EXTINVRST_INVITEM" related="org.apache.ofbiz.product.inventory.InventoryItem">
+            <key-map field-name="inventoryItemId"/>
+        </relationship>
+    </entity>
+
 
     <entity entity-name="TransferOrderItemHistory" package="co.hotwax.integration.order">
         <field name="historyId" type="id" is-pk="true"/>
