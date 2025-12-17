@@ -560,7 +560,6 @@
 
                 // Query to find transfer order items that need to be closed
                 toItemFind = ec.entity.find("co.hotwax.netsuite.TransferOrderItemsWithoutShipmentAndReceipt")
-                toItemFind.selectField("orderId", "orderItemSeqId", "itemExternalId", "netsuiteOrderId")
 
                 if (orderId) {
                     toItemFind.condition("orderId", orderId)
@@ -568,6 +567,8 @@
                 if (completedDate) {
                     toItemFind.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, completedDate)
                 }
+
+                toItemFind.selectField("orderId,orderItemSeqId,itemExternalId,netsuiteOrderId")
 
                 // If no eligible order items, don't generate the file
                 long toItemsCount = toItemFind.count()

@@ -19,6 +19,7 @@
         <parameters parameterName="recordLimitPerFeed" parameterValue="1000"/>
         <parameters parameterName="jobName" parameterValue="Generate_TO_Receivable_Item_Closure_Feed"/>
         <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
+        <parameters parameterName="lastRunTime"/>
     </moqui.service.job.ServiceJob>
 
 </entity-facade-xml>
