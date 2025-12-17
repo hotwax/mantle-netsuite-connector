@@ -87,7 +87,7 @@
             <econdition field-name="orderTypeId" entity-alias="OH" value="TRANSFER_ORDER"/>
         </entity-condition>
     </view-entity>
-    <view-entity entity-name="UnfilfilledCompletedTransferOrderItems" package="co.hotwax.netsuite">
+    <view-entity entity-name="TransferOrderItemsWithoutShipmentAndReceipt" package="co.hotwax.netsuite">
         <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
         <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
             <key-map field-name="orderId"/>
@@ -120,12 +120,13 @@
         <alias name="statusDatetime"  entity-alias="ORDS"/>
         <entity-condition>
             <econditions combine="or">
-                <econdition field-name="shipmentId" entity-alias="OS" value=""/>
-                <econdition field-name="statusId" entity-alias="S" value="SHIPMENT_CANCELLED"/>
+                <econdition field-name="shipmentId" entity-alias="OS" operator="is-null"/>
+                <econdition field-name="statusId" entity-alias="S" operator="not-equals" value="SHIPMENT_SHIPPED"/>
             </econditions>
-            <econdition field-name="receiptId" entity-alias="SR" value=""/>
+            <econdition field-name="receiptId" entity-alias="SR" operator="is-null"/>
             <econdition field-name="orderTypeId" entity-alias="OH" value="TRANSFER_ORDER"/>
             <econdition field-name="statusId" entity-alias="OI" value="ITEM_COMPLETED"/>
+            <econdition field-name="statusFlowId" entity-alias="OH" operator="not-equals" value="TO_Fulfill_Only"/>
         </entity-condition>
     </view-entity>
 
