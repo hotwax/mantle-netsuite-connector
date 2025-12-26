@@ -26,4 +26,9 @@
             <service-call name="co.hotwax.netsuite.NetSuiteRestletServices.call#RunNetSuiteScript" in-map="context"/>
         </actions>
     </seca>
+    <seca id="TransferOrderShipmentReceiptFeed" service="co.hotwax.poorti.TransferOrderFulfillmentServices.receive#TransferOrder" when="post-commit" run-on-error="false">
+        <actions>
+            <service-call name="co.hotwax.netsuite.TransferOrderServices.prepare#TransferOrderShipmentReceiptPayload" in-map="context"/>
+        </actions>
+    </seca>
 </secas>
