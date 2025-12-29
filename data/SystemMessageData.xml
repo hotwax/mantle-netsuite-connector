@@ -122,4 +122,12 @@
             sendPath="/home/${sftpUsername}/netsuite/transferorderv2/export/oms-fulfillment/TransferOrderShipmentFeed-${dateTime}-${systemMessageId}.json"
             sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
             receivePath="${contentRoot}/netsuite/TransferOrderShipmentFeed/TransferOrderShipmentFeed-${dateTime}.json"/>
+    <moqui.service.message.SystemMessageType systemMessageTypeId="NetSuiteTransferOrderItemsFeed"
+        description="Generate HotWax Create Transfer Order Items Feed for Netsuite"
+        parentTypeId="LocalFeedFile"
+        sendPath="/home/${sftpUsername}/netsuite/transferorder/export/CreatedTransferOrderItemsFeed-${systemMessageId}-${dateTime}.csv"
+        sendServiceName="co.hotwax.ofbiz.SystemMessageServices.send#SystemMessageFileSftp"
+        receivePath="${contentRoot}/netsuite/CreateTransferOrderItemFeed/createTransferOrderItemFeed-${dateTime}.csv">
+    </moqui.service.message.SystemMessageType>
+
 </entity-facade-xml>
