@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="ext-upgrade">
+    <moqui.service.job.ServiceJob jobName="generate_BrokeredOrderItemsFeed_Netsuite"
+            serviceName="co.hotwax.netsuite.OrderServices.generate#BrokeredOrderItemsFeed">
+        <parameters parameterName="filePathPattern"/>
+        <parameters parameterName="templatePath"/>
+    </moqui.service.job.ServiceJob>
+</entity-facade-xml>

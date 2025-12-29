@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="ext-upgrade">
+    <!-- ServiceJob data for create order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed">
+        <parameters parameterName="runFeedWithHistory" parameterValue="N"/>
+        <parameters parameterName="ordersCountPerFeed" parameterValue="500"/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- ServiceJob data for create POS order from HC to netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed_pos">
+        <parameters parameterName="runFeedWithHistory" parameterValue="N"/>
+        <parameters parameterName="ordersCountPerFeed" parameterValue="500"/>
+    </moqui.service.job.ServiceJob>
+
+    <moqui.service.job.ServiceJob jobName="generate_CustomerFeed">
+        <parameters name="customersCountPerFeed" parameterValue="500"/>
+    </moqui.service.job.ServiceJob>
+</entity-facade-xml>

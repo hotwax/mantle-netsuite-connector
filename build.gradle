@@ -36,10 +36,7 @@ tasks.withType(GroovyCompile) { options.compilerArgs << "-proc:none" }
 
 dependencies {
     implementation project(':framework')
-    //mySql Database jar
-    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
-    implementation 'com.github.erosb:everit-json-schema:1.14.5'
-    implementation  'org.json:json:20160810'
+    implementation 'com.googlecode.libphonenumber:libphonenumber:8.12.57'
 }
 
 // by default the Java plugin runs test on build, change to not do that (only run test if explicit task)

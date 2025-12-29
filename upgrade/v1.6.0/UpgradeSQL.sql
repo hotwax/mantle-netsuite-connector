@@ -1,0 +1,4 @@
+DELETE from service_job_parameter where job_name = 'generate_FulfilledOrderItemsFeed_Netsuite' and parameter_name in ('parentFacilityTypeIds', 'productStoreIds', 'productTypeIds', 'orderTypeId', 'orderStatusId','systemMessageTypeId');
+DELETE from system_message_type where system_message_type_id = 'FulfilledOrderItemsFeedNS';
+DELETE FROM System_Message_Type WHERE system_message_type_id IN ('PosCashOrderItemsFeed', 'NetSuiteOrderItemsFeed', 'ReqFieldMisPosCashOrder', 'ReqFieldMisOrderItems');
+DELETE FROM Enumeration WHERE enum_id IN ( 'PosCashOrderItemsFeed', 'NetSuiteOrderItemsFeed', 'ReqFieldMisPosCashOrder', 'ReqFieldMisOrderItems');

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="ext-upgrade">
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed_pos">
+        <parameters parameterName="minAgeInMinutes" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <moqui.service.job.ServiceJob jobName="generate_CreateOrderFeed">
+        <parameters parameterName="minAgeInMinutes" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+</entity-facade-xml>
