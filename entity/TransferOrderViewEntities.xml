@@ -132,6 +132,7 @@
         <alias entity-alias="OH" name="orderDate"/>
         <alias entity-alias="OH" name="originFacilityId"/>
         <alias entity-alias="OH" name="externalId"/>
+        <alias entity-alias="OH" name="orderName"/>
         <alias entity-alias="PS" field="externalId" name="productStoreExternalId"/>
         <alias entity-alias="SCENM" field="description" name="salesChannel"/>
 

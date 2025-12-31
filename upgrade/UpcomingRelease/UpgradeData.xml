@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-upgrade">
-    <moqui.service.job.ServiceJob jobName="generate_TransferOrderItemsFeed" jobTypeEnumId="GEN_TO_ITEM_FD"
+    <moqui.basic.Enumeration enumId="GEN_TO_ITEM_FD" enumCode="GEN_TO_ITEM_FD" description="Generate Transfer Order Items Feed Job" enumTypeId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_TO_ITEM_FD" productTypeId="SERVICE" internalName="GEN_TO_ITEM_FD"
+             productName="NetSuite Import Update Transfer Order Job" description="Generate Transfer Order Items Feed Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+
+    <ProductCategoryMember productId="GEN_TO_ITEM_FD" productCategoryId="GEN_TO_ITEM_FD" fromDate="2024-01-01 00:00:00.0"/>
+
+    <!-- Template Service Job to generate Transfer Order Items Feed from HotWax to Netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderItemsFeed" instanceOfProductId="GEN_TO_ITEM_FD" jobTypeEnumId="GEN_TO_ITEM_FD"
         description="Template Service Job to generate the Transfer Order Items Feed from HotWax"
         serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderItemsFeed"
         cronExpression="0 0 * * * ?" paused="Y">
-        <parameters parameterName="filePathPattern" parameterValue="netsuite/transferorderv2/create"/>
+        <parameters parameterName="filePathPattern" parameterValue="netsuite/transferorder/export"/>
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="fromOrderDate"/>

@@ -554,7 +554,7 @@
                 transferOrder_find = ec.entity.find("co.hotwax.netsuite.order.TransferOrderItemSyncView")
                 if(orderId) transferOrder_find.condition("orderId", orderId)
                 if(fromOrderDate) transferOrder_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
-                if(thruOrderDate) transferOrder_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, fromOrderDate)
+                if(thruOrderDate) transferOrder_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
                 transferOrder_find.selectField("orderId")
                 transferOrder_find.distinct(true)
                 transferOrder_find.limit(recordLimitPerFeed)

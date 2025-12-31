@@ -16,21 +16,22 @@
     .condition("facilityId", "in", facilityIds)
     .list()!/>
 
+<#assign netsuiteShipmentMethod = Static["co.hotwax.netsuite.NetSuiteMappingWorker"].getIntegrationTypeMappingValue(ec,'NETSUITE_SHP_MTHD', transferOrderItem.shipmentMethodTypeId)!>
+
 {
     "HCOrderId": "${transferOrderItem.orderId}",
-    "salesChannel": "WEB_SALES_CHANNEL",
-    "HCShopifySalesOrderId": "${transferOrderItem.externalId!}",
-    "externalId":"${transferOrderItem.externalId!}",
+    "salesChannel": "${transferOrderItem.salesChannel!}",
+    "externalId":"${transferOrderItem.orderId}-${transferOrderItem.orderName!}",
 
     <#if facilityList?has_content>
         <#assign fromLocation = facilityList?filter(f -> f.facilityId == transferOrderItem.originFacilityId!)?first!/>
-        <#if fromLocation?has_content>"formLocation": "${fromLocation.externalId!}",</#if>
+        <#if fromLocation?has_content>"fromLocation": "${fromLocation.externalId!}",</#if>
         <#assign toLocation = facilityList?filter(f -> f.facilityId == transferOrderItem.orderFacilityId!)?first!/>
         <#if toLocation?has_content>"toLocation": "${toLocation.externalId!}",</#if>
     </#if>
 
     "orderNote": "",
-    "shippingMethod": "",
+    "shippingMethod": "${netsuiteShipmentMethod!}",
     "subsidiary": "${transferOrderItem.productStoreExternalId}",
     "date": "${transferOrderItem.orderDate}",
     <#if facilityIdentification?has_content>"department": "${facilityIdentification[0].idValue}",</#if>
