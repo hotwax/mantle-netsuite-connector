@@ -521,7 +521,7 @@
         <description>Service to generate the Inventory Adjustment file for NetSuite for the Transfer Order receipts for products which were mis-shipped as part of the order.</description>
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true"/>
-            <parameter name="filePathPattern" required="true" default-value="netsuite/inventoryadjustment"/>
+            <parameter name="filePathPattern" required="true" default-value="netsuite/inventoryadjustment/csv"/>
             <parameter name="adjustmentAccount" required="true">
                 <description>
                     The specific General Ledger (GL) account where the financial impact of inventory changes is recorded when you use an Inventory Adjustment transaction in NetSuite.
@@ -605,7 +605,7 @@
                         'Adjust Qty By':toReceipt.quantityAccepted,
                         'Date': ec.l10n.format(nowTimestamp, 'MM/dd/yyyy'),
                         Memo:'Inventory Adj for MisShipped Item Receipt for Transfer Order ' +  toReceipt.orderName,
-                        'HC Inventory Adj Id':toReceipt.orderId,
+                        'HC Inventory Adj Id':toReceipt.orderName,
                         Location:transferOrderList?.first?.orderFacilityExternalId,
                         'Adjustment Location':transferOrderList?.first?.orderFacilityExternalId,
                         'Facility Name':transferOrderList?.first?.orderFacilityName,]"/>
