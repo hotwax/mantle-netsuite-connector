@@ -573,16 +573,16 @@
     </moqui.service.job.ServiceJob>
 
 
-    <moqui.service.job.ServiceJob jobName="Generate_TO_Receivable_Item_Closure_Feed" instanceOfProductId="GEN_TO_ITEM_CLOSURE_FD" jobTypeEnumId="GEN_TO_ITEM_CLOSURE_FD"
-        description="Service to generate feed file for NetSuite to close Transfer Order items that are completed in OMS but have no shipment or receipt records"
-        serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderItemsWithoutShipmentAndReceiptFeed"
+    <moqui.service.job.ServiceJob jobName="Generate_TO_Item_Closure_Feed" instanceOfProductId="GEN_TO_ITEM_CLOSURE_FD" jobTypeEnumId="GEN_TO_ITEM_CLOSURE_FD"
+        description="Service to generate feed file for NetSuite to close Transfer Order items that are completed in OMS"
+        serviceName="co.hotwax.netsuite.TransferOrderServices.generate#CompletedTransferOrderItemsFeed"
         cronExpression="0 0 1 * * ?" paused="Y">
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="filePathPattern" parameterValue="netsuite/transferorderv2/update"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="completedDate"/>
         <parameters parameterName="recordLimitPerFeed" parameterValue="1000"/>
-        <parameters parameterName="jobName" parameterValue="Generate_TO_Receivable_Item_Closure_Feed"/>
+        <parameters parameterName="jobName" parameterValue="Generate_TO_Item_Closure_Feed"/>
         <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
         <parameters parameterName="lastRunTime"/>
     </moqui.service.job.ServiceJob>
