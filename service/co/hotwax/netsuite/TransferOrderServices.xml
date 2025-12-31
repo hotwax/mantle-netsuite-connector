@@ -584,7 +584,7 @@
                     <script>csvWriteHelper.writeToFile(jsonOut)</script>
                 </iterate>
             </iterate>
-            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote" cache="true"/>
             <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
             <script>
                 } catch (Exception e) {
