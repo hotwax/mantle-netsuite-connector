@@ -527,11 +527,12 @@
            description="Template Service Job to generate the Transfer Order Items Feed from HotWax"
            serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderItemsFeed"
            cronExpression="0 0 * * * ?" paused="Y">
-        <parameters parameterName="systemMessageTypeId"/>
+        <parameters parameterName="filePathPattern" parameterValue="netsuite/transferorderv2/create"/>
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="orderId"/>
         <parameters parameterName="fromOrderDate"/>
         <parameters parameterName="thruOrderDate"/>
+        <parameters parameterName="recordLimitPerFeed" parameterValue="500"/>
     </moqui.service.job.ServiceJob>
 
 </entity-facade-xml>
