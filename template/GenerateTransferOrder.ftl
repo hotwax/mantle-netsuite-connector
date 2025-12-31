@@ -32,7 +32,7 @@
 
     "orderNote": "",
     "shippingMethod": "${netsuiteShipmentMethod!}",
-    "subsidiary": "${transferOrderItem.productStoreExternalId}",
+    "subsidiary": "${transferOrderItem.productStoreExternalId!}",
     "date": "${transferOrderItem.orderDate}",
     <#if facilityIdentification?has_content>"department": "${facilityIdentification[0].idValue}",</#if>
     "amount": "",
