@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-seed">
-
+   
     <!-- NetSuite Job Enum Data -->
     <moqui.basic.Enumeration enumId="NS_IMP_CASH_SALE" enumCode="NS_IMP_CASH_SALE" description="NetSuite Import Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="NS_EXP_CASH_SALE" enumCode="NS_EXP_CASH_SALE" description="NetSuite Export Cash Sale Order Job" enumTypeId="ORDER_SYS_JOB"/>
@@ -111,16 +111,16 @@
     <Product productId="NS_UPLOAD_PROD" productTypeId="SERVICE" internalName="NS_UPLOAD_PROD"
              productName="NetSuite Upload Product Job" description="NetSuite Upload Product Job"
              primaryProductCategoryId="PRODUCT_SYS_JOB"/>
-    <Product productId="GEN_CRT_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_ORD_FD"
+    <Product productId="GEN_CRT_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_ORD_FD" 
              productName="Generate Create Orders Feed For NetSuite Job" description="Generate Create Orders Feed For NetSuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
     <Product productId="GEN_CRT_POS_ORD_FD" productTypeId="SERVICE" internalName="GEN_CRT_POS_ORD_FD"
              productName="Generate Create POS Orders Feed For NetSuite Job" description="Generate Create POS Orders Feed For NetSuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-    <Product productId="GEN_CUST_DEP_FD" productTypeId="SERVICE" internalName="GEN_CUST_DEP_FD"
+    <Product productId="GEN_CUST_DEP_FD" productTypeId="SERVICE" internalName="GEN_CUST_DEP_FD" 
              productName="Generate Customer Deposit Feed for Netsuite Job" description="Generate Customer Deposit Feed for Netsuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-    <Product productId="GEN_CRT_CUST_FD" productTypeId="SERVICE" internalName="GEN_CRT_CUST_FD"
+    <Product productId="GEN_CRT_CUST_FD" productTypeId="SERVICE" internalName="GEN_CRT_CUST_FD" 
              productName="Generate HotWax Create Customer Feed for Netsuite Job" description="Generate HotWax Create Customer Feed for Netsuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
     <Product productId="NS_EXP_INV_ADJ" productTypeId="SERVICE" internalName="NS_EXP_INV_ADJ"
