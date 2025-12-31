@@ -516,7 +516,7 @@
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
-    <service verb="generate" noun="TransferOrderItemsWithoutShipmentAndReceiptFeed" authenticate="anonymous-all" transaction-timeout="7200">
+    <service verb="generate" noun="CompletedTransferOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
         <description>Service to generate feed file for NetSuite to close Transfer Order items that are completed in OMS but have no shipment or receipt records</description>
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true"/>
@@ -536,7 +536,7 @@
             </parameter>
         </in-parameters>
         <actions>
-            <log message="Generating Transfer Order Item Closure Feed file at time ${nowTimestamp}"/>
+            <log message="Generating Completed Transfer Order Item Feed file at time ${nowTimestamp}"/>
 
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
             <set field="baseFile" value="runtime://datamanager/${filePathPattern}/TransferOrderItemClosureFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')}.csv"/>
@@ -559,7 +559,7 @@
                 import org.moqui.entity.EntityCondition
 
                 // Query to find transfer order items that need to be closed
-                toItemFind = ec.entity.find("co.hotwax.netsuite.TransferOrderItemsWithoutShipmentAndReceipt")
+                toItemFind = ec.entity.find("co.hotwax.netsuite.CompletedTransferOrderItem")
 
                 if (orderId) {
                     toItemFind.condition("orderId", orderId)
@@ -568,7 +568,7 @@
                     toItemFind.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, completedDate)
                 }
 
-                toItemFind.selectField("orderId,orderItemSeqId,itemExternalId,netsuiteOrderId")
+                toItemFind.selectField("orderId,itemExternalId,netsuiteOrderId")
 
                 // If no eligible order items, don't generate the file
                 long toItemsCount = toItemFind.count()
@@ -578,13 +578,13 @@
                 }
 
                 try (toItemItr = toItemFind.iterator();
-                CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, ["internalId", "hcOrderId", "lineId", "closed"], recordLimitPerFeed)) {
+                CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, ["internalId", "hcOrderId", "lineId", "hcClosed"], recordLimitPerFeed)) {
             </script>
 
             <iterate list="toItemItr" entry="toItem">
                 <script>
                     // Write the order item details to CSV with isClosed as TRUE
-                    csvWriteHelper.writeToFile([internalId: toItem.netsuiteOrderId, hcOrderId: toItem.orderId, lineId: toItem.itemExternalId, closed: "TRUE"])  
+                    csvWriteHelper.writeToFile([internalId: toItem.netsuiteOrderId, hcOrderId: toItem.orderId, lineId: toItem.itemExternalId, hcClosed: "TRUE"])
                 </script>
             </iterate>
 
