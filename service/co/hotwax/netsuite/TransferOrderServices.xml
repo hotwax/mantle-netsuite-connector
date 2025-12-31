@@ -517,7 +517,7 @@
         </actions>
     </service>
     <service verb="generate" noun="CompletedTransferOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
-        <description>Service to generate feed file for NetSuite to close Transfer Order items that are completed in OMS but have no shipment or receipt records</description>
+        <description>Service to generate feed file for NetSuite to close Transfer Order items</description>
         <in-parameters>
             <parameter name="systemMessageRemoteId" required="true"/>
             <parameter name="filePathPattern" required="true" default-value="netsuite/transferorderv2/update"/>
