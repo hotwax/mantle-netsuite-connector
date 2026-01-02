@@ -591,7 +591,7 @@
             description="Service to generate Inventory Adjustment Feed file for the Mis-shipped items received as part of the Transfer Orders for NetSuite"
             serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderMisShippedReceiptAdjFeed"
             cronExpression="0 0 0 * * ?" paused="Y">
-        <parameters parameterName="filePathPattern"/>
+        <parameters parameterName="filePathPattern" parameterValue="netsuite/inventoryadjustment/csv"/>
         <parameters parameterName="systemMessageRemoteId"/>
         <parameters parameterName="adjustmentAccount"/>
         <parameters parameterName="sinceDatetimeReceived"/>
