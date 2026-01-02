@@ -553,6 +553,7 @@
         <parameters parameterName="jobName" parameterValue="Generate_Inventory_Var_Feed"/>
         <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
         <parameters parameterName="lastRunTime"/>
+        <parameters parameterName="adjustmentAccount"/>
     </moqui.service.job.ServiceJob>
 
 </entity-facade-xml>

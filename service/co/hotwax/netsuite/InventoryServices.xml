@@ -127,6 +127,11 @@ under the License.
             <parameter name="resetBy" default-value="QOH">
                 <description>QOH or ATP - determines which quantity to use for adjustment</description>
             </parameter>
+            <parameter name="adjustmentAccount" required="true">
+                <description>
+                    The specific General Ledger (GL) account where the financial impact of inventory changes is recorded when you use an Inventory Adjustment transaction in NetSuite.
+                </description>
+            </parameter>
         </in-parameters>
         <actions>
             <script>
@@ -186,7 +191,7 @@ under the License.
                     </else>
                 </if>
                 <set field="adjustQtyBy" from="(resetBy == 'QOH') ? (adjustment.inventoryItemQOHDiff ?: 0) : (adjustment.inventoryItemATPDiff ?: 0)"/>
-                <set field="adjustmentRecord" from="['Reference No': adjustment.resetDateResourceId, 'Adjustment Account': '254', 'Item': adjustment.netsuiteProductId, 'Adjust Qty By': adjustQtyBy.toString(), 'Location': adjustment.externalFacilityId, 'Date': adjDate,
+                <set field="adjustmentRecord" from="['Reference No': adjustment.resetDateResourceId, 'Adjustment Account':adjustmentAccount , 'Item': adjustment.netsuiteProductId, 'Adjust Qty By': adjustQtyBy.toString(), 'Location': adjustment.externalFacilityId, 'Date': adjDate,
                     'Memo': 'Inventory Reset Adjustment from HotWax - ' + (resetBy == 'QOH' ? 'QOH' : 'ATP'), 'HC Inventory Adj Id': adjustment.resetDateResourceId, 'Adjustment Location': adjustment.externalFacilityId, 'Facility Name': facilityName, 'Item Tag': adjustment.resetItemId]"/>
                 <script>csvWriteHelper.writeToFile(adjustmentRecord)</script>
             </iterate>
@@ -195,7 +200,7 @@ under the License.
             
             <!-- Upload the generated files to SFTP if any -->
             <if condition="generatedFilePaths">
-                <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote">
+                <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote" cache="true">
                     <field-map field-name="systemMessageRemoteId" from="systemMessageRemoteId"/>
                 </entity-find-one>
                 
