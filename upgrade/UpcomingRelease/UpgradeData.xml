@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="ext-upgrade">
+
     <moqui.basic.Enumeration enumId="GEN_TO_REC_FD" enumCode="GEN_TO_REC_FD" description="Generate Transfer Order Completed Items Reconciliation Feed" enumTypeId="ORDER_SYS_JOB"/>
     <Product productId="GEN_TO_REC_FD" productTypeId="SERVICE" internalName="GEN_TO_REC_FD"
              productName="Generate Transfer Order Completed Items Reconciliation Feed" description="Generate Transfer Order Completed Items Reconciliation Feed"

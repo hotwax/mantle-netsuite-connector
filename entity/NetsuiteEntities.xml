@@ -6,4 +6,16 @@
         <field name="externalSystemId" type="id"/>
         <field name="syncDate" type="date-time"/>
     </entity>
+
+    <entity entity-name="TransferOrderItemHistory" package="co.hotwax.integration.order">
+        <field name="historyId" type="id" is-pk="true"/>
+        <field name="orderId" type="id"/>
+        <field name="orderItemSeqId" type="id"/>
+        <field name="createdDate" type="date-time"/>
+        <field name="comments" type="text-medium"/>
+        <relationship type="one" related="org.apache.ofbiz.order.order.OrderItem">
+            <key-map field-name="orderId"/>
+            <key-map field-name="orderItemSeqId"/>
+        </relationship>
+    </entity>
 </entities>

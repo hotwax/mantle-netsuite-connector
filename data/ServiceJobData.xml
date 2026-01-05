@@ -41,6 +41,7 @@
     <moqui.basic.Enumeration enumId="GEN_TO_ACK_FD" enumCode="GEN_TO_ACK_FD" description="Generate Transfer Order Acknowledgement Feed" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_TO_MSHIP_ADJ_FD" enumCode="GEN_TO_MSHIP_ADJ_FD" description="Generate Transfer Order MisShipped Receipt Inv Adj Feed" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_TO_ITEM_CLOSURE_FD" enumCode="GEN_TO_ITEM_CLOSURE_FD" description="Generate Transfer Order Item Closure Feed" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_TO_REC_FD" enumCode="GEN_TO_REC_FD" description="Generate Transfer Order Completed Items Reconciliation Feed" enumTypeId="ORDER_SYS_JOB"/>
 
     <!-- NetSuite Transfer Order v2 Job Enum Data -->
     <moqui.basic.Enumeration enumId="NS_EXP_TO_S2S" enumCode="NS_EXP_TO_S2S" description="NetSuite Export Store to Store Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
@@ -167,6 +168,9 @@
     <Product productId="GEN_TO_ITEM_CLOSURE_FD" productTypeId="SERVICE" internalName="GEN_TO_ITEM_CLOSURE_FD"
              productName="Generate Transfer Order Item Closure Feed" description="Generate Transfer Order Item Closure Feed"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_TO_REC_FD" productTypeId="SERVICE" internalName="GEN_TO_REC_FD"
+             productName="Generate Transfer Order Completed Items Reconciliation Feed" description="Generate Transfer Order Completed Items Reconciliation Feed"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
 
     <!-- NetSuite Transfer Order v2 Job Product Data -->
     <Product productId="NS_EXP_TO_S2S" productTypeId="SERVICE" internalName="NS_EXP_TO_S2S"
@@ -225,6 +229,7 @@
     <ProductCategoryMember productId="GEN_TO_ITEM_CLOSURE_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_UPDATE_TO" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_MSHIP_ADJ_FD" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_REC_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
     <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -262,6 +267,7 @@
     <ProductCategoryMember productId="GEN_FLFLD_ORD_FD_NS" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_ACK_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_MSHIP_ADJ_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_REC_FD" productCategoryId="UPLOAD_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
 
     <!-- NetSuite Transfer Order v2 Job Product Category Members -->
     <ProductCategoryMember productId="NS_EXP_TO_S2S" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -559,5 +565,16 @@
         <parameters parameterName="jobName" parameterValue="Generate_TO_Item_Closure_Feed"/>
         <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
         <parameters parameterName="lastRunTime"/>
+    </moqui.service.job.ServiceJob>
+
+    <!-- Template Service Job to generate Transfer Order Completed Items Reconciliation Feed from HotWax -->
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderReconciliationFeed" jobTypeEnumId="GEN_TO_REC_FD"
+                                  description="Template Service Job to generate the Transfer Order Completed Items Reconciliation Feed from HotWax" instanceOfProductId="GEN_TO_REC_FD"
+                                  serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderReconciliationFeed"
+                                  cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="systemMessageTypeId" parameterValue="TransferOrderReconciliationFeed"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="sinceCompletedDate"/>
     </moqui.service.job.ServiceJob>
 </entity-facade-xml>
