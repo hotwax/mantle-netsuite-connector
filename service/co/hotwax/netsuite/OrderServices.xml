@@ -92,7 +92,7 @@
                     findNetSuiteOrders.condition("entryDate", EntityCondition.ComparisonOperator.LESS_THAN_EQUAL_TO, maxEntryDate)
                 }
 
-                findNetSuiteOrders.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId")
+                findNetSuiteOrders.selectField("orderId,partyId,netsuiteCustomerId,orderDate,isMixCartOrder,shopifyOrderId,salesChannelEnumId")
                 findNetSuiteOrders.useClone(true)
                 findNetSuiteOrders.distinct(true)
                 findNetSuiteOrders.limit(ordersCountPerFeed)
@@ -229,7 +229,7 @@
                     orderDetails = null
                 ]]></script>
                 <!-- Skip history creation for partially paid orders since it can be paid via transactions coming in via webhooks eventually -->
-                <if condition="'Y' == runFeedWithHistory &amp;&amp; isInvalidPmtFileEmpty">
+                <if condition="'Y' == runFeedWithHistory &amp;&amp; !(orderPaymentTotal &lt; grandTotal &amp;&amp; order.salesChannelEnumId == 'POS_SALES_CHANNEL')">
                     <service-call name="create#co.hotwax.integration.ExternalOrderSyncHistory" in-map="[orderId:order.orderId, syncDate:nowTimestamp]"/>
                 </if>
             </iterate>

@@ -56,6 +56,7 @@
         <alias name="orderId" entity-alias="OH"/>
         <alias name="orderDate" entity-alias="OH"/>
         <alias name="entryDate" entity-alias="OH"/>
+        <alias name="salesChannelEnumId" entity-alias="OH"/>
         <alias name="shipmentMethodTypeId" entity-alias="OIV"/>
         <alias name="isMixCartOrder" type="text-indicator">
             <case>
@@ -121,6 +122,7 @@
         <alias name="orderId" entity-alias="OH"/>
         <alias name="orderDate" entity-alias="OH"/>
         <alias name="entryDate" entity-alias="OH"/>
+        <alias name="salesChannelEnumId" entity-alias="OH"/>
         <alias name="shipmentMethodTypeId" entity-alias="OIV"/>
         <alias name="isMixCartOrder" type="text-indicator">
             <case>
@@ -360,7 +362,7 @@
         <alias-all entity-alias="OH"/>
         <alias name="productId" entity-alias="OI" field="productId"/>
         <entity-condition>
-            <econdition field-name="goodIdentificationTypeId" entity-alias="GID" operator="equals" value="null"/>
+            <econdition field-name="idValue" entity-alias="GID" operator="equals" value="null"/>
             <econdition field-name="orderTypeId" entity-alias="OH" operator="equals" value="SALES_ORDER"/>
         </entity-condition>
     </view-entity>
