@@ -36,7 +36,7 @@
                 <parameter name="shipmentStatusId"/>
                 <parameter name="shippedDate"/>
                 <parameter name="packages" type="List">
-                        <parameter name="packageMap" type="Map">
+                    <parameter name="packageMap" type="Map">
                         <parameter name="trackingNumber"/>
                         <parameter name="items" type="List">
                             <parameter name="itemMap" type="Map">
@@ -62,6 +62,9 @@
             </entity-find>
             <set field="payload.orderId" from="orderIdentificationList?.first?.orderId"/>
             <iterate list="payload.packages" entry="shipmentPackage">
+                <!-- Create a list to track items that should be kept -->
+                <set field="validItems" from="[]"/>
+
                 <iterate list="shipmentPackage.items" entry="item">
                     <!-- Get HC Product ID -->
                     <entity-find entity-name="org.apache.ofbiz.product.product.GoodIdentification" list="goodIdentifications" limit="1">
@@ -72,14 +75,42 @@
                     </entity-find>
                     <set field="item.productId" from="goodIdentifications?.first?.productId"/>
 
-                    <!-- Get Order Item Seq ID and Ship Group Seq ID -->
+                    <!-- Get Order Item Seq ID and Ship Group Seq ID and check status -->
                     <entity-find entity-name="org.apache.ofbiz.order.order.OrderItem" list="orderItemList">
                         <econdition field-name="orderId" from="payload.orderId"/>
                         <econdition field-name="externalId" from="item.remove('itemExternalId')"/>
                     </entity-find>
                     <set field="item.orderItemSeqId" from="orderItemList?.first?.orderItemSeqId"/>
+                    <set field="orderItemStatusId" from="orderItemList?.first?.statusId"/>
+
+                    <!-- Only add item to validItems if it's not completed -->
+                    <if condition="orderItemStatusId != 'ITEM_COMPLETED'">
+                        <script>validItems.add(item)</script>
+                        <else>
+                            <!-- Log that we're skipping a completed item -->
+                            <log level="info" message="OrderItem [${item.orderItemSeqId}] for Order [${payload.orderId}] – skipped in shipment creation; already completed."/>
+                        </else>
+                    </if>
                 </iterate>
+
+                <!-- Replace the items list with only valid items -->
+                <set field="shipmentPackage.items" from="validItems"/>
             </iterate>
+
+            <!-- Remove packages that have no valid items -->
+            <set field="validPackages" from="[]"/>
+            <iterate list="payload.packages" entry="shipmentPackage">
+                <if condition="shipmentPackage.items">
+                    <script>validPackages.add(shipmentPackage)</script>
+                </if>
+            </iterate>
+            <set field="payload.packages" from="validPackages"/>
+
+            <!-- If no packages remain with valid items, return empty payload to skip shipment creation -->
+            <if condition="!payload.packages">
+                <log level="info" message="Shipment [${payload.externalId}] – skipped for creation; all items already completed."/>
+                <set field="payload" from="[:]"/>
+            </if>
         </actions>
     </service>
 
@@ -514,6 +545,97 @@
             </if>
             
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
+        </actions>
+    </service>
+    <service verb="generate" noun="CompletedTransferOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>Service to generate feed file for NetSuite to close Transfer Order items</description>
+        <in-parameters>
+            <parameter name="systemMessageRemoteId" required="true"/>
+            <parameter name="filePathPattern" required="true" default-value="netsuite/transferorderv2/update"/>
+            <parameter name="orderId">
+                <description>Optional parameter to process a specific transfer order</description>
+            </parameter>
+            <parameter name="completedDate">
+                <description>Parameter to fetch Order details after specific completed date of Transfer Order</description>
+            </parameter>
+            <parameter name="recordLimitPerFeed" type="Integer" default-value="1000"/>
+            <parameter name="jobName">
+                <description>The name of the scheduled job to fetch the last run time for preparing the Feed</description>
+            </parameter>
+            <parameter name="skipLastRunTimeUpdate" type="Boolean" default="false">
+                <description>Skip the LastRunTime update, mainly used while debugging</description>
+            </parameter>
+        </in-parameters>
+        <actions>
+            <log message="Generating Completed Transfer Order Item Feed file at time ${nowTimestamp}"/>
+
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/TransferOrderItemClosureFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')}.csv"/>
+            <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
+            <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
+
+            <!-- Get the last run time to fetch records updated after the last job run -->
+            <entity-find-one entity-name="moqui.service.job.ServiceJobParameter" value-field="lastRunParam">
+                <field-map field-name="jobName"/>
+                <field-map field-name="parameterName" value="lastRunTime"/>
+            </entity-find-one>
+
+            <!-- Set completedDate using the lastRunTime if not explicitly provided -->
+            <if condition="!completedDate">
+                <set field="completedDate" from="lastRunParam?.parameterValue"/>
+            </if>
+
+            <script>
+                import co.hotwax.ns.util.CsvWriteHelper
+                import org.moqui.entity.EntityCondition
+
+                // Query to find transfer order items that need to be closed
+                toItemFind = ec.entity.find("co.hotwax.netsuite.CompletedTransferOrderItem")
+
+                if (orderId) {
+                    toItemFind.condition("orderId", orderId)
+                }
+                if (completedDate) {
+                    toItemFind.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, completedDate)
+                }
+
+                toItemFind.selectField("orderId,itemExternalId,netsuiteOrderId")
+
+                // If no eligible order items, don't generate the file
+                long toItemsCount = toItemFind.count()
+                if (toItemsCount == 0) {
+                    ec.message.addMessage("No eligible transfer order items found for closure at ${nowTimestamp}, not generating the feed file.")
+                    return
+                }
+
+                try (toItemItr = toItemFind.iterator();
+                CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, ["internalId", "hcOrderId", "lineId", "hcClosed"], recordLimitPerFeed)) {
+            </script>
+
+            <iterate list="toItemItr" entry="toItem">
+                <script>
+                    // Write the order item details to CSV with isClosed as TRUE
+                    csvWriteHelper.writeToFile([internalId: toItem.netsuiteOrderId, hcOrderId: toItem.orderId, lineId: toItem.itemExternalId, hcClosed: "TRUE"])
+                </script>
+            </iterate>
+
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote">
+                <field-map field-name="systemMessageRemoteId" from="systemMessageRemoteId"/>
+            </entity-find-one>
+
+            <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
+            <script>}</script>
+
+            <!-- Upload generated files to SFTP -->
+            <iterate list="generatedFilePaths" entry="generatedFilePath">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
+            </iterate>
+
+            <!-- Update the last run time if not skipped -->
+            <if condition="!skipLastRunTimeUpdate">
+                <service-call name="update#moqui.service.job.ServiceJobParameter" in-map="[jobName:jobName, parameterName:'lastRunTime', parameterValue:nowTimestamp]"/>
+            </if>
+            <return message="Created Transfer Order Item Closure Feed file at time ${nowTimestamp} with ${toItemsCount} items. Files: ${generatedFilePaths}"/>
         </actions>
     </service>
 

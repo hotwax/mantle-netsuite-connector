@@ -87,6 +87,32 @@
             <econdition field-name="orderTypeId" entity-alias="OH" value="TRANSFER_ORDER"/>
         </entity-condition>
     </view-entity>
+    <view-entity entity-name="CompletedTransferOrderItem" package="co.hotwax.netsuite">
+        <member-entity entity-alias="OH" entity-name="org.apache.ofbiz.order.order.OrderHeader"/>
+        <member-entity entity-alias="OI" entity-name="org.apache.ofbiz.order.order.OrderItem" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+        </member-entity>
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <entity-condition>
+                <econdition field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
+            </entity-condition>
+        </member-entity>
+        <member-entity entity-alias="ORDS" entity-name="org.apache.ofbiz.order.order.OrderStatus" join-from-alias="OH">
+            <key-map field-name="orderId"/>
+            <key-map field-name="statusId"/>
+        </member-entity>
+        <alias name="orderId" entity-alias="OH"/>
+        <alias name="itemExternalId" entity-alias="OI" field="externalId"/>
+        <alias name="netsuiteOrderId" entity-alias="OID" field="idValue"/>
+        <alias name="statusDatetime"  entity-alias="ORDS"/>
+        <alias name="orderItemSeqId" entity-alias="OI"/>
+        <entity-condition>
+            <econdition field-name="orderTypeId" entity-alias="OH" value="TRANSFER_ORDER"/>
+            <econdition field-name="statusId" entity-alias="OH" value="ORDER_COMPLETED"/>
+            <econdition field-name="statusFlowId" entity-alias="OH" operator="not-equals" value="TO_Fulfill_Only"/>
+        </entity-condition>
+    </view-entity>
 
     <view-entity entity-name="TransferOrderItemAndHistory" package="co.hotwax.netsuite">
         <description>
