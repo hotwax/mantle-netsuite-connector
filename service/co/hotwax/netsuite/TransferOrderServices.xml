@@ -533,17 +533,17 @@
             <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote"/>
             <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
             <script>}</script>
-            
+
             <iterate list="generatedFilePaths" entry="generatedFilePath">
                 <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
             </iterate>
-            
+
             <if condition="!skipLastRunTimeUpdate">
                 <!-- Set the current timestamp as the last run time for next run -->
                 <service-call name="update#moqui.service.job.ServiceJobParameter"
                     in-map="[jobName:lastRunParam.jobName, parameterName:lastRunParam.parameterName, parameterValue:nowTimestamp]"/>
             </if>
-            
+
             <return message="Created the Transfer Order Sync Ack Feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
         </actions>
     </service>
@@ -1013,6 +1013,89 @@
             </if>
 
             <return message="Created the Transfer Order Inventory Adjustment Feed file for mis-shipped receipts feed file at time ${nowTimestamp} saved response in messages ${generatedFilePaths}"/>
+        </actions>
+    </service>
+
+    <service verb="generate" noun="TransferOrderItemsFeed" authenticate="anonymous-all" transaction-timeout="7200">
+        <description>Service to generate feed file for Transfer Order Items to be sent to NetSuite</description>
+        <in-parameters>
+            <parameter name="orderId">
+                <description>Parameter to fetch Order details for a specific orderId.</description>
+            </parameter>
+            <parameter name="systemMessageRemoteId" required="true">
+                <description>The System Message Remote Id for generating the Transfer Order Items Feed for Netsuite.</description>
+            </parameter>
+            <parameter name="filePathPattern" required="true"/>
+            <parameter name="orderId">
+                <description>Parameter to fetch Order details for a specific orderId.</description>
+            </parameter>
+            <parameter name="fromOrderDate">
+                <description>Parameter to fetch Order details after specific order date</description>
+            </parameter>
+            <parameter name="thruOrderDate">
+                <description>Parameter to fetch Order details after specific order date</description>
+            </parameter>
+            <parameter name="recordLimitPerFeed" type="Integer" default-value="500"/>
+        </in-parameters>
+        <actions>
+            <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
+            <log message="Generating Transfer Order Items Feed file at time ${nowTimestamp}"/>
+
+            <!-- Prepare csv File Path -->
+            <set field="baseFile" value="runtime://datamanager/${filePathPattern}/TransferOrderItemsFeed_${ec.l10n.format(nowTimestamp, 'yyyy-MM-dd-HH-mm-ss-SSS')}.csv"/>
+            <set field="baseFilePath" from="ec.resource.getLocationReference(baseFile).getUri().getPath()"/>
+            <set field="sendPath" from="'/home/${sftpUsername}/' + filePathPattern + '/'"/>
+
+            <script>
+                import co.hotwax.ns.util.CsvWriteHelper
+                import org.moqui.entity.EntityCondition
+
+                transferOrder_find = ec.entity.find("co.hotwax.netsuite.order.TransferOrderItemSyncView")
+                if(orderId) transferOrder_find.condition("orderId", orderId)
+                if(fromOrderDate) transferOrder_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, fromOrderDate)
+                if(thruOrderDate) transferOrder_find.condition("orderDate", EntityCondition.ComparisonOperator.LESS_THAN, thruOrderDate)
+                transferOrder_find.selectField("orderId")
+                transferOrder_find.distinct(true)
+                transferOrder_find.limit(recordLimitPerFeed)
+
+                // Get the count first
+                def transferOrderCount = transferOrder_find.count()
+                if (transferOrderCount == 0) {
+                    ec.message.addMessage("No eligible transfer orders for Feed at ${nowTimestamp}, not generating the HotWax Feed file.")
+                    return
+                }
+
+                try (transferOrderItr = transferOrder_find.iterator();
+                    CsvWriteHelper csvWriteHelper = new CsvWriteHelper(baseFilePath, null, recordLimitPerFeed)) {
+            </script>
+
+            <iterate list="transferOrderItr" entry="transferOrder">
+                <entity-find entity-name="co.hotwax.netsuite.order.TransferOrderItemSyncView" list="transferOrderItemList">
+                    <econdition field-name="orderId" from="transferOrder.orderId"/>
+                </entity-find>
+                <iterate list="transferOrderItemList" entry="transferOrderItem">
+                    <script>transferOrderItem.orderDate = new java.text.SimpleDateFormat("MM/dd/yyyy").format(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(transferOrderItem.orderDate.toString()))</script>
+
+                    <set field="templateLoc" value="component://mantle-netsuite-connector/template/GenerateTransferOrder.ftl"/>
+                    <set field="templateWriter" from="new StringWriter()"/>
+                    <script>ec.resourceFacade.template(templateLoc, templateWriter)</script>
+                    <set field="jsonOut" from="(org.moqui.impl.context.ContextJavaUtil.jacksonMapper.readValue(templateWriter.toString(), Map.class))"/>
+                    <script>csvWriteHelper.writeToFile(jsonOut)</script>
+                </iterate>
+            </iterate>
+            <entity-find-one entity-name="moqui.service.message.SystemMessageRemote" value-field="systemMessageRemote" cache="true"/>
+            <set field="generatedFilePaths" from="csvWriteHelper.getGeneratedFilePaths()"/>
+            <script>
+                } catch (Exception e) {
+                    ec.message.addError("Error preparing Transfer Order Items feed file: ${e.message}")
+                    throw e
+                }
+            </script>
+
+            <iterate list="generatedFilePaths" entry="generatedFilePath">
+                <service-call name="co.hotwax.helper.HelperServices.put#FileOnSftp" in-map="[systemMessageRemoteId:systemMessageRemote.systemMessageRemoteId, receivePath:generatedFilePath, sendPath:sendPath]"/>
+            </iterate>
+            <return message="Successfully generated Transfer Order Items Feed file with type ${systemMessageTypeId} and remote ${systemMessageRemoteId}."/>
         </actions>
     </service>
 </services>

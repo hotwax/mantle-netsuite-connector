@@ -42,6 +42,7 @@
     <moqui.basic.Enumeration enumId="GEN_TO_MSHIP_ADJ_FD" enumCode="GEN_TO_MSHIP_ADJ_FD" description="Generate Transfer Order MisShipped Receipt Inv Adj Feed" enumTypeId="INVENTORY_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_TO_ITEM_CLOSURE_FD" enumCode="GEN_TO_ITEM_CLOSURE_FD" description="Generate Transfer Order Item Closure Feed" enumTypeId="ORDER_SYS_JOB"/>
     <moqui.basic.Enumeration enumId="GEN_TO_REC_FD" enumCode="GEN_TO_REC_FD" description="Generate Transfer Order Completed Items Reconciliation Feed" enumTypeId="ORDER_SYS_JOB"/>
+    <moqui.basic.Enumeration enumId="GEN_TO_ITEM_FD" enumCode="GEN_TO_ITEM_FD" description="Generate Transfer Order Items Feed Job" enumTypeId="ORDER_SYS_JOB"/>
 
     <!-- NetSuite Transfer Order v2 Job Enum Data -->
     <moqui.basic.Enumeration enumId="NS_EXP_TO_S2S" enumCode="NS_EXP_TO_S2S" description="NetSuite Export Store to Store Transfer Order Job" enumTypeId="INVENTORY_SYS_JOB"/>
@@ -155,11 +156,11 @@
     <Product productId="POL_TRANSORD_FD" productTypeId="SERVICE" internalName="POL_TRANSORD_FD"
              productName="NetSuite Import Transfer Order Feed" description="NetSuite Import Transfer Order Feed"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
-    <Product productId="GEN_BRKR_ORD_FD_NS" productTypeId="SERVICE" internalName="GEN_BRKR_ORD_FD_NS" 
+    <Product productId="GEN_BRKR_ORD_FD_NS" productTypeId="SERVICE" internalName="GEN_BRKR_ORD_FD_NS"
              productName="Generate Brokered Order Items Feed For NetSuite Job" description="Generate Brokered Order Items Feed For NetSuite Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
 
-    <Product productId="GEN_FLFLD_ORD_FD_NS" productTypeId="SERVICE" internalName="GEN_FLFLD_ORD_FD_NS" 
+    <Product productId="GEN_FLFLD_ORD_FD_NS" productTypeId="SERVICE" internalName="GEN_FLFLD_ORD_FD_NS"
              productName="Generate Fulfillment Order Items Feed For NetSuite Job" description="Generate Fulfillment Order Items Feed For NetSuite Job"
              primaryProductCategoryId="FULFILLMENT_SYS_JOB"/>
     <Product productId="GEN_TO_ACK_FD" productTypeId="SERVICE" internalName="GEN_TO_ACK_FD"
@@ -187,6 +188,9 @@
              primaryProductCategoryId="INVENTORY_SYS_JOB"/>
     <Product productId="NS_UPDATE_TO" productTypeId="SERVICE" internalName="NS_UPDATE_TO"
              productName="NetSuite Import Update Transfer Order Job" description="NetSuite Import Update Transfer Order Job"
+             primaryProductCategoryId="ORDER_SYS_JOB"/>
+    <Product productId="GEN_TO_ITEM_FD" productTypeId="SERVICE" internalName="GEN_TO_ITEM_FD"
+             productName="NetSuite Import Update Transfer Order Job" description="Generate Transfer Order Items Feed Job"
              primaryProductCategoryId="ORDER_SYS_JOB"/>
 
     <Product productId="IMP_STR_INV_NS" productTypeId="SERVICE" internalName="IMP_STR_INV_NS"
@@ -242,6 +246,7 @@
     <ProductCategoryMember productId="NS_UPDATE_TO" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_MSHIP_ADJ_FD" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="GEN_TO_REC_FD" productCategoryId="ORDER_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+    <ProductCategoryMember productId="GEN_TO_ITEM_FD" productCategoryId="GEN_TO_ITEM_FD" fromDate="2024-01-01 00:00:00.0"/>
 
     <ProductCategoryMember productId="NS_IMP_CASH_SALE" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
     <ProductCategoryMember productId="NS_IMP_CUSTOMER" productCategoryId="IMPORT_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
@@ -610,6 +615,19 @@
         <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
         <parameters parameterName="lastRunTime"/>
         <parameters parameterName="adjustmentAccount"/>
+    </moqui.service.job.ServiceJob>
+
+     <!-- Template Service Job to generate Transfer Order Items Feed from HotWax to Netsuite -->
+    <moqui.service.job.ServiceJob jobName="generate_TransferOrderItemsFeed" instanceOfProductId="GEN_TO_ITEM_FD" jobTypeEnumId="GEN_TO_ITEM_FD"
+           description="Template Service Job to generate the Transfer Order Items Feed from HotWax"
+           serviceName="co.hotwax.netsuite.TransferOrderServices.generate#TransferOrderItemsFeed"
+           cronExpression="0 0 * * * ?" paused="Y">
+        <parameters parameterName="filePathPattern" parameterValue="netsuite/transferorder/export"/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="orderId"/>
+        <parameters parameterName="fromOrderDate"/>
+        <parameters parameterName="thruOrderDate"/>
+        <parameters parameterName="recordLimitPerFeed" parameterValue="500"/>
     </moqui.service.job.ServiceJob>
 
 </entity-facade-xml>
