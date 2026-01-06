@@ -72,6 +72,34 @@
         <parameters parameterName="lastRunTime"/>
     </moqui.service.job.ServiceJob>
 
+
+    <moqui.basic.Enumeration enumId="IMP_STR_INV_NS" enumCode="IMP_STR_INV_NS" description="Import store inventory from netsuite" enumTypeId="INVENTORY_SYS_JOB"/>
+    <Product productId="IMP_STR_INV_NS" productTypeId="SERVICE" internalName="IMP_STR_INV_NS"
+             productName="Import store inventory from netsuite" description="Import store inventory from netsuite"
+             primaryProductCategoryId="INVENTORY_SYS_JOB"/>
+    <ProductCategoryMember productId="IMP_STR_INV_NS" productCategoryId="INVENTORY_SYS_JOB" fromDate="2024-01-01 00:00:00.0"/>
+
+
+    <moqui.service.job.ServiceJob jobName="import_store_inventory_from_NS" description="Import Store Inventory from NetSuite" instanceOfProductId="IMP_STR_INV_NS" jobTypeEnumId="IMP_STR_INV_NS"
+        serviceName="co.hotwax.util.UtilityServices.get#DataManagerFileFromSftp" cronExpression="" paused="Y">
+        <parameters parameterName="configId" parameterValue="STORE_INV_RESET"/>
+        <parameters parameterName="systemMessageRemoteId" parameterValue=""/>
+        <parameters parameterName="parameters" parameterValue=""/>
+    </moqui.service.job.ServiceJob>
+
+    <moqui.service.job.ServiceJob jobName="Generate_Inventory_Var_Feed" instanceOfProductId="GEN_INV_VAR_FEED_NS" jobTypeEnumId="GEN_INV_VAR_FEED_NS"
+        description="Generate Inventory Adjustment Feed for NetSuite"
+        serviceName="co.hotwax.netsuite.InventoryServices.generate#InventoryAdjustmentFeed"
+        cronExpression="0 0 0 * * ?" paused="Y">
+        <parameters parameterName="recordLimitPerFeed" parameterValue="1000"/>
+        <parameters parameterName="filePathPattern" parameterValue=""/>
+        <parameters parameterName="systemMessageRemoteId"/>
+        <parameters parameterName="jobName" parameterValue="Generate_Inventory_Var_Feed"/>
+        <parameters parameterName="skipLastRunTimeUpdate" parameterValue="false"/>
+        <parameters parameterName="lastRunTime"/>
+        <parameters parameterName="adjustmentAccount"/>
+    </moqui.service.job.ServiceJob>
+
     <moqui.basic.Enumeration enumId="GEN_TO_ITEM_FD" enumCode="GEN_TO_ITEM_FD" description="Generate Transfer Order Items Feed Job" enumTypeId="ORDER_SYS_JOB"/>
     <Product productId="GEN_TO_ITEM_FD" productTypeId="SERVICE" internalName="GEN_TO_ITEM_FD"
              productName="NetSuite Import Update Transfer Order Job" description="Generate Transfer Order Items Feed Job"
