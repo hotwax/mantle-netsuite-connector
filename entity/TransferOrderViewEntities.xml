@@ -46,7 +46,7 @@
         <member-entity entity-alias="OSH" entity-name="org.apache.ofbiz.order.order.OrderShipment" join-from-alias="SH">
             <key-map field-name="shipmentId"/>
         </member-entity>
-        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OSH">
+        <member-entity entity-alias="OID" entity-name="co.hotwax.order.OrderIdentification" join-from-alias="OSH" join-optional="true">
             <key-map field-name="orderId"/>
             <entity-condition>
                 <econdition entity-alias="OID" field-name="orderIdentificationTypeId" value="NETSUITE_ORDER_ID"/>
@@ -78,6 +78,7 @@
         <entity-condition>
             <econdition entity-alias="OFH" field-name="orderId" value=""/>
             <econdition entity-alias="SH" field-name="shipmentTypeId" value="OUT_TRANSFER"/>
+            <econdition entity-alias="OID" field-name="idValue" operator="is-not-null"/>
         </entity-condition>
     </view-entity>
     <view-entity entity-name="TransferOrderWithIdentification" package="co.hotwax.netsuite">
