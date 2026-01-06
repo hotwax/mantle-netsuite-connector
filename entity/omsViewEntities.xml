@@ -28,14 +28,4 @@
             <key-map field-name="lastModifiedByUserLogin" related="userLoginId"/>
         </relationship>
     </entity>
-
-    <!-- we can shift this view into ofbiz-oms-udm component where all other generic views are created as CommunicationEventAndOrder view is not specific to netsuite. -->
-    <view-entity entity-name="CommunicationEventAndOrder" package="co.hotwax.integration">
-        <member-entity entity-alias="CO" entity-name="org.apache.ofbiz.order.order.CommunicationEventOrder"/>
-        <member-entity entity-alias="CE" entity-name="org.apache.ofbiz.party.communication.CommunicationEvent" join-from-alias="CO">
-            <key-map field-name="communicationEventId"/>
-        </member-entity>
-        <alias-all entity-alias="CO"/>
-        <alias-all entity-alias="CE"/>
-    </view-entity>
 </entities>
