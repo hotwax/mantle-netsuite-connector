@@ -857,7 +857,6 @@
                         <set field="isFileEmpty" from="false"/>
                     </then><else>
                         <script>itemsToCreateHistory.add([orderId:transferOrder.orderId, orderItemSeqId:completedNotShippedItem.orderItemSeqId, comment:'Transfer Order Item not shipped and not received, not sent as part of Transfer Order Reconciliation Feed'])</script>
-                        <set field="isFileEmpty" from="false"/>
                     </else>
                     </if>
                 </iterate>
