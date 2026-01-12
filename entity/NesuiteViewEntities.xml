@@ -320,9 +320,6 @@
         </member-entity>
         <member-entity entity-alias="F" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true" sub-select="non-lateral">
             <key-map field-name="facilityId"/>
-            <entity-condition>
-                <econdition field-name="parentTypeId" entity-alias="F" operator="not-equals" value="VIRTUAL_FACILITY"/>
-            </entity-condition>
         </member-entity>
         <member-entity entity-alias="P" entity-name="org.apache.ofbiz.product.product.Product" join-from-alias="OI" join-optional="true">
             <key-map field-name="productId"/>
