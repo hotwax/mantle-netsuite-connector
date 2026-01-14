@@ -185,7 +185,7 @@
         <alias entity-alias="OH" name="orderTypeId"/>
         <alias entity-alias="OH" name="productStoreId"/>
         <alias entity-alias="OH" name="statusFlowId"/>
-        <alias name="orderDate" entity-alias="OH"/>
+        <alias entity-alias="OH" name="orderDate"/>
         <alias entity-alias="OID" field="idValue" name="nsOrderId"/>
 
         <alias entity-alias="OI" name="orderItemSeqId"/>
