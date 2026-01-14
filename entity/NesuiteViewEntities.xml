@@ -314,9 +314,6 @@
         </member-entity>
         <member-entity entity-alias="ORDF" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true" sub-select="non-lateral">
             <key-map field-name="orderFacilityId" related="facilityId"/>
-            <entity-condition>
-                <econdition field-name="parentTypeId" entity-alias="ORDF" operator="not-equals" value="VIRTUAL_FACILITY"/>
-            </entity-condition>
         </member-entity>
         <member-entity entity-alias="F" entity-name="co.hotwax.facility.FacilityAndType" join-from-alias="OISG" join-optional="true" sub-select="non-lateral">
             <key-map field-name="facilityId"/>
