@@ -659,6 +659,9 @@
             <parameter name="sinceCompletedDate">
                 <description>Parameter to fetch Transfer Order Reconciliation details for items completed after a specific date.</description>
             </parameter>
+            <parameter name="sinceOrderDate">
+                <description>Parameter to fetch Transfer Order Reconciliation details for items created after a specific date.</description>
+            </parameter>
         </in-parameters>
         <actions>
             <set field="nowTimestamp" from="ec.user.nowTimestamp"/>
@@ -679,6 +682,7 @@
 
                 if(orderId) transferOrder_find.condition("orderId", orderId)
                 if(sinceCompletedDate) transferOrder_find.condition("statusDatetime", EntityCondition.ComparisonOperator.GREATER_THAN, sinceCompletedDate)
+                if(sinceOrderDate) transferOrder_find.condition("orderDate", EntityCondition.ComparisonOperator.GREATER_THAN, sinceOrderDate)
                 transferOrder_find.selectField("orderId,orderName,nsOrderId,orderFacilityExternalId")
                 transferOrder_find.distinct(true)
 
